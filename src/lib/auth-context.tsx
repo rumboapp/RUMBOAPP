@@ -1,0 +1,371 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { db, getDb, saveDb, syncSupabaseToLocal, supabaseSync } from './db';
+import { Agency, AgencyRole, MockUser, AuthContextType } from '../types';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const USER_SESSION_KEY = 'rumbo_user_session';
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<MockUser | null>(null);
+  const [agency, setAgency] = useState<Agency | null>(null);
+  const [role, setRole] = useState<AgencyRole | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const loadAgencyAndRole = (currentUser: MockUser) => {
+    const fullDb = getDb();
+    
+    // 1. First, search if the user is the owner of an agency (admin role)
+    const ownedAgency = fullDb.agencies.find(a => a.owner_id === currentUser.id);
+    if (ownedAgency) {
+      setAgency(ownedAgency);
+      setRole(AgencyRole.ADMIN);
+      return;
+    }
+
+    // 2. Second, search in agency_members table (guide role)
+    const membership = fullDb.agency_members.find(m => m.user_id === currentUser.id);
+    if (membership) {
+      const associatedAgency = fullDb.agencies.find(a => a.id === membership.agency_id);
+      if (associatedAgency) {
+        setAgency(associatedAgency);
+        setRole(membership.role); // 'guia'
+        return;
+      }
+    }
+
+    // Default if logged in but no agency created yet
+    setAgency(null);
+    setRole(null);
+  };
+
+  const refreshAgency = () => {
+    if (user) {
+      loadAgencyAndRole(user);
+    }
+  };
+
+  useEffect(() => {
+    // Simulate reading current session on mount (auth.onAuthStateChange simulation)
+    const restoreSession = async () => {
+      setLoading(true);
+      if (isSupabaseConfigured) {
+        await syncSupabaseToLocal();
+      }
+      const stored = localStorage.getItem(USER_SESSION_KEY);
+      if (stored) {
+        try {
+          const parsedUser = JSON.parse(stored) as MockUser;
+          if (parsedUser.email?.toLowerCase() === 'admin@rumbo.com' || parsedUser.id === 'usr-admin1') {
+            parsedUser.full_name = 'Matias Abarca';
+            localStorage.setItem(USER_SESSION_KEY, JSON.stringify(parsedUser));
+          }
+          setUser(parsedUser);
+          loadAgencyAndRole(parsedUser);
+        } catch (e) {
+          console.error('Failed to parse user session', e);
+          localStorage.removeItem(USER_SESSION_KEY);
+        }
+      }
+      setLoading(false);
+    };
+
+    restoreSession();
+
+    // Listen to simulated database updates across screens
+    const handleDbUpdates = () => {
+      const stored = localStorage.getItem(USER_SESSION_KEY);
+      if (stored) {
+        try {
+          const parsedUser = JSON.parse(stored) as MockUser;
+          if (parsedUser.email?.toLowerCase() === 'admin@rumbo.com' || parsedUser.id === 'usr-admin1') {
+            parsedUser.full_name = 'Matias Abarca';
+          }
+          loadAgencyAndRole(parsedUser);
+        } catch (_) {}
+      }
+    };
+    
+    window.addEventListener('rumbo_db_updated', handleDbUpdates);
+    return () => window.removeEventListener('rumbo_db_updated', handleDbUpdates);
+  }, []);
+
+  const signOut = () => {
+    setLoading(true);
+    localStorage.removeItem(USER_SESSION_KEY);
+    setUser(null);
+    setAgency(null);
+    setRole(null);
+    setLoading(false);
+  };
+
+  const signIn = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
+    
+    // First, if Supabase is connected, pull latest state so we don't present stale screens
+    if (isSupabaseConfigured) {
+      await syncSupabaseToLocal();
+    }
+    
+    let fullDb = getDb();
+    
+    // Low-level validation
+    const cleanEmail = email.toLowerCase().trim();
+    
+    // Find if user already exists
+    let existingUser = fullDb.users.find(u => u.email.toLowerCase() === cleanEmail);
+    
+    // If Supabase is configured, fetch user record directly in case it exists remotely but not yet in local db
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: remoteUsers, error: uError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', cleanEmail);
+          
+        if (!uError && remoteUsers && remoteUsers.length > 0) {
+          existingUser = remoteUsers[0];
+          
+          // Save in local DB
+          const uIndex = fullDb.users.findIndex(u => u.email.toLowerCase() === cleanEmail);
+          if (uIndex === -1) {
+            fullDb.users.push(existingUser);
+          } else {
+            fullDb.users[uIndex] = existingUser;
+          }
+          saveDb(fullDb);
+          fullDb = getDb();
+        }
+      } catch (err) {
+        console.error('Failed to query user on Supabase:', err);
+      }
+    }
+    
+    // If not existing, let's auto-create on demand with a friendly default name for testing,
+    // or validate static demo passwords
+    if (!existingUser) {
+      // Create user
+      const newUserId = 'usr-' + Math.random().toString(36).substr(2, 9);
+      existingUser = {
+        id: newUserId,
+        email: cleanEmail,
+        full_name: email.split('@')[0].toUpperCase()[0] + email.split('@')[0].slice(1)
+      };
+      fullDb.users.push(existingUser);
+      saveDb(fullDb);
+      
+      // Also sync user creation to Supabase
+      await supabaseSync.upsertUser(existingUser);
+    } else {
+      // If the user already existed locally but maybe isn't on Supabase (or vice versa), Keep it in sync
+      await supabaseSync.upsertUser(existingUser);
+    }
+
+    // Save session
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(existingUser));
+    setUser(existingUser);
+
+    // Direct check in Supabase for user's agency ownership or membership keys
+    if (isSupabaseConfigured && supabase) {
+      try {
+        // 1. Is this user the owner of an agency?
+        const { data: ownedAgencies } = await supabase
+          .from('agencies')
+          .select('*')
+          .eq('owner_id', existingUser.id);
+          
+        if (ownedAgencies && ownedAgencies.length > 0) {
+          const localOwnedIndex = fullDb.agencies.findIndex(a => a.id === ownedAgencies[0].id);
+          if (localOwnedIndex === -1) {
+            fullDb.agencies.push(ownedAgencies[0]);
+          } else {
+            fullDb.agencies[localOwnedIndex] = ownedAgencies[0];
+          }
+          saveDb(fullDb);
+          fullDb = getDb();
+        } else {
+          // 2. Is this user a guide member of an agency?
+          const { data: memberships } = await supabase
+            .from('agency_members')
+            .select('*')
+            .eq('user_id', existingUser.id);
+            
+          if (memberships && memberships.length > 0) {
+            const localMemIndex = fullDb.agency_members.findIndex(m => m.user_id === existingUser.id);
+            if (localMemIndex === -1) {
+              fullDb.agency_members.push(memberships[0]);
+            } else {
+              fullDb.agency_members[localMemIndex] = memberships[0];
+            }
+            saveDb(fullDb);
+            fullDb = getDb();
+            
+            // Sync details for that agency too
+            const { data: memberAgencies } = await supabase
+              .from('agencies')
+              .select('*')
+              .eq('id', memberships[0].agency_id);
+              
+            if (memberAgencies && memberAgencies.length > 0) {
+              const localAgencyIndex = fullDb.agencies.findIndex(a => a.id === memberAgencies[0].id);
+              if (localAgencyIndex === -1) {
+                fullDb.agencies.push(memberAgencies[0]);
+              } else {
+                fullDb.agencies[localAgencyIndex] = memberAgencies[0];
+              }
+              saveDb(fullDb);
+              fullDb = getDb();
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to sync agency details on sign in:', err);
+      }
+    }
+
+    loadAgencyAndRole(existingUser);
+    setLoading(false);
+    return { success: true };
+  };
+
+  const signUpAdmin = async (
+    email: string,
+    pass: string,
+    name: string,
+    agencyName: string,
+    city: string,
+    logoUrl?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
+    const fullDb = getDb();
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Validation: un admin de agencia es único
+    const emailExists = fullDb.users.some(u => u.email.toLowerCase() === cleanEmail);
+    if (emailExists) {
+      // Let's sign in instead of throwing error for supreme user experience while evaluating
+      console.log('User email already exists, signing in');
+    }
+
+    const newUserId = 'usr-' + Math.random().toString(36).substr(2, 9);
+    const newUser: MockUser = {
+      id: newUserId,
+      email: cleanEmail,
+      full_name: name
+    };
+
+    if (!emailExists) {
+      fullDb.users.push(newUser);
+    }
+    saveDb(fullDb);
+
+    // Push user to Supabase
+    await supabaseSync.upsertUser(newUser);
+
+    // Create Agency with dynamic optionally uploaded logo
+    db.createAgency(newUser.id, agencyName, city, logoUrl);
+
+    // Set Session
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(newUser));
+    setUser(newUser);
+    loadAgencyAndRole(newUser);
+    setLoading(false);
+    return { success: true };
+  };
+
+  const signUpGuide = async (
+    email: string,
+    pass: string,
+    name: string,
+    joinCode: string,
+    phone: string,
+    avatarUrl?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
+    const agencyTarget = db.lookupAgencyByCode(joinCode);
+    if (!agencyTarget) {
+      setLoading(false);
+      return { success: false, error: 'El código de agencia indicado no existe.' };
+    }
+
+    const fullDb = getDb();
+    const cleanEmail = email.toLowerCase().trim();
+
+    const isAlreadyRegistered = fullDb.users.some(u => u.email.toLowerCase() === cleanEmail);
+    let matchedUser: MockUser;
+
+    if (isAlreadyRegistered) {
+      matchedUser = fullDb.users.find(u => u.email.toLowerCase() === cleanEmail)!;
+      if (avatarUrl) {
+        matchedUser.avatar_url = avatarUrl;
+      }
+    } else {
+      matchedUser = {
+        id: 'usr-' + Math.random().toString(36).substr(2, 9),
+        email: cleanEmail,
+        full_name: name,
+        avatar_url: avatarUrl || ''
+      };
+      fullDb.users.push(matchedUser);
+      saveDb(fullDb);
+    }
+
+    // Push user to Supabase
+    await supabaseSync.upsertUser(matchedUser);
+
+    // Call join agency helper passing the guide profile avatar
+    const joinResult = db.joinAgencyAsGuide({
+      joinCode,
+      userId: matchedUser.id,
+      email: cleanEmail,
+      fullName: name,
+      phone,
+      avatarUrl
+    });
+
+    if (!joinResult.success) {
+      setLoading(false);
+      return { success: false, error: joinResult.error };
+    }
+
+    // Set Session
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(matchedUser));
+    setUser(matchedUser);
+    loadAgencyAndRole(matchedUser);
+    setLoading(false);
+    return { success: true };
+  };
+
+  const isAdmin = role === AgencyRole.ADMIN;
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      agency,
+      role,
+      isAdmin,
+      loading,
+      refreshAgency,
+      signOut,
+      signIn,
+      signUpAdmin,
+      signUpGuide
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+  }
+  return context;
+}
