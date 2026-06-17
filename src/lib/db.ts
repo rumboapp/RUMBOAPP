@@ -669,7 +669,7 @@ export const db = {
     return updatedAgency;
   },
 
-  joinAgencyAsGuide(args: { joinCode: string; userId: string; email: string; fullName: string, phone: string, avatarUrl?: string }): { success: boolean; error?: string; agency?: Agency } {
+  joinAgencyAsGuide(args: { joinCode: string; userId: string; email: string; fullName: string, phone: string, avatarUrl?: string }): { success: boolean; error?: string; agency?: Agency; member?: AgencyMember; guide?: Guide } {
     const fullDb = getDb();
     const agency = this.lookupAgencyByCode(args.joinCode);
     if (!agency) {
@@ -735,7 +735,7 @@ export const db = {
       null
     );
 
-    return { success: true, agency };
+    return { success: true, agency, member: newMember, guide: newGuideProfile };
   },
 
   // Activities CRUD

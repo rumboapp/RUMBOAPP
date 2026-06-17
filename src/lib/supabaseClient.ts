@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || '';
+// @ts-ignore
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+// @ts-ignore
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Checks if the user has updated the placeholders with real credentials in the environment variables
 export const isSupabaseConfigured = !!(

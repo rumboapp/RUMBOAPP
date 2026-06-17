@@ -477,7 +477,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabaseSync.upsertUser(newUser);
 
     // Create Agency with dynamic optionally uploaded logo
-    db.createAgency(newUser.id, agencyName, city, logoUrl);
+    const newAgency = db.createAgency(newUser.id, agencyName, city, logoUrl);
+
+    if (isSupabaseConfigured && supabase) {
+      console.log('⏳ Awaiting Supabase agency sync...');
+      await supabaseSync.upsertAgency(newAgency);
+    }
 
     // Set Session
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(newUser));
@@ -601,6 +606,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!joinResult.success) {
       setLoading(false);
       return { success: false, error: joinResult.error };
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      console.log('⏳ Awaiting Supabase guide profile and membership sync...');
+      if (joinResult.member) {
+        await supabaseSync.upsertMember(joinResult.member);
+      }
+      if (joinResult.guide) {
+        await supabaseSync.upsertGuide(joinResult.guide);
+      }
     }
 
     // Set Session

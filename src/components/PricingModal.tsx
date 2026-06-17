@@ -14,8 +14,10 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<'premium' | 'pro' | null>(null);
   const [successStatus, setSuccessStatus] = useState(false);
 
-  const mpPremiumUrl = (import.meta as any).env.VITE_MERCADOPAGO_PREMIUM_URL || '';
-  const mpProUrl = (import.meta as any).env.VITE_MERCADOPAGO_PRO_URL || '';
+// @ts-ignore
+  const mpPremiumUrl = import.meta.env.VITE_MERCADOPAGO_PREMIUM_URL || '';
+// @ts-ignore
+  const mpProUrl = import.meta.env.VITE_MERCADOPAGO_PRO_URL || '';
 
   if (!isOpen || !agency) return null;
 
