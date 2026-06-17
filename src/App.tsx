@@ -364,11 +364,11 @@ function AppContent() {
   // 1. PUBLIC AUTHENTICATION SCREENS
   if (!user) {
     return (
-      <div className="w-full min-h-screen bg-slate-100 font-sans flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
+      <div className="w-full min-h-screen bg-[#1F4D3A] font-sans flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
         
         {/* Background glow effects to make it premium */}
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#1F4D3A]/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#0F6BA8]/5 blur-3xl pointer-events-none" />
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#0F6BA8]/10 blur-3xl pointer-events-none" />
 
         {/* COMPACT CARD FOR AUTH & SIGN-UP */}
         <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-150 relative z-10 animate-in fade-in zoom-in-95 duration-200">
