@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let authenticatedUserId: string | null = null;
     let supabaseMetadata: any = null;
-    const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
+    const isDemoAccount = !isSupabaseConfigured || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE AUTHENTICATION ---
     if (isSupabaseConfigured && supabase && !isDemoAccount) {
@@ -414,7 +414,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
-    const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
+    const isDemoAccount = !isSupabaseConfigured || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE SIGN UP ---
     if (isSupabaseConfigured && supabase && !isDemoAccount) {
@@ -529,7 +529,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
-    const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
+    const isDemoAccount = !isSupabaseConfigured || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE SIGN UP ---
     if (isSupabaseConfigured && supabase && !isDemoAccount) {
