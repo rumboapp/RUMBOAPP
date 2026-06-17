@@ -151,7 +151,28 @@ export async function syncSupabaseToLocal(): Promise<boolean> {
 
     const localDb = getDb();
 
-    // If Supabase has data, load it. If completely empty, we seed it with local demo!
+    // Helper to merge collections by ID, giving precedence to remote values for existing records
+    // but preserving local-only records that haven't been pushed to Supabase yet.
+    const mergeCollections = <T extends { id: string }>(localList: T[], remoteList: T[] | null): T[] => {
+      const itemsMap = new Map<string, T>();
+      if (localList) {
+        localList.forEach(item => {
+          if (item && item.id) {
+            itemsMap.set(item.id, item);
+          }
+        });
+      }
+      if (remoteList) {
+        remoteList.forEach(item => {
+          if (item && item.id) {
+            itemsMap.set(item.id, item);
+          }
+        });
+      }
+      return Array.from(itemsMap.values());
+    };
+
+    // If Supabase has no agencies at all, load local seed demo data
     const hasData = rAgencies && rAgencies.length > 0;
     if (!hasData) {
       await seedSupabaseIfNeeded(localDb);
@@ -159,14 +180,14 @@ export async function syncSupabaseToLocal(): Promise<boolean> {
     }
 
     const stateToApply: DBState = {
-      users: rUsers && rUsers.length ? rUsers : localDb.users,
-      agencies: rAgencies && rAgencies.length ? rAgencies : localDb.agencies,
-      agency_members: rMembers && rMembers.length ? rMembers : localDb.agency_members,
-      activities: rActivities ? rActivities : localDb.activities,
-      guides: rGuides ? rGuides : localDb.guides,
-      departures: rDepartures ? rDepartures : localDb.departures,
-      passengers: rPassengers ? rPassengers : localDb.passengers,
-      notifications: rNotifications ? rNotifications : localDb.notifications,
+      users: mergeCollections(localDb.users, rUsers),
+      agencies: mergeCollections(localDb.agencies, rAgencies),
+      agency_members: mergeCollections(localDb.agency_members, rMembers),
+      activities: mergeCollections(localDb.activities, rActivities),
+      guides: mergeCollections(localDb.guides, rGuides),
+      departures: mergeCollections(localDb.departures, rDepartures),
+      passengers: mergeCollections(localDb.passengers, rPassengers),
+      notifications: mergeCollections(localDb.notifications, rNotifications),
     };
 
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToApply));

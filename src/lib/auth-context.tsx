@@ -239,37 +239,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           saveDb(fullDb);
           fullDb = getDb();
         } else {
-          // 2. Is this user a guide member of an agency?
-          const { data: memberships } = await supabase
-            .from('agency_members')
-            .select('*')
-            .eq('user_id', existingUser.id);
+          // If Supabase didn't find the agency, check if there's a local agency for this user owner ID
+          const localOwned = fullDb.agencies.find(a => a.owner_id === existingUser.id);
+          if (localOwned) {
+            console.log('🔄 Sincronizando agencia local a Supabase:', localOwned);
+            await supabaseSync.upsertAgency(localOwned);
             
-          if (memberships && memberships.length > 0) {
-            const localMemIndex = fullDb.agency_members.findIndex(m => m.user_id === existingUser.id);
-            if (localMemIndex === -1) {
-              fullDb.agency_members.push(memberships[0]);
-            } else {
-              fullDb.agency_members[localMemIndex] = memberships[0];
+            // Sync related local items to Supabase
+            const localActivities = fullDb.activities.filter(a => a.agency_id === localOwned.id);
+            for (const act of localActivities) {
+              await supabaseSync.upsertActivity(act);
             }
-            saveDb(fullDb);
-            fullDb = getDb();
-            
-            // Sync details for that agency too
-            const { data: memberAgencies } = await supabase
-              .from('agencies')
+            const localGuides = fullDb.guides.filter(g => g.agency_id === localOwned.id);
+            for (const gd of localGuides) {
+              await supabaseSync.upsertGuide(gd);
+            }
+            const localDepartures = fullDb.departures.filter(d => d.agency_id === localOwned.id);
+            for (const dep of localDepartures) {
+              await supabaseSync.upsertDeparture(dep);
+            }
+          } else {
+            // 2. Is this user a guide member of an agency?
+            const { data: memberships } = await supabase
+              .from('agency_members')
               .select('*')
-              .eq('id', memberships[0].agency_id);
+              .eq('user_id', existingUser.id);
               
-            if (memberAgencies && memberAgencies.length > 0) {
-              const localAgencyIndex = fullDb.agencies.findIndex(a => a.id === memberAgencies[0].id);
-              if (localAgencyIndex === -1) {
-                fullDb.agencies.push(memberAgencies[0]);
+            if (memberships && memberships.length > 0) {
+              const localMemIndex = fullDb.agency_members.findIndex(m => m.user_id === existingUser.id);
+              if (localMemIndex === -1) {
+                fullDb.agency_members.push(memberships[0]);
               } else {
-                fullDb.agencies[localAgencyIndex] = memberAgencies[0];
+                fullDb.agency_members[localMemIndex] = memberships[0];
               }
               saveDb(fullDb);
               fullDb = getDb();
+              
+              // Sync details for that agency too
+              const { data: memberAgencies } = await supabase
+                .from('agencies')
+                .select('*')
+                .eq('id', memberships[0].agency_id);
+                
+              if (memberAgencies && memberAgencies.length > 0) {
+                const localAgencyIndex = fullDb.agencies.findIndex(a => a.id === memberAgencies[0].id);
+                if (localAgencyIndex === -1) {
+                  fullDb.agencies.push(memberAgencies[0]);
+                } else {
+                  fullDb.agencies[localAgencyIndex] = memberAgencies[0];
+                }
+                saveDb(fullDb);
+                fullDb = getDb();
+              }
             }
           }
         }
