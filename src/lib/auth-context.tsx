@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let authenticatedUserId: string | null = null;
     let supabaseMetadata: any = null;
-    const isDemoAccount = !isSupabaseConfigured || pass === 'admin' || pass === 'guia';
+    const isDemoAccount = !isSupabaseConfigured;
 
     // --- REAL SUPABASE AUTHENTICATION ---
     if (isSupabaseConfigured && supabase && !isDemoAccount) {
@@ -139,24 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         if (authError) {
-          console.warn('⚠️ Supabase Auth falló:', authError.message, '- Evaluando respaldo local offline-first.');
-          
-          // Fallback check: Si el usuario ya está registrado localmente en nuestro state offline,
-          // permitimos que inicie sesión local para no bloquear el desarrollo o si falta confirmar el correo.
-          const localUserExists = fullDb.users.some(u => u.email.toLowerCase() === cleanEmail);
-          
-          if (localUserExists) {
-            console.log('🔄 Desvío exitoso: Cuenta encontrada localmente en localStorage. Bypass de autenticación remota.');
-          } else {
-            setLoading(false);
-            let errMsg = authError.message;
-            if (errMsg.includes('Invalid login credentials')) {
-              errMsg = 'Credenciales de acceso inválidas. Por favor verifica tu correo y contraseña o usa la cuenta Demo para probar.';
-            } else if (errMsg.includes('Email not confirmed')) {
-              errMsg = 'Tu correo electrónico no ha sido confirmado aún. Revisa tu bandeja de entrada o desactiva la confirmación obligatoria en Supabase Auth. Para pruebas, también puedes registrar un nuevo correo de pruebas o usar la cuenta Demo.';
-            }
-            return { success: false, error: errMsg };
+          setLoading(false);
+          let errMsg = authError.message;
+          if (errMsg.includes('Invalid login credentials')) {
+            errMsg = 'Credenciales de acceso inválidas. Por favor verifica tu correo y contraseña.';
+          } else if (errMsg.includes('Email not confirmed')) {
+            errMsg = 'Tu correo electrónico no ha sido confirmado aún. Revisa tu bandeja de entrada o desactiva la confirmación obligatoria en Supabase Auth.';
           }
+          return { success: false, error: errMsg };
         }
 
         if (authData?.user) {
@@ -165,12 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (err: any) {
         console.error('Supabase auth sign in exception:', err);
-        // Fallback checks too on exceptions
-        const localUserExists = fullDb.users.some(u => u.email.toLowerCase() === cleanEmail);
-        if (!localUserExists) {
-          setLoading(false);
-          return { success: false, error: 'Excepción de autenticación: ' + (err.message || err) };
-        }
+        setLoading(false);
+        return { success: false, error: 'Excepción de autenticación: ' + (err.message || err) };
       }
     }
     
@@ -414,7 +400,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
-    const isDemoAccount = !isSupabaseConfigured || pass === 'admin' || pass === 'guia';
+    const isDemoAccount = !isSupabaseConfigured;
 
     // --- REAL SUPABASE SIGN UP ---
     if (isSupabaseConfigured && supabase && !isDemoAccount) {
@@ -534,7 +520,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
-    const isDemoAccount = !isSupabaseConfigured || pass === 'admin' || pass === 'guia';
+    const isDemoAccount = !isSupabaseConfigured;
 
     // --- REAL SUPABASE SIGN UP ---
     if (isSupabaseConfigured && supabase && !isDemoAccount) {

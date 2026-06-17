@@ -386,41 +386,45 @@ function AppContent() {
             {/* VIEW A: LOGIN */}
             {authView === 'login' && (
               <div className="flex flex-col gap-5 text-left animate-in fade-in duration-150">
-                {/* Highly-styled callout for the Interactive Demo Mode */}
-                <div className="relative overflow-hidden p-4.5 rounded-2xl bg-linear-to-br from-[#1F4D3A] to-emerald-900 text-white shadow-md flex flex-col gap-2.5 text-left border border-emerald-950/20">
-                  <div className="absolute right-[-2rem] bottom-[-2rem] w-24 h-24 rounded-full bg-white/5 blur-xl pointer-events-none" />
-                  
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">Entrada Rápida / Modo Demo</span>
-                  </div>
-                  
-                  <p className="text-[11px] leading-relaxed text-emerald-100/90">
-                    Evalúa la plataforma en vivo con clima dinámico, deslindes digitales y control de operaciones. No requiere registrarse.
-                  </p>
-                  
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      resetDbToDemo();
-                      localStorage.setItem('rumbo_demo_mode', 'true');
-                      const res = await signIn('admin@rumbo.com', 'admin');
-                      if (res.success) {
-                        navigateToHash('#/dashboard');
-                      }
-                    }}
-                    className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-gray-950 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                  >
-                    <span>🎯 Explorar Demo en Vivo</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-gray-950" />
-                  </button>
-                </div>
+                {!isSupabaseConfigured && (
+                  <>
+                    {/* Highly-styled callout for the Interactive Demo Mode */}
+                    <div className="relative overflow-hidden p-4.5 rounded-2xl bg-linear-to-br from-[#1F4D3A] to-emerald-900 text-white shadow-md flex flex-col gap-2.5 text-left border border-emerald-950/20">
+                      <div className="absolute right-[-2rem] bottom-[-2rem] w-24 h-24 rounded-full bg-white/5 blur-xl pointer-events-none" />
+                      
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">Entrada Rápida / Modo Demo</span>
+                      </div>
+                      
+                      <p className="text-[11px] leading-relaxed text-emerald-100/90">
+                        Evalúa la plataforma en vivo con clima dinámico, deslindes digitales y control de operaciones. No requiere registrarse.
+                      </p>
+                      
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          resetDbToDemo();
+                          localStorage.setItem('rumbo_demo_mode', 'true');
+                          const res = await signIn('admin@rumbo.com', 'admin');
+                          if (res.success) {
+                            navigateToHash('#/dashboard');
+                          }
+                        }}
+                        className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-gray-950 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <span>🎯 Explorar Demo en Vivo</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-gray-950" />
+                      </button>
+                    </div>
 
-                <div className="flex items-center my-1 select-none">
-                  <div className="flex-1 border-t border-gray-150" />
-                  <span className="px-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">O acceder con tu cuenta</span>
-                  <div className="flex-1 border-t border-gray-150" />
-                </div>
+                    <div className="flex items-center my-1 select-none">
+                      <div className="flex-1 border-t border-gray-150" />
+                      <span className="px-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">O acceder con tu cuenta</span>
+                      <div className="flex-1 border-t border-gray-150" />
+                    </div>
+                  </>
+                )}
 
                 <form onSubmit={handleSignIn} className="flex flex-col gap-4">
                   <div>
