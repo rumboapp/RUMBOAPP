@@ -292,6 +292,8 @@ function AppContent() {
     const res = await signIn(email, password);
     if (res.success) {
       navigateToHash('#/dashboard');
+    } else {
+      alert(res.error || 'Error al iniciar sesión. Por favor verifica tus datos.');
     }
   };
 
@@ -304,6 +306,8 @@ function AppContent() {
     const res = await signUpAdmin(email, password, fullName, agencyName, city, registerLogo);
     if (res.success) {
       navigateToHash('#/dashboard');
+    } else {
+      alert(res.error || 'Error al registrar la agencia. Por favor verifica tus datos.');
     }
   };
 

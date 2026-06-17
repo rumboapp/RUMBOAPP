@@ -119,9 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
+    const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE AUTHENTICATION ---
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && !isDemoAccount) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
@@ -295,9 +296,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
+    const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE SIGN UP ---
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && !isDemoAccount) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: cleanEmail,
@@ -377,9 +379,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
+    const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE SIGN UP ---
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && !isDemoAccount) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: cleanEmail,
