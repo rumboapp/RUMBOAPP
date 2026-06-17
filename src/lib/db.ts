@@ -26,59 +26,101 @@ export interface DBState {
 export const supabaseSync = {
   async upsertUser(user: MockUser) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('users').upsert(user); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('users').upsert(user); 
+      if (error) console.error('Supabase Sync user error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for user:', e); }
   },
   async upsertAgency(agency: Agency) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('agencies').upsert(agency); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('agencies').upsert(agency); 
+      if (error) console.error('Supabase Sync agency error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for agency:', e); }
   },
   async upsertMember(member: AgencyMember) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('agency_members').upsert(member); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('agency_members').upsert(member); 
+      if (error) console.error('Supabase Sync agency member error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for agency member:', e); }
   },
   async deleteMember(id: string) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('agency_members').delete().eq('id', id); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('agency_members').delete().eq('id', id); 
+      if (error) console.error('Supabase Sync delete member error:', error);
+    } catch(e) { console.error('Supabase Sync exception delete member:', e); }
   },
   async upsertActivity(activity: Activity) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('activities').upsert(activity); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('activities').upsert(activity); 
+      if (error) console.error('Supabase Sync activity error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for activity:', e); }
   },
   async deleteActivity(id: string) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('activities').delete().eq('id', id); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('activities').delete().eq('id', id); 
+      if (error) console.error('Supabase Sync delete activity error details:', error);
+    } catch(e) { console.error('Supabase Sync exception delete activity:', e); }
   },
   async upsertGuide(guide: Guide) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('guides').upsert(guide); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('guides').upsert(guide); 
+      if (error) console.error('Supabase Sync guide error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for guide:', e); }
   },
   async deleteGuide(id: string) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('guides').delete().eq('id', id); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('guides').delete().eq('id', id); 
+      if (error) console.error('Supabase Sync delete guide error details:', error);
+    } catch(e) { console.error('Supabase Sync exception delete guide:', e); }
   },
   async upsertDeparture(departure: Departure) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('departures').upsert(departure); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('departures').upsert(departure); 
+      if (error) console.error('Supabase Sync departure error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for departure:', e); }
   },
   async deleteDeparture(id: string) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('departures').delete().eq('id', id); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('departures').delete().eq('id', id); 
+      if (error) console.error('Supabase Sync delete departure error details:', error);
+    } catch(e) { console.error('Supabase Sync exception delete departure:', e); }
   },
   async upsertPassenger(passenger: Passenger) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('passengers').upsert(passenger); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('passengers').upsert(passenger); 
+      if (error) console.error('Supabase Sync passenger error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for passenger:', e); }
   },
   async deletePassenger(id: string) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('passengers').delete().eq('id', id); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('passengers').delete().eq('id', id); 
+      if (error) console.error('Supabase Sync delete passenger error details:', error);
+    } catch(e) { console.error('Supabase Sync exception delete passenger:', e); }
   },
   async upsertNotification(notification: Notification) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('notifications').upsert(notification); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('notifications').upsert(notification); 
+      if (error) console.error('Supabase Sync notification error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for notification:', e); }
   },
   async bulkMarkNotificationsRead(agencyId: string) {
     if (!isSupabaseConfigured || !supabase) return;
-    try { await supabase.from('notifications').update({ read: true }).eq('agency_id', agencyId); } catch(e) { console.error('Supabase Sync error:', e); }
+    try { 
+      const { error } = await supabase.from('notifications').update({ read: true }).eq('agency_id', agencyId); 
+      if (error) console.error('Supabase Sync bulk mark read error details:', error);
+    } catch(e) { console.error('Supabase Sync exception for bulk mark read:', e); }
   }
 };
 

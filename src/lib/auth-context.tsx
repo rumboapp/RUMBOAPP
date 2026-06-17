@@ -119,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = email.toLowerCase().trim();
 
     let authenticatedUserId: string | null = null;
+    let supabaseMetadata: any = null;
     const isDemoAccount = cleanEmail === 'admin@rumbo.com' || cleanEmail === 'guia@rumbo.com' || pass === 'admin' || pass === 'guia';
 
     // --- REAL SUPABASE AUTHENTICATION ---
@@ -142,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (authData.user) {
           authenticatedUserId = authData.user.id;
+          supabaseMetadata = authData.user.user_metadata;
         }
       } catch (err: any) {
         console.error('Supabase auth sign in exception:', err);
@@ -187,10 +189,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!existingUser) {
       // Create user
       const newUserId = authenticatedUserId || 'usr-' + Math.random().toString(36).substr(2, 9);
+      const fullNameFromMeta = supabaseMetadata?.full_name || email.split('@')[0].toUpperCase()[0] + email.split('@')[0].slice(1);
       existingUser = {
         id: newUserId,
         email: cleanEmail,
-        full_name: email.split('@')[0].toUpperCase()[0] + email.split('@')[0].slice(1)
+        full_name: fullNameFromMeta,
+        avatar_url: supabaseMetadata?.avatar_url || ''
       };
       fullDb.users.push(existingUser);
       saveDb(fullDb);
@@ -223,6 +227,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Direct check in Supabase for user's agency ownership or membership keys
     if (isSupabaseConfigured && supabase) {
       try {
+        // First ensure user profile row actually exists on public schema users table
+        const { data: existingRemoteUser } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', existingUser.id)
+          .single();
+          
+        if (!existingRemoteUser) {
+          console.log('👤 Profile row not found on Supabase users table, creating it now...');
+          await supabase.from('users').upsert(existingUser);
+        }
+
         // 1. Is this user the owner of an agency?
         const { data: ownedAgencies } = await supabase
           .from('agencies')
@@ -240,23 +256,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fullDb = getDb();
         } else {
           // If Supabase didn't find the agency, check if there's a local agency for this user owner ID
-          const localOwned = fullDb.agencies.find(a => a.owner_id === existingUser.id);
+          let localOwned = fullDb.agencies.find(a => a.owner_id === existingUser.id);
+          
+          // And what if NOT in local storage either BUT we have agency name in Auth metadata?
+          if (!localOwned && supabaseMetadata?.role === 'admin' && supabaseMetadata?.agency_name) {
+            console.log('🧱 Creating agency from authentic user_metadata saved in Auth:', supabaseMetadata);
+            // Create agency locally and push
+            localOwned = db.createAgency(
+              existingUser.id,
+              supabaseMetadata.agency_name,
+              supabaseMetadata.agency_city || 'Puerto Varas, Región de Los Lagos',
+              supabaseMetadata.logo_url || ''
+            );
+          }
+          
           if (localOwned) {
-            console.log('🔄 Sincronizando agencia local a Supabase:', localOwned);
-            await supabaseSync.upsertAgency(localOwned);
-            
-            // Sync related local items to Supabase
-            const localActivities = fullDb.activities.filter(a => a.agency_id === localOwned.id);
-            for (const act of localActivities) {
-              await supabaseSync.upsertActivity(act);
-            }
-            const localGuides = fullDb.guides.filter(g => g.agency_id === localOwned.id);
-            for (const gd of localGuides) {
-              await supabaseSync.upsertGuide(gd);
-            }
-            const localDepartures = fullDb.departures.filter(d => d.agency_id === localOwned.id);
-            for (const dep of localDepartures) {
-              await supabaseSync.upsertDeparture(dep);
+            console.log('🔄 Sincronizando agencia local/creada a Supabase:', localOwned);
+            const { error: agencyInsertError } = await supabase.from('agencies').upsert(localOwned);
+            if (agencyInsertError) {
+              console.error('Error syncing local agency to Supabase:', agencyInsertError);
+            } else {
+              // Sync related local items to Supabase
+              const localActivities = fullDb.activities.filter(a => a.agency_id === localOwned!.id);
+              for (const act of localActivities) {
+                await supabase.from('activities').upsert(act);
+              }
+              const localGuides = fullDb.guides.filter(g => g.agency_id === localOwned!.id);
+              for (const gd of localGuides) {
+                await supabase.from('guides').upsert(gd);
+              }
+              const localDepartures = fullDb.departures.filter(d => d.agency_id === localOwned!.id);
+              for (const dep of localDepartures) {
+                await supabase.from('departures').upsert(dep);
+              }
             }
           } else {
             // 2. Is this user a guide member of an agency?
@@ -265,12 +297,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .select('*')
               .eq('user_id', existingUser.id);
               
-            if (memberships && memberships.length > 0) {
+            let matchedMemberships = memberships;
+            
+            // If they are not registered as guide on Supabase BUT custom user_metadata says they are a guide with a join code:
+            if ((!matchedMemberships || matchedMemberships.length === 0) && supabaseMetadata?.role === 'guia' && supabaseMetadata?.join_code) {
+              console.log('🧱 Auto-joining guide from authentic user_metadata with join_code:', supabaseMetadata.join_code);
+              
+              // We need to fetch the target agency first
+              let targetAgency = db.lookupAgencyByCode(supabaseMetadata.join_code);
+              if (!targetAgency && isSupabaseConfigured && supabase) {
+                const { data: remoteAgencies } = await supabase
+                  .from('agencies')
+                  .select('*')
+                  .eq('join_code', supabaseMetadata.join_code.toUpperCase().trim());
+                  
+                if (remoteAgencies && remoteAgencies.length > 0) {
+                  targetAgency = remoteAgencies[0];
+                  // cache target agency
+                  fullDb.agencies.push(targetAgency);
+                  saveDb(fullDb);
+                  fullDb = getDb();
+                }
+              }
+              
+              if (targetAgency) {
+                const joinResult = db.joinAgencyAsGuide({
+                  joinCode: supabaseMetadata.join_code,
+                  userId: existingUser.id,
+                  email: existingUser.email,
+                  fullName: existingUser.full_name,
+                  phone: supabaseMetadata.phone || '',
+                  avatarUrl: existingUser.avatar_url
+                });
+                
+                if (joinResult.success) {
+                  // Re-query local agency member to get the record we just created
+                  const localM = fullDb.agency_members.find(m => m.user_id === existingUser.id);
+                  if (localM) {
+                    matchedMemberships = [localM];
+                  }
+                }
+              }
+            }
+            
+            if (matchedMemberships && matchedMemberships.length > 0) {
               const localMemIndex = fullDb.agency_members.findIndex(m => m.user_id === existingUser.id);
               if (localMemIndex === -1) {
-                fullDb.agency_members.push(memberships[0]);
+                fullDb.agency_members.push(matchedMemberships[0]);
               } else {
-                fullDb.agency_members[localMemIndex] = memberships[0];
+                fullDb.agency_members[localMemIndex] = matchedMemberships[0];
               }
               saveDb(fullDb);
               fullDb = getDb();
@@ -279,7 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const { data: memberAgencies } = await supabase
                 .from('agencies')
                 .select('*')
-                .eq('id', memberships[0].agency_id);
+                .eq('id', matchedMemberships[0].agency_id);
                 
               if (memberAgencies && memberAgencies.length > 0) {
                 const localAgencyIndex = fullDb.agencies.findIndex(a => a.id === memberAgencies[0].id);
@@ -324,7 +399,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: cleanEmail,
-          password: pass
+          password: pass,
+          options: {
+            data: {
+              full_name: name,
+              role: 'admin',
+              agency_name: agencyName,
+              agency_city: city,
+              logo_url: logoUrl || ''
+            }
+          }
         });
 
         if (authError) {
@@ -390,7 +474,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     avatarUrl?: string
   ): Promise<{ success: boolean; error?: string }> => {
     setLoading(true);
-    const agencyTarget = db.lookupAgencyByCode(joinCode);
+    let agencyTarget = db.lookupAgencyByCode(joinCode);
+    
+    // Better lookup check directly from Supabase
+    if (!agencyTarget && isSupabaseConfigured && supabase) {
+      try {
+        const { data: remoteAgencies } = await supabase
+          .from('agencies')
+          .select('*')
+          .eq('join_code', joinCode.toUpperCase().trim());
+        if (remoteAgencies && remoteAgencies.length > 0) {
+          agencyTarget = remoteAgencies[0];
+          // Cache it locally so other components can see it
+          const fullDb = getDb();
+          const existIdx = fullDb.agencies.findIndex(a => a.id === agencyTarget!.id);
+          if (existIdx === -1) {
+            fullDb.agencies.push(agencyTarget);
+            saveDb(fullDb);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to query agency by join code on Supabase:', err);
+      }
+    }
+
     if (!agencyTarget) {
       setLoading(false);
       return { success: false, error: 'El código de agencia indicado no existe.' };
@@ -407,7 +514,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: cleanEmail,
-          password: pass
+          password: pass,
+          options: {
+            data: {
+              full_name: name,
+              role: 'guia',
+              join_code: joinCode,
+              phone: phone,
+              avatar_url: avatarUrl || ''
+            }
+          }
         });
 
         if (authError) {
