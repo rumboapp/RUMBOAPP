@@ -382,11 +382,6 @@ function AppContent() {
             {/* VIEW A: LOGIN */}
             {authView === 'login' && (
               <div className="flex flex-col gap-5 text-left animate-in fade-in duration-150">
-                <div>
-                  <h3 className="font-display font-semibold text-xl text-pine">Evaluar o Acceder</h3>
-                  <p className="text-xs text-gray-500 mt-1 font-medium">Coordinación de guías, fichas y control de salidas técnicas.</p>
-                </div>
-
                 {/* Highly-styled callout for the Interactive Demo Mode */}
                 <div className="relative overflow-hidden p-4.5 rounded-2xl bg-linear-to-br from-[#1F4D3A] to-emerald-900 text-white shadow-md flex flex-col gap-2.5 text-left border border-emerald-950/20">
                   <div className="absolute right-[-2rem] bottom-[-2rem] w-24 h-24 rounded-full bg-white/5 blur-xl pointer-events-none" />

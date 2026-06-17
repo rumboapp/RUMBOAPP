@@ -117,9 +117,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Low-level validation
     const cleanEmail = email.toLowerCase().trim();
+
+    let authenticatedUserId: string | null = null;
+
+    // --- REAL SUPABASE AUTHENTICATION ---
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: pass
+        });
+
+        if (authError) {
+          setLoading(false);
+          let errMsg = authError.message;
+          if (errMsg.includes('Invalid login credentials')) {
+            errMsg = 'Credenciales de acceso inválidas. Por favor verifica tu correo y contraseña.';
+          } else if (errMsg.includes('Email not confirmed')) {
+            errMsg = 'Tu correo electrónico no ha sido confirmado aún. Revisa tu bandeja de entrada o desactiva la confirmación obligatoria de correo en tu panel de Supabase Auth (Authentication > Providers > Email > uncheck Confirm Email).';
+          }
+          return { success: false, error: errMsg };
+        }
+
+        if (authData.user) {
+          authenticatedUserId = authData.user.id;
+        }
+      } catch (err: any) {
+        console.error('Supabase auth sign in exception:', err);
+        setLoading(false);
+        return { success: false, error: 'Excepción de autenticación: ' + (err.message || err) };
+      }
+    }
     
     // Find if user already exists
-    let existingUser = fullDb.users.find(u => u.email.toLowerCase() === cleanEmail);
+    let existingUser = fullDb.users.find(u => 
+      u.email.toLowerCase() === cleanEmail || 
+      (authenticatedUserId && u.id === authenticatedUserId)
+    );
     
     // If Supabase is configured, fetch user record directly in case it exists remotely but not yet in local db
     if (isSupabaseConfigured && supabase) {
@@ -151,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // or validate static demo passwords
     if (!existingUser) {
       // Create user
-      const newUserId = 'usr-' + Math.random().toString(36).substr(2, 9);
+      const newUserId = authenticatedUserId || 'usr-' + Math.random().toString(36).substr(2, 9);
       existingUser = {
         id: newUserId,
         email: cleanEmail,
@@ -163,8 +197,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Also sync user creation to Supabase
       await supabaseSync.upsertUser(existingUser);
     } else {
-      // If the user already existed locally but maybe isn't on Supabase (or vice versa), Keep it in sync
-      await supabaseSync.upsertUser(existingUser);
+      // If we authenticated with Supabase Auth and have a real UUID, and our table had an old id (usr-...), let's align them.
+      if (authenticatedUserId && existingUser.id !== authenticatedUserId) {
+        const oldId = existingUser.id;
+        existingUser.id = authenticatedUserId;
+        
+        // Update all related local tables so they don't break foreign key-like references
+        fullDb.agencies.forEach(a => { if (a.owner_id === oldId) a.owner_id = authenticatedUserId; });
+        fullDb.agency_members.forEach(m => { if (m.user_id === oldId) m.user_id = authenticatedUserId; });
+        saveDb(fullDb);
+        fullDb = getDb();
+
+        await supabaseSync.upsertUser(existingUser);
+      } else {
+        // If the user already existed locally but maybe isn't on Supabase (or vice versa), Keep it in sync
+        await supabaseSync.upsertUser(existingUser);
+      }
     }
 
     // Save session
@@ -246,14 +294,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fullDb = getDb();
     const cleanEmail = email.toLowerCase().trim();
 
+    let authenticatedUserId: string | null = null;
+
+    // --- REAL SUPABASE SIGN UP ---
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password: pass
+        });
+
+        if (authError) {
+          setLoading(false);
+          return { success: false, error: authError.message };
+        }
+
+        if (authData.user) {
+          authenticatedUserId = authData.user.id;
+        }
+      } catch (err: any) {
+        console.error('Supabase auth sign up exception:', err);
+        setLoading(false);
+        return { success: false, error: 'Excepción al registrar: ' + (err.message || err) };
+      }
+    }
+
     // Validation: un admin de agencia es único
     const emailExists = fullDb.users.some(u => u.email.toLowerCase() === cleanEmail);
     if (emailExists) {
-      // Let's sign in instead of throwing error for supreme user experience while evaluating
       console.log('User email already exists, signing in');
     }
 
-    const newUserId = 'usr-' + Math.random().toString(36).substr(2, 9);
+    const newUserId = authenticatedUserId || 'usr-' + Math.random().toString(36).substr(2, 9);
     const newUser: MockUser = {
       id: newUserId,
       email: cleanEmail,
@@ -262,6 +334,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!emailExists) {
       fullDb.users.push(newUser);
+    } else {
+      // Update ID to sync if authenticated
+      const existingIdx = fullDb.users.findIndex(u => u.email.toLowerCase() === cleanEmail);
+      if (existingIdx !== -1) {
+        fullDb.users[existingIdx].id = newUserId;
+        newUser.id = newUserId;
+      }
     }
     saveDb(fullDb);
 
@@ -297,17 +376,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fullDb = getDb();
     const cleanEmail = email.toLowerCase().trim();
 
+    let authenticatedUserId: string | null = null;
+
+    // --- REAL SUPABASE SIGN UP ---
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password: pass
+        });
+
+        if (authError) {
+          setLoading(false);
+          return { success: false, error: authError.message };
+        }
+
+        if (authData.user) {
+          authenticatedUserId = authData.user.id;
+        }
+      } catch (err: any) {
+        console.error('Supabase auth guide sign up exception:', err);
+        setLoading(false);
+        return { success: false, error: 'Excepción al registrar guía: ' + (err.message || err) };
+      }
+    }
+
     const isAlreadyRegistered = fullDb.users.some(u => u.email.toLowerCase() === cleanEmail);
     let matchedUser: MockUser;
 
+    const newUserId = authenticatedUserId || 'usr-' + Math.random().toString(36).substr(2, 9);
+
     if (isAlreadyRegistered) {
       matchedUser = fullDb.users.find(u => u.email.toLowerCase() === cleanEmail)!;
+      matchedUser.id = newUserId; // Sync to authentic uuid
       if (avatarUrl) {
         matchedUser.avatar_url = avatarUrl;
       }
     } else {
       matchedUser = {
-        id: 'usr-' + Math.random().toString(36).substr(2, 9),
+        id: newUserId,
         email: cleanEmail,
         full_name: name,
         avatar_url: avatarUrl || ''
