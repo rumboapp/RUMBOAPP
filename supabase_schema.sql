@@ -128,11 +128,26 @@ ALTER TABLE passengers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Crear políticas permisivas para pruebas rápidas de lectura/escritura pública (puedes refinarlas después)
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en users" ON users;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en users" ON users FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en agencies" ON agencies;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en agencies" ON agencies FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en agency_members" ON agency_members;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en agency_members" ON agency_members FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en activities" ON activities;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en activities" ON activities FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en guides" ON guides;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en guides" ON guides FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en departures" ON departures;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en departures" ON departures FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en passengers" ON passengers;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en passengers" ON passengers FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en notifications" ON notifications;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
