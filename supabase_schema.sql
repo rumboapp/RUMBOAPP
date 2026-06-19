@@ -151,3 +151,31 @@ CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en passengers" O
 
 DROP POLICY IF EXISTS "Permitir todo a usuarios autenticados y anonimos en notifications" ON notifications;
 CREATE POLICY "Permitir todo a usuarios autenticados y anonimos en notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
+
+-- 9. Trigger para sincronizar automáticamente auth.users con public.users
+-- Esto asegura que cada vez que un usuario se registra (con o sin confirmación de email),
+-- su perfil se crea en la tabla 'users' de forma inmediata en la base de datos de Supabase.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, full_name, avatar_url)
+  VALUES (
+    new.id,
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    COALESCE(new.raw_user_meta_data->>'avatar_url', '')
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    full_name = EXCLUDED.full_name,
+    avatar_url = EXCLUDED.avatar_url;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Eliminar y recrear el trigger para evitar duplicados
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+

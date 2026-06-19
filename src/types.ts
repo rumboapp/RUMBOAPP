@@ -125,6 +125,6 @@ export interface AuthContextType {
   refreshAgency: () => void;
   signOut: () => void;
   signIn: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signUpAdmin: (email: string, pass: string, name: string, agencyName: string, city: string, logoUrl?: string) => Promise<{ success: boolean; error?: string }>;
-  signUpGuide: (email: string, pass: string, name: string, joinCode: string, phone: string, avatarUrl?: string) => Promise<{ success: boolean; error?: string }>;
+  signUpAdmin: (email: string, pass: string, name: string, agencyName: string, city: string, logoUrl?: string) => Promise<{ success: boolean; error?: string; requiresConfirmation?: boolean; message?: string }>;
+  signUpGuide: (email: string, pass: string, name: string, joinCode: string, phone: string, avatarUrl?: string) => Promise<{ success: boolean; error?: string; requiresConfirmation?: boolean; message?: string }>;
 }

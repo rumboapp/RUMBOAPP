@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     agencyName: string,
     city: string,
     logoUrl?: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; requiresConfirmation?: boolean; message?: string }> => {
     if (!isSupabaseConfigured || !supabase) {
       return { success: false, error: 'Supabase no está configurado.' };
     }
@@ -240,17 +240,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const userId = authData.user.id;
+      const emailConfirmationRequired = !authData.session;
 
-      // 2. El trigger debería haber creado el perfil en public.users, pero esperamos un momento
-      await new Promise(r => setTimeout(r, 500));
+      // 2. El trigger o la base de datos deberían crear el perfil, pero esperamos un momento
+      await new Promise(r => setTimeout(r, 600));
 
       // 3. Crear o actualizar el perfil en public.users con upsert
-      await supabase.from('users').upsert({
+      const { error: userError } = await supabase.from('users').upsert({
         id: userId,
         email: email.toLowerCase().trim(),
         full_name: name,
         avatar_url: logoUrl || ''
       });
+
+      if (userError) {
+        console.error('Error creando perfil en users:', userError);
+        if (emailConfirmationRequired) {
+          setLoading(false);
+          return {
+            success: true,
+            requiresConfirmation: true,
+            message: '¡Registro completado! Supabase requiere confirmación por correo. Por favor, revisa tu bandeja de entrada para verificar tu correo electrónico antes de iniciar sesión.'
+          };
+        }
+        setLoading(false);
+        return { 
+          success: false, 
+          error: `Error al crear tu perfil en la base de datos: ${userError.message}. Asegúrate de haber ejecutado todo el código de /supabase_schema.sql en el SQL Editor de tu panel de Supabase.` 
+        };
+      }
 
       // 4. Crear la agencia
       const joinCode = agencyName.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() + 
@@ -277,11 +295,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (agencyError) {
         console.error('Error creando agencia:', agencyError);
-        // No fallamos todo, el usuario puede crear la agencia después
+        setLoading(false);
+        return {
+          success: false,
+          error: `Error al registrar tu agencia en la tabla 'agencies': ${agencyError.message}. Verifica que ejecutaras el script de /supabase_schema.sql.`
+        };
       }
 
       // 5. Crear notificación de bienvenida
-      await supabase.from('notifications').insert({
+      const { error: notifError } = await supabase.from('notifications').insert({
         id: 'not-' + Math.random().toString(36).substr(2, 9),
         agency_id: newAgency.id,
         kind: 'system',
@@ -290,6 +312,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         read: false,
         created_at: new Date().toISOString()
       });
+
+      if (notifError) {
+        console.warn('Advertencia al insertar notificación inicial:', notifError);
+      }
+
+      if (emailConfirmationRequired) {
+        setLoading(false);
+        return {
+          success: true,
+          requiresConfirmation: true,
+          message: '¡Registro completado e inicializado! Se requiere confirmación por correo. Revisa tu email para activar la cuenta antes de iniciar sesión y configurar tu panel.'
+        };
+      }
 
       // 6. Recargar sesión para obtener todo actualizado
       await loadSession();
@@ -309,7 +344,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     joinCode: string,
     phone: string,
     avatarUrl?: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; requiresConfirmation?: boolean; message?: string }> => {
     if (!isSupabaseConfigured || !supabase) {
       return { success: false, error: 'Supabase no está configurado.' };
     }
@@ -365,21 +400,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const userId = authData.user.id;
+      const emailConfirmationRequired = !authData.session;
 
-      // 3. Esperar que el trigger cree el perfil
-      await new Promise(r => setTimeout(r, 500));
+      // 3. Esperar que la base de datos procese el usuario
+      await new Promise(r => setTimeout(r, 600));
 
       // 4. Crear o actualizar perfil en public.users con upsert
-      await supabase.from('users').upsert({
+      const { error: userError } = await supabase.from('users').upsert({
         id: userId,
         email: email.toLowerCase().trim(),
         full_name: name,
         avatar_url: avatarUrl || ''
       });
 
+      if (userError) {
+        console.error('Error creando perfil en users para guía:', userError);
+        if (emailConfirmationRequired) {
+          setLoading(false);
+          return {
+            success: true,
+            requiresConfirmation: true,
+            message: '¡Registro exitoso! Requiere confirmación por correo electrónico. Hemos enviado un correo para verificar tu cuenta. Confírmala antes de iniciar sesión.'
+          };
+        }
+        setLoading(false);
+        return {
+          success: false,
+          error: `Error al registrar tu perfil en la base de datos: ${userError.message}. Verifica que hayas ejecutado el script de /supabase_schema.sql.`
+        };
+      }
+
       // 5. Crear membresía (pendiente de aprobación)
       const memberId = 'mem-' + Math.random().toString(36).substr(2, 9);
-      await supabase.from('agency_members').insert({
+      const { error: memberError } = await supabase.from('agency_members').insert({
         id: memberId,
         agency_id: targetAgency.id,
         user_id: userId,
@@ -387,8 +440,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         created_at: new Date().toISOString()
       });
 
+      if (memberError) {
+        console.error('Error insertando miembro de agencia:', memberError);
+        setLoading(false);
+        return {
+          success: false,
+          error: `Error al unir el usuario con la agencia: ${memberError.message}`
+        };
+      }
+
       // 6. Crear perfil de guía (inactivo hasta aprobación)
-      await supabase.from('guides').insert({
+      const { error: guideError } = await supabase.from('guides').insert({
         id: 'gd-' + Math.random().toString(36).substr(2, 9),
         agency_id: targetAgency.id,
         user_id: userId,
@@ -402,8 +464,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updated_at: new Date().toISOString()
       });
 
+      if (guideError) {
+        console.error('Error creando perfil de guía:', guideError);
+        setLoading(false);
+        return {
+          success: false,
+          error: `Error al inicializar la ficha de guía: ${guideError.message}`
+        };
+      }
+
       // 7. Notificar al admin
-      await supabase.from('notifications').insert({
+      const { error: notifError } = await supabase.from('notifications').insert({
         id: 'not-' + Math.random().toString(36).substr(2, 9),
         agency_id: targetAgency.id,
         kind: 'system',
@@ -412,6 +483,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         read: false,
         created_at: new Date().toISOString()
       });
+
+      if (notifError) {
+        console.warn('Advertencia al crear notificación para admin:', notifError);
+      }
+
+      if (emailConfirmationRequired) {
+        setLoading(false);
+        return {
+          success: true,
+          requiresConfirmation: true,
+          message: '¡Registro de guía exitoso! Hemos enviado un enlace de confirmación a tu correo. Revisa tu email para confirmar y activar la cuenta antes de iniciar sesión.'
+        };
+      }
 
       await loadSession();
       setLoading(false);
