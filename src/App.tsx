@@ -5,7 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './lib/auth-context';
-import { db, isSupabaseConfigured } from './lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
+import { db } from './lib/db';
 import DashboardView from './components/DashboardView';
 import ActivitiesView from './components/ActivitiesView';
 import GuidesView from './components/GuidesView';
@@ -15,7 +16,7 @@ import { FileUpload } from './components/FileUpload';
 import { CityAutocomplete } from './components/CityAutocomplete';
 import { PricingModal } from './components/PricingModal';
 import { DownloadAppModal } from './components/DownloadAppModal';
-import { RiskWaiverSignView } from './components/RiskWaiverSignView';
+import RiskWaiverSignView from './components/RiskWaiverSignView';
 import { 
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2, 
   LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight, 
@@ -308,7 +309,7 @@ function AppContent() {
   // 1. PUBLIC AUTHENTICATION SCREENS
   if (!user) {
     return (
-      <div className="w-full min-h-screen bg-[#1F4D3A] font-sans flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
+      <div className="w-full min-h-screen bg-gradient-to-br from-emerald-900 via-emerald-800 to-green-700 font-sans flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-white/5 blur-3xl pointer-events-none" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#0F6BA8]/10 blur-3xl pointer-events-none" />
 

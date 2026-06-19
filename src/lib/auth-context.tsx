@@ -244,11 +244,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 2. El trigger debería haber creado el perfil en public.users, pero esperamos un momento
       await new Promise(r => setTimeout(r, 500));
 
-      // 3. Actualizar el perfil con el nombre completo
-      await supabase.from('users').update({
+      // 3. Crear o actualizar el perfil en public.users con upsert
+      await supabase.from('users').upsert({
+        id: userId,
+        email: email.toLowerCase().trim(),
         full_name: name,
         avatar_url: logoUrl || ''
-      }).eq('id', userId);
+      });
 
       // 4. Crear la agencia
       const joinCode = agencyName.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() + 
@@ -367,11 +369,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 3. Esperar que el trigger cree el perfil
       await new Promise(r => setTimeout(r, 500));
 
-      // 4. Actualizar perfil
-      await supabase.from('users').update({
+      // 4. Crear o actualizar perfil en public.users con upsert
+      await supabase.from('users').upsert({
+        id: userId,
+        email: email.toLowerCase().trim(),
         full_name: name,
         avatar_url: avatarUrl || ''
-      }).eq('id', userId);
+      });
 
       // 5. Crear membresía (pendiente de aprobación)
       const memberId = 'mem-' + Math.random().toString(36).substr(2, 9);
