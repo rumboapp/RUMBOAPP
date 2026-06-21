@@ -255,14 +255,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (userError) {
         console.error('Error creando perfil en users:', userError);
-        if (emailConfirmationRequired) {
-          setLoading(false);
-          return {
-            success: true,
-            requiresConfirmation: true,
-            message: '¡Registro completado! Supabase requiere confirmación por correo. Por favor, revisa tu bandeja de entrada para verificar tu correo electrónico antes de iniciar sesión.'
-          };
-        }
         setLoading(false);
         return { 
           success: false, 
@@ -321,8 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return {
           success: true,
-          requiresConfirmation: true,
-          message: '¡Registro completado e inicializado! Se requiere confirmación por correo. Revisa tu email para activar la cuenta antes de iniciar sesión y configurar tu panel.'
+          error: '¡Registro completado e inicializado! Se requiere confirmación por correo. Revisa tu email para activar la cuenta antes de iniciar sesión.'
         };
       }
 
@@ -415,14 +406,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (userError) {
         console.error('Error creando perfil en users para guía:', userError);
-        if (emailConfirmationRequired) {
-          setLoading(false);
-          return {
-            success: true,
-            requiresConfirmation: true,
-            message: '¡Registro exitoso! Requiere confirmación por correo electrónico. Hemos enviado un correo para verificar tu cuenta. Confírmala antes de iniciar sesión.'
-          };
-        }
         setLoading(false);
         return {
           success: false,
@@ -492,8 +475,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return {
           success: true,
-          requiresConfirmation: true,
-          message: '¡Registro de guía exitoso! Hemos enviado un enlace de confirmación a tu correo. Revisa tu email para confirmar y activar la cuenta antes de iniciar sesión.'
+          error: '¡Registro de guía exitoso! Revisa tu email para confirmar y activar la cuenta.'
         };
       }
 

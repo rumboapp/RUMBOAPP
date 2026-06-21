@@ -239,13 +239,7 @@ function AppContent() {
     }
     const res = await signUpAdmin(email, password, fullName, agencyName, city, registerLogo);
     if (res.success) {
-      if (res.requiresConfirmation) {
-        alert(res.message || 'Se requiere confirmación. Por favor, revisa tu correo electrónico para activar tu cuenta.');
-        setAuthView('login');
-        navigateToHash('#/login');
-      } else {
-        navigateToHash('#/dashboard');
-      }
+      navigateToHash('#/dashboard');
     } else {
       alert(res.error || 'Error al registrar.');
     }
@@ -263,13 +257,7 @@ function AppContent() {
     }
     const res = await signUpGuide(email, password, fullName, joinCode, phone, registerAvatar);
     if (res.success) {
-      if (res.requiresConfirmation) {
-        alert(res.message || 'Registro exitoso. Se requiere confirmación por correo electrónico.');
-        setAuthView('login');
-        navigateToHash('#/login');
-      } else {
-        navigateToHash('#/dashboard');
-      }
+      navigateToHash('#/dashboard');
     } else {
       alert(res.error || 'Error al registrar.');
     }
