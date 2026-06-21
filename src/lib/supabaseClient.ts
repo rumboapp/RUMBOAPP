@@ -1,9 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
 // @ts-ignore
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
 // @ts-ignore
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+// Clean surrounding quotes if any are present
+const cleanValue = (val: string) => {
+  let cleaned = val.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  return cleaned.trim();
+};
+
+export const supabaseUrl = cleanValue(rawUrl);
+export const supabaseAnonKey = cleanValue(rawKey);
 
 export const isSupabaseConfigured = !!(
   supabaseUrl && 
@@ -14,6 +29,16 @@ export const isSupabaseConfigured = !!(
   !supabaseAnonKey.includes('YOUR_ANON_PUBLISHABLE_KEY') &&
   supabaseUrl.startsWith('http')
 );
+
+// Safe diagnostic inside the browser console to help troubleshoot
+console.log('🔌 Supabase Config Diagnostic:', {
+  hasUrl: !!supabaseUrl,
+  urlStartsWithHttp: supabaseUrl.startsWith('http'),
+  urlLength: supabaseUrl.length,
+  hasKey: !!supabaseAnonKey,
+  keyLength: supabaseAnonKey.length,
+  isConfigured: isSupabaseConfigured
+});
 
 let supabaseInstance = null;
 if (isSupabaseConfigured) {

@@ -4,10 +4,31 @@ import path from 'path';
 import {defineConfig} from 'vite';
 import dotenv from 'dotenv';
 
+import fs from 'fs';
+
 // Load environment variables
 dotenv.config();
 
-// Fallbacks are provided, but prefer environment keys from platform config
+// Sync environment variables from process.env to .env to make sure Vite reads them reliably.
+const envVarsToSync = {
+  VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.SUPABASE_KEY || '',
+  VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '',
+  VITE_MERCADOPAGO_PREMIUM_URL: process.env.VITE_MERCADOPAGO_PREMIUM_URL || '',
+  VITE_MERCADOPAGO_PRO_URL: process.env.VITE_MERCADOPAGO_PRO_URL || '',
+};
+
+if (envVarsToSync.VITE_SUPABASE_URL && envVarsToSync.VITE_SUPABASE_ANON_KEY) {
+  let envContent = '';
+  for (const [key, val] of Object.entries(envVarsToSync)) {
+    if (val) {
+      envContent += `${key}="${val}"\n`;
+    }
+  }
+  fs.writeFileSync('.env', envContent);
+  console.log('💾 Automatically synced environment variables from process.env into .env');
+  dotenv.config(); // Reload env
+}
+
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.SUPABASE_KEY || '';
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
@@ -15,7 +36,7 @@ const mpPremiumUrl = process.env.VITE_MERCADOPAGO_PREMIUM_URL || '';
 const mpProUrl = process.env.VITE_MERCADOPAGO_PRO_URL || '';
 
 console.log('🔌 Vite Config: Supabase URL detected =', supabaseUrl ? 'YES' : 'NO');
-console.log('🔌 Vite Config: Supabase Anon Key detected =', supabaseAnonKey ? 'YES' : 'NO');
+console.log('🔌 Vite Config: Supabase Anon Key detected =', supabaseAnonKey ? 'YES text-length: ' + supabaseAnonKey.length : 'NO');
 
 export default defineConfig(() => {
   return {
