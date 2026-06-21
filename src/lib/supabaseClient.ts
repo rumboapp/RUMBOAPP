@@ -9,18 +9,28 @@ export const isSupabaseConfigured = !!(
   supabaseUrl && 
   supabaseAnonKey && 
   supabaseUrl !== 'TU_SUPABASE_URL_AQUI' && 
-  supabaseAnonKey !== 'TU_SUPABASE_ANON_KEY_AQUI'
+  supabaseAnonKey !== 'TU_SUPABASE_ANON_KEY_AQUI' &&
+  !supabaseUrl.includes('YOUR_PROJECT_ID') &&
+  !supabaseAnonKey.includes('YOUR_ANON_PUBLISHABLE_KEY') &&
+  supabaseUrl.startsWith('http')
 );
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
+let supabaseInstance = null;
+if (isSupabaseConfigured) {
+  try {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true
       }
-    })
-  : null;
+    });
+  } catch (err) {
+    console.error('Error al inicializar el cliente de Supabase:', err);
+  }
+}
+
+export const supabase = supabaseInstance;
 
 export function getSupabaseErrorMessage(error: any): string {
   if (!error) return 'Error desconocido';

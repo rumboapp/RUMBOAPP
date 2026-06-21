@@ -122,7 +122,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    loadSession();
+    // Safety timer to prevent eternal loading screen if Supabase queries stay pending
+    const timer = setTimeout(() => {
+      setLoading(false);
+      console.warn('Carga de sesión excedió el límite de seguridad. Forzando pasaje.');
+    }, 4000);
+
+    loadSession().finally(() => {
+      clearTimeout(timer);
+    });
 
     // Escuchar cambios de autenticación en tiempo real
     if (supabase) {
@@ -142,9 +150,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       return () => {
+        clearTimeout(timer);
         subscription.unsubscribe();
       };
     }
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   const signOut = async () => {

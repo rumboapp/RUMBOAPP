@@ -322,11 +322,7 @@ function AppContent() {
             <p className="text-[10px] text-[#0F6BA8] font-bold tracking-wider uppercase mt-1">Gestión & Logística de Aventura</p>
           </div>
 
-          {!isSupabaseConfigured && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-              <strong>⚠️ Configuración pendiente:</strong> Necesitas agregar <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code> en tu archivo <code>.env</code> o configuración de Vercel.
-            </div>
-          )}
+
 
           <div className="w-full">
             {authView === 'login' && (
