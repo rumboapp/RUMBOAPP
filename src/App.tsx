@@ -20,10 +20,10 @@ import { DownloadAppModal } from './components/DownloadAppModal';
 import RiskWaiverSignView from './components/RiskWaiverSignView';
 import LegalView from './components/LegalView';
 import { 
-  Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2, 
-  LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight, 
+  Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2,
+  LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight,
   ArrowLeft, ArrowRight, X, Calendar, Eye, EyeOff, Sparkles, Building, AlertCircle, UserPlus, Settings, UserCheck,
-  Smartphone, Tablet
+  Smartphone, Tablet, Plus
 } from 'lucide-react';
 
 function AppContent() {
@@ -92,6 +92,7 @@ function AppContent() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
 
   // Agency Edit state
   const [editAgencyName, setEditAgencyName] = useState('');
@@ -790,25 +791,51 @@ function AppContent() {
       </div>
 
       {/* MOBILE BOTTOM NAV */}
-      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-150 z-40 flex items-center justify-around p-2.5 md:hidden">
+      {isQuickActionsOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setIsQuickActionsOpen(false)}>
+          <div className="absolute bottom-20 right-3 bg-white rounded-2xl shadow-pop border border-gray-100 p-1.5 flex flex-col gap-0.5 min-w-[180px] animate-modal-in">
+            {isAdmin && (
+              <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); setIsQuickActionsOpen(false); }}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky cursor-pointer transition-colors">
+                <ActivitiesIcon className="w-4 h-4" /> Nueva Actividad
+              </button>
+            )}
+            <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); setIsQuickActionsOpen(false); }}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky cursor-pointer transition-colors">
+              <Calendar className="w-4 h-4" /> Nueva Salida
+            </button>
+            {isAdmin && (
+              <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); setIsQuickActionsOpen(false); }}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky cursor-pointer transition-colors">
+                <UserPlus className="w-4 h-4" /> Nuevo Guía
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-150 z-40 flex items-center justify-around p-2 md:hidden">
         <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[9px] font-bold ${activeTab === 'dashboard' ? 'text-pine' : 'text-gray-400'}`}>
-          <LayoutDashboard className="w-4.5 h-4.5" /> Operaciones
+          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'dashboard' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+          <LayoutDashboard className="w-5 h-5" /> Operaciones
         </button>
         <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[9px] font-bold ${activeTab === 'activities' ? 'text-pine' : 'text-gray-400'}`}>
-          <ActivitiesIcon className="w-4.5 h-4.5" /> Catálogo
+          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'activities' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+          <ActivitiesIcon className="w-5 h-5" /> Catálogo
+        </button>
+        <button onClick={() => setIsQuickActionsOpen((v) => !v)}
+          className="flex items-center justify-center w-12 h-12 rounded-2xl bg-pine text-white shadow-pop cursor-pointer hover:bg-pine-hover transition-colors -mt-4">
+          <Plus className={`w-5 h-5 transition-transform ${isQuickActionsOpen ? 'rotate-45' : ''}`} />
         </button>
         <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[9px] font-bold ${activeTab === 'guides' ? 'text-pine' : 'text-gray-400'}`}>
-          <Users className="w-4.5 h-4.5" /> Guías
+          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'guides' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+          <Users className="w-5 h-5" /> Guías
         </button>
-        {isAdmin && (
+        {isAdmin ? (
           <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[9px] font-bold ${activeTab === 'reports' ? 'text-[#1F4D3A]' : 'text-gray-400'}`}>
-            <LineChart className="w-4.5 h-4.5" /> Métricas
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'reports' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+            <LineChart className="w-5 h-5" /> Métricas
           </button>
-        )}
+        ) : <div className="w-[58px]" />}
       </nav>
 
       {/* MODALS */}
