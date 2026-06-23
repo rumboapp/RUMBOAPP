@@ -9,9 +9,10 @@ interface FileUploadProps {
   currentUrl?: string;
   placeholderText?: string;
   folder?: string;
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
-export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra una imagen aquí o haz clic para subir", folder = 'misc' }: FileUploadProps) {
+export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra una imagen aquí o haz clic para subir", folder = 'misc', onUploadingChange }: FileUploadProps) {
   const { notifyWarning } = useNotification();
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(currentUrl || '');
@@ -42,6 +43,7 @@ export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra u
     }
 
     setUploading(true);
+    onUploadingChange?.(true);
     try {
       const url = await uploadImageToStorage(file, folder);
       onUpload(url);
@@ -51,6 +53,7 @@ export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra u
       onUpload(base64);
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
     }
   };
 

@@ -29,6 +29,7 @@ export default function ActivitiesView() {
   const [meetingPoint, setMeetingPoint] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [active, setActive] = useState(true);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
   const loadActivities = async () => {
     if (!agencyId) return;
@@ -60,6 +61,7 @@ export default function ActivitiesView() {
     setEditingActivity(null);
     setName(''); setDescription(''); setDuration(120); setPrice(50000); setCurrency('CLP');
     setCapacity(15); setMeetingPoint(''); setPhotoUrl(''); setActive(true);
+    setIsPhotoUploading(false);
     setIsModalOpen(true);
   };
 
@@ -68,6 +70,7 @@ export default function ActivitiesView() {
     setName(act.name); setDescription(act.description); setDuration(act.duration_minutes);
     setPrice(act.price); setCurrency(act.currency); setCapacity(act.capacity_max);
     setMeetingPoint(act.meeting_point); setPhotoUrl(act.photo_url); setActive(act.active);
+    setIsPhotoUploading(false);
     setIsModalOpen(true);
   };
 
@@ -75,6 +78,10 @@ export default function ActivitiesView() {
     e.preventDefault();
     if (!name || !description || !meetingPoint) {
       notifyWarning('Completa todos los campos requeridos.');
+      return;
+    }
+    if (isPhotoUploading) {
+      notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
       return;
     }
     const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrl, active };
@@ -193,12 +200,12 @@ export default function ActivitiesView() {
               </div>
               <input type="text" required placeholder="Punto de encuentro" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               <div>
-                <FileUpload onUpload={(url) => setPhotoUrl(url)} currentUrl={photoUrl} placeholderText="Foto de la actividad" folder="activities" />
+                <FileUpload onUpload={(url) => setPhotoUrl(url)} currentUrl={photoUrl} placeholderText="Foto de la actividad" folder="activities" onUploadingChange={setIsPhotoUploading} />
                 <input type="text" placeholder="O URL directa" value={photoUrl.startsWith('data:image/') ? '' : photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} className="w-full mt-2 border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">{editingActivity ? 'Guardar' : 'Crear'}</button>
+                <button type="submit" disabled={isPhotoUploading} className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{isPhotoUploading ? 'Subiendo foto...' : (editingActivity ? 'Guardar' : 'Crear')}</button>
               </div>
             </form>
           </div>

@@ -135,6 +135,10 @@ function AppContent() {
 
   const handleSaveAgency = async () => {
     if (!agency) return;
+    if (isAgencyLogoUploading) {
+      notifyWarning('Espera a que el logo termine de subirse antes de guardar.');
+      return;
+    }
     await db.updateAgency(agency.id, {
       name: editAgencyName,
       city: editAgencyCity,
@@ -147,6 +151,10 @@ function AppContent() {
 
   const handleSaveUserProfile = async () => {
     if (!user || !supabase) return;
+    if (isUserAvatarUploading) {
+      notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
+      return;
+    }
 
     await supabase.from('users').update({
       full_name: editUserName,
@@ -185,6 +193,10 @@ function AppContent() {
   const [joinCode, setJoinCode] = useState('');
   const [registerLogo, setRegisterLogo] = useState('');
   const [registerAvatar, setRegisterAvatar] = useState('');
+  const [isRegisterLogoUploading, setIsRegisterLogoUploading] = useState(false);
+  const [isRegisterAvatarUploading, setIsRegisterAvatarUploading] = useState(false);
+  const [isAgencyLogoUploading, setIsAgencyLogoUploading] = useState(false);
+  const [isUserAvatarUploading, setIsUserAvatarUploading] = useState(false);
   const [previewAgency, setPreviewAgency] = useState<any>(null);
 
   const [resetPasswordState, setResetPasswordState] = useState('');
@@ -270,6 +282,10 @@ function AppContent() {
       notifyWarning('Debes aceptar los Términos y Condiciones para continuar.');
       return;
     }
+    if (isRegisterLogoUploading) {
+      notifyWarning('Espera a que el logo termine de subirse antes de continuar.');
+      return;
+    }
     const res = await signUpAdmin(email, password, fullName, agencyName, city, registerLogo);
     if (res.requiresConfirmation) {
       setConfirmationEmail(email);
@@ -293,6 +309,10 @@ function AppContent() {
     }
     if (!acceptedTermsGuide) {
       notifyWarning('Debes aceptar los Términos y Condiciones para continuar.');
+      return;
+    }
+    if (isRegisterAvatarUploading) {
+      notifyWarning('Espera a que la foto termine de subirse antes de continuar.');
       return;
     }
     const res = await signUpGuide(email, password, fullName, joinCode, phone, registerAvatar);
@@ -442,7 +462,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
-                    <FileUpload onUpload={(url) => setRegisterLogo(url)} currentUrl={registerLogo} placeholderText="Arrastra el logo o haz clic" folder="logos" />
+                    <FileUpload onUpload={(url) => setRegisterLogo(url)} currentUrl={registerLogo} placeholderText="Arrastra el logo o haz clic" folder="logos" onUploadingChange={setIsRegisterLogoUploading} />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Correo:</label>
@@ -462,8 +482,8 @@ function AppContent() {
                       <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
                     </span>
                   </label>
-                  <button type="submit" className="w-full py-3 bg-[#1F4D3A] hover:bg-[#173b2c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
-                    Crear Agencia & Cuenta
+                  <button type="submit" disabled={isRegisterLogoUploading} className="w-full py-3 bg-[#1F4D3A] hover:bg-[#173b2c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isRegisterLogoUploading ? 'Subiendo logo...' : 'Crear Agencia & Cuenta'}
                   </button>
                 </form>
               </div>
@@ -500,7 +520,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Foto de Perfil:</label>
-                    <FileUpload onUpload={(url) => setRegisterAvatar(url)} currentUrl={registerAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" />
+                    <FileUpload onUpload={(url) => setRegisterAvatar(url)} currentUrl={registerAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" onUploadingChange={setIsRegisterAvatarUploading} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -527,8 +547,8 @@ function AppContent() {
                       <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
                     </span>
                   </label>
-                  <button type="submit" className="w-full py-3 bg-ocean hover:bg-[#0c598c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
-                    Completar Enlace
+                  <button type="submit" disabled={isRegisterAvatarUploading} className="w-full py-3 bg-ocean hover:bg-[#0c598c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isRegisterAvatarUploading ? 'Subiendo foto...' : 'Completar Enlace'}
                   </button>
                 </form>
               </div>
@@ -811,7 +831,7 @@ function AppContent() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
-                <FileUpload onUpload={(url) => setEditAgencyLogo(url)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" folder="logos" />
+                <FileUpload onUpload={(url) => setEditAgencyLogo(url)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" folder="logos" onUploadingChange={setIsAgencyLogoUploading} />
               </div>
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Plantilla WhatsApp:</label>
@@ -829,7 +849,7 @@ function AppContent() {
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                 <button onClick={() => setIsAgencyModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl">Cancelar</button>
-                <button onClick={handleSaveAgency} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl">Guardar</button>
+                <button onClick={handleSaveAgency} disabled={isAgencyLogoUploading} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">{isAgencyLogoUploading ? 'Subiendo logo...' : 'Guardar'}</button>
               </div>
             </div>
           </div>
@@ -855,11 +875,11 @@ function AppContent() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Avatar:</label>
-                <FileUpload onUpload={(url) => setEditUserAvatar(url)} currentUrl={editUserAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" />
+                <FileUpload onUpload={(url) => setEditUserAvatar(url)} currentUrl={editUserAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" onUploadingChange={setIsUserAvatarUploading} />
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                 <button onClick={() => setIsProfileModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl">Cancelar</button>
-                <button onClick={handleSaveUserProfile} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl">Actualizar</button>
+                <button onClick={handleSaveUserProfile} disabled={isUserAvatarUploading} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">{isUserAvatarUploading ? 'Subiendo foto...' : 'Actualizar'}</button>
               </div>
             </div>
           </div>

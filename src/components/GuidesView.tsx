@@ -28,6 +28,7 @@ export default function GuidesView() {
   const [specialtyStr, setSpecialtyStr] = useState('');
   const [active, setActive] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
 
   const loadData = async () => {
     if (!agencyId) return;
@@ -65,6 +66,7 @@ export default function GuidesView() {
     }
     setEditingGuide(null);
     setFullName(''); setPhone(''); setEmail(''); setSpecialtyStr(''); setActive(true); setAvatarUrl('');
+    setIsAvatarUploading(false);
     setIsModalOpen(true);
   };
 
@@ -72,12 +74,14 @@ export default function GuidesView() {
     setEditingGuide(g);
     setFullName(g.full_name); setPhone(g.phone); setEmail(g.email);
     setSpecialtyStr(g.specialties.join(', ')); setActive(g.active); setAvatarUrl(g.avatar_url || '');
+    setIsAvatarUploading(false);
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !email) { notifyWarning('Completa todos los campos.'); return; }
+    if (isAvatarUploading) { notifyWarning('Espera a que la foto termine de subirse antes de guardar.'); return; }
     const specialtiesList = specialtyStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const payload = { user_id: editingGuide ? editingGuide.user_id : null, full_name: fullName, phone, email, specialties: specialtiesList.length > 0 ? specialtiesList : ['Turismo General'], active, avatar_url: avatarUrl };
     if (editingGuide) {
@@ -261,12 +265,12 @@ export default function GuidesView() {
                 <input type="tel" required placeholder="WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               </div>
-              <FileUpload onUpload={(url) => setAvatarUrl(url)} currentUrl={avatarUrl} placeholderText="Foto de perfil" folder="avatars" />
+              <FileUpload onUpload={(url) => setAvatarUrl(url)} currentUrl={avatarUrl} placeholderText="Foto de perfil" folder="avatars" onUploadingChange={setIsAvatarUploading} />
               <input type="text" placeholder="Especialidades (separadas por coma)" value={specialtyStr} onChange={(e) => setSpecialtyStr(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               <label className="flex items-center gap-2"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="rounded text-pine" /><span className="text-xs font-semibold">Activo</span></label>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">{editingGuide ? 'Guardar' : 'Crear'}</button>
+                <button type="submit" disabled={isAvatarUploading} className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{isAvatarUploading ? 'Subiendo foto...' : (editingGuide ? 'Guardar' : 'Crear')}</button>
               </div>
             </form>
           </div>
