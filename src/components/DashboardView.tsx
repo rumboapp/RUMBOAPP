@@ -44,7 +44,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   // New Departure Form
   const [newActivityId, setNewActivityId] = useState('');
   const [newGuideIds, setNewGuideIds] = useState<string[]>([]);
-  const [editingGuidesDepId, setEditingGuidesDepId] = useState<string | null>(null);
+  const [editingDepartureId, setEditingDepartureId] = useState<string | null>(null);
   const [newDepartureDate, setNewDepartureDate] = useState('');
   const [newTime, setNewTime] = useState('09:00');
   const [newNotes, setNewNotes] = useState('');
@@ -99,22 +99,48 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
 
   const filteredDepartures = departures.filter(d => d.departure_date === selectedDate);
 
-  const handleCreateDeparture = async (e: React.FormEvent) => {
+  const resetDepartureForm = () => {
+    setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
+    setEditingDepartureId(null);
+  };
+
+  const handleOpenEditDeparture = (dep: Departure) => {
+    setEditingDepartureId(dep.id);
+    setNewActivityId(dep.activity_id);
+    setNewGuideIds(dep.guide_ids && dep.guide_ids.length > 0 ? dep.guide_ids : dep.guide_id ? [dep.guide_id] : []);
+    setNewDepartureDate(dep.departure_date);
+    setNewTime(dep.departure_time);
+    setNewNotes(dep.notes || '');
+    setIsAddDepartureOpen(true);
+  };
+
+  const handleSubmitDeparture = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newActivityId) { notifyWarning('Selecciona una actividad.'); return; }
     const scheduledDate = newDepartureDate || selectedDate;
-    await db.createDeparture(agencyId, {
-      activity_id: newActivityId,
-      guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
-      guide_ids: newGuideIds,
-      departure_date: scheduledDate,
-      departure_time: newTime,
-      status: 'programada',
-      notes: newNotes
-    });
+    if (editingDepartureId) {
+      await db.updateDeparture(editingDepartureId, {
+        activity_id: newActivityId,
+        guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
+        guide_ids: newGuideIds,
+        departure_date: scheduledDate,
+        departure_time: newTime,
+        notes: newNotes
+      });
+    } else {
+      await db.createDeparture(agencyId, {
+        activity_id: newActivityId,
+        guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
+        guide_ids: newGuideIds,
+        departure_date: scheduledDate,
+        departure_time: newTime,
+        status: 'programada',
+        notes: newNotes
+      });
+    }
     setIsAddDepartureOpen(false);
     setSelectedDate(scheduledDate);
-    setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
+    resetDepartureForm();
     await loadData();
   };
 
@@ -388,7 +414,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
               <span className="text-xs px-2 py-0.5 bg-sky text-ocean rounded-full font-bold">{filteredDepartures.length}</span>
             </h2>
             {isAdmin && (
-              <button onClick={() => { setNewDepartureDate(selectedDate); setIsAddDepartureOpen(true); }}
+              <button onClick={() => { resetDepartureForm(); setNewDepartureDate(selectedDate); setIsAddDepartureOpen(true); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-pine text-white rounded-xl text-xs font-semibold shadow-sm cursor-pointer hover:bg-pine-hover transition-colors">
                 <Plus className="w-3.5 h-3.5" /> Programar
               </button>
@@ -424,11 +450,20 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         <p className="text-xs text-gray-400">{bookedSum}/{act.capacity_max} pasajeros</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <ArrowRight className={`w-4 h-4 ${isSelected ? 'text-pine' : 'text-gray-300'}`} />
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-1.5">
+                        {isAdmin && dep.status !== 'finalizada' && dep.status !== 'cancelada' && (
+                          <button onClick={(e) => { e.stopPropagation(); handleOpenEditDeparture(dep); }}
+                            title="Editar salida"
+                            className="p-1 rounded border bg-white hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                        <ArrowRight className={`w-4 h-4 ${isSelected ? 'text-pine' : 'text-gray-300'}`} />
+                      </div>
                       {dep.status !== 'cancelada' && weather?.condition === 'tormenta' && (
                         <button onClick={(e) => { e.stopPropagation(); handleWeatherSuspension(dep.id); }}
-                          className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 mt-2 cursor-pointer hover:bg-rose-100 transition-colors">
+                          className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 cursor-pointer hover:bg-rose-100 transition-colors">
                           <AlertTriangle className="w-2.5 h-2.5 inline" /> Suspender
                         </button>
                       )}
@@ -437,28 +472,15 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                   <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-3">
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap">
                       <User className="w-3.5 h-3.5 text-ocean shrink-0" />
-                      {isAdmin ? (
-                        <button onClick={(e) => { e.stopPropagation(); setEditingGuidesDepId(editingGuidesDepId === dep.id ? null : dep.id); }}
-                          className="flex items-center gap-1 flex-wrap cursor-pointer">
-                          {getDepartureGuideNames(dep).length > 0 ? (
-                            getDepartureGuideNames(dep).map((name, i) => (
-                              <span key={i} className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 py-0.5 rounded transition-colors">{name}</span>
-                            ))
-                          ) : (
-                            <span className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 py-0.5 rounded transition-colors">Sin guía</span>
-                          )}
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {getDepartureGuideNames(dep).length > 0 ? (
-                            getDepartureGuideNames(dep).map((name, i) => (
-                              <span key={i} className="font-medium text-gray-700">{name}{i < getDepartureGuideNames(dep).length - 1 ? ',' : ''}</span>
-                            ))
-                          ) : (
-                            <span>Sin guía</span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {getDepartureGuideNames(dep).length > 0 ? (
+                          getDepartureGuideNames(dep).map((name, i) => (
+                            <span key={i} className="font-medium text-gray-700 border border-gray-100 bg-gray-50 px-1.5 py-0.5 rounded">{name}</span>
+                          ))
+                        ) : (
+                          <span>Sin guía</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                       {dep.status === 'programada' && (
@@ -486,13 +508,13 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         </div>
       </div>
 
-      {/* MODAL: Add Departure */}
+      {/* MODAL: Add/Edit Departure */}
       {isAddDepartureOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="absolute inset-0" onClick={() => setIsAddDepartureOpen(false)} />
+          <div className="absolute inset-0" onClick={() => { setIsAddDepartureOpen(false); resetDepartureForm(); }} />
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
-            <h3 className="font-display font-medium text-lg text-pine mb-4">Programar Nueva Salida</h3>
-            <form onSubmit={handleCreateDeparture} className="flex flex-col gap-4">
+            <h3 className="font-display font-medium text-lg text-pine mb-4">{editingDepartureId ? 'Editar Salida' : 'Programar Nueva Salida'}</h3>
+            <form onSubmit={handleSubmitDeparture} className="flex flex-col gap-4">
               <select required value={newActivityId} onChange={(e) => setNewActivityId(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs cursor-pointer">
                 <option value="">Selecciona actividad...</option>
@@ -517,8 +539,8 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
               <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} placeholder="Notas..."
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none" />
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setIsAddDepartureOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">Crear</button>
+                <button type="button" onClick={() => { setIsAddDepartureOpen(false); resetDepartureForm(); }} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
+                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">{editingDepartureId ? 'Guardar cambios' : 'Crear'}</button>
               </div>
             </form>
           </div>
