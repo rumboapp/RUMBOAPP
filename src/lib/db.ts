@@ -39,6 +39,27 @@ function dispatchDbUpdate() {
   window.dispatchEvent(new Event('rumbo_db_updated'));
 }
 
+// ─── MODO DEMO ───
+// Cuando está activo, todas las escrituras a Supabase quedan bloqueadas
+// y se notifica vía evento para mostrar un aviso al usuario.
+let demoModeActive = false;
+
+export function setDemoMode(active: boolean): void {
+  demoModeActive = active;
+}
+
+export function isDemoModeActive(): boolean {
+  return demoModeActive;
+}
+
+function blockIfDemo(): boolean {
+  if (demoModeActive) {
+    window.dispatchEvent(new Event('rumbo_demo_blocked'));
+    return true;
+  }
+  return false;
+}
+
 // ============================================================
 // FUNCIONES DE BASE DE DATOS - SUPABASE FIRST
 // ============================================================
@@ -85,6 +106,7 @@ export const db = {
   },
 
   async updateAgency(agencyId: string, data: Partial<Agency>): Promise<Agency | null> {
+    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
 
     const updatedCoords = data.city ? getCoordinatesForCity(data.city) : {};
@@ -115,6 +137,7 @@ export const db = {
     phone: string; 
     avatarUrl?: string 
   }): Promise<{ success: boolean; error?: string; agency?: Agency; member?: AgencyMember; guide?: Guide }> {
+    if (blockIfDemo()) return { success: false, error: 'Esto es una demo: los cambios no se guardan.' };
     const agency = await this.lookupAgencyByCode(args.joinCode);
     if (!agency) {
       return { success: false, error: 'Código de agencia inválido.' };
@@ -205,6 +228,9 @@ export const db = {
   },
 
   async createActivity(agencyId: string, data: Omit<Activity, 'id' | 'agency_id' | 'created_at' | 'updated_at'>): Promise<Activity> {
+    if (blockIfDemo()) {
+      return { ...data, id: 'demo-act', agency_id: agencyId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    }
     let photo = data.photo_url;
     if (!photo) {
       const keywords = data.name.toLowerCase();
@@ -237,6 +263,7 @@ export const db = {
   },
 
   async updateActivity(id: string, data: Partial<Omit<Activity, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Activity | null> {
+    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('activities')
@@ -249,6 +276,7 @@ export const db = {
   },
 
   async deleteActivity(id: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('activities').delete().eq('id', id);
     // También eliminar salidas asociadas
@@ -269,6 +297,9 @@ export const db = {
   },
 
   async createGuide(agencyId: string, data: Omit<Guide, 'id' | 'agency_id' | 'created_at' | 'updated_at'>): Promise<Guide> {
+    if (blockIfDemo()) {
+      return { ...data, id: 'demo-gd', agency_id: agencyId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    }
     const newGuide: Guide = {
       ...data,
       id: 'gd-' + Math.random().toString(36).substr(2, 9),
@@ -286,6 +317,7 @@ export const db = {
   },
 
   async updateGuide(id: string, data: Partial<Omit<Guide, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Guide | null> {
+    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('guides')
@@ -298,6 +330,7 @@ export const db = {
   },
 
   async deleteGuide(id: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('guides').delete().eq('id', id);
     // Desasignar de salidas
@@ -323,12 +356,14 @@ export const db = {
   },
 
   async updateMemberRole(memberId: string, role: AgencyRole): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('agency_members').update({ role }).eq('id', memberId);
     dispatchDbUpdate();
   },
 
   async deleteMember(memberId: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('agency_members').delete().eq('id', memberId);
     dispatchDbUpdate();
@@ -366,6 +401,9 @@ export const db = {
   },
 
   async createDeparture(agencyId: string, data: Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>): Promise<Departure> {
+    if (blockIfDemo()) {
+      return { ...data, id: 'demo-dep', agency_id: agencyId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    }
     const newDeparture: Departure = {
       ...data,
       id: 'dep-' + Math.random().toString(36).substr(2, 9),
@@ -404,6 +442,7 @@ export const db = {
   },
 
   async updateDeparture(id: string, data: Partial<Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Departure | null> {
+    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('departures')
@@ -416,6 +455,7 @@ export const db = {
   },
 
   async deleteDeparture(id: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('passengers').delete().eq('departure_id', id);
     await supabase.from('departures').delete().eq('id', id);
@@ -447,6 +487,9 @@ export const db = {
   },
 
   async createPassenger(data: Omit<Passenger, 'id' | 'created_at'>): Promise<Passenger> {
+    if (blockIfDemo()) {
+      return { ...data, id: 'demo-pax', created_at: new Date().toISOString() };
+    }
     const newPassenger: Passenger = {
       ...data,
       id: 'pax-' + Math.random().toString(36).substr(2, 9),
@@ -462,6 +505,7 @@ export const db = {
   },
 
   async updatePassenger(id: string, data: Partial<Omit<Passenger, 'id' | 'created_at'>>): Promise<Passenger | null> {
+    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('passengers')
@@ -474,6 +518,7 @@ export const db = {
   },
 
   async deletePassenger(id: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('passengers').delete().eq('id', id);
     dispatchDbUpdate();
@@ -512,12 +557,14 @@ export const db = {
   },
 
   async markNotificationAsRead(id: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('notifications').update({ read: true }).eq('id', id);
     dispatchDbUpdate();
   },
 
   async markAllAsRead(agencyId: string): Promise<void> {
+    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('notifications').update({ read: true }).eq('agency_id', agencyId);
     dispatchDbUpdate();

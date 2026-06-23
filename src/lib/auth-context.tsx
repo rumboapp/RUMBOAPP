@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Agency, AgencyRole, MockUser, AuthContextType } from '../types';
 import { supabase, isSupabaseConfigured, getSupabaseErrorMessage } from './supabaseClient';
+import { setDemoMode } from './db';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -93,8 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .limit(1);
 
       if (ownedAgencies && ownedAgencies.length > 0) {
-        setAgency(ownedAgencies[0] as Agency);
+        const ownedAgency = ownedAgencies[0] as Agency;
+        setAgency(ownedAgency);
         setRole(AgencyRole.ADMIN);
+        setIsDemoMode(!!ownedAgency.is_demo);
+        setDemoMode(!!ownedAgency.is_demo);
         return;
       }
 
@@ -107,17 +111,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (memberships && memberships.length > 0) {
         const membership = memberships[0];
-        setAgency(membership.agencies as Agency);
+        const memberAgency = membership.agencies as Agency;
+        setAgency(memberAgency);
         setRole(membership.role as AgencyRole);
+        setIsDemoMode(!!memberAgency.is_demo);
+        setDemoMode(!!memberAgency.is_demo);
         return;
       }
 
       setAgency(null);
       setRole(null);
+      setIsDemoMode(false);
+      setDemoMode(false);
     } catch (err) {
       console.error('Error cargando agencia:', err);
       setAgency(null);
       setRole(null);
+      setIsDemoMode(false);
+      setDemoMode(false);
     }
   };
 
@@ -145,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setAgency(null);
             setRole(null);
             setIsDemoMode(false);
+            setDemoMode(false);
           }
         }
       );
@@ -169,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAgency(null);
     setRole(null);
     setIsDemoMode(false);
+    setDemoMode(false);
     setLoading(false);
   };
 
@@ -521,6 +534,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role,
       isAdmin,
       loading,
+      isDemoMode,
       refreshAgency,
       signOut,
       signIn,

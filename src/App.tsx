@@ -18,6 +18,7 @@ import { CityAutocomplete } from './components/CityAutocomplete';
 import { PricingModal } from './components/PricingModal';
 import { DownloadAppModal } from './components/DownloadAppModal';
 import RiskWaiverSignView from './components/RiskWaiverSignView';
+import LegalView from './components/LegalView';
 import { 
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2, 
   LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight, 
@@ -26,13 +27,12 @@ import {
 } from 'lucide-react';
 
 function AppContent() {
-  const { 
-    user, agency, role, isAdmin, loading, signOut, signIn, signUpAdmin, signUpGuide, refreshAgency
+  const {
+    user, agency, role, isAdmin, loading, isDemoMode, signOut, signIn, signUpAdmin, signUpGuide, refreshAgency
   } = useAuth();
   const { notifyError, notifyWarning, notifySuccess } = useNotification();
 
   const [supabaseSyncError, setSupabaseSyncErrorState] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     // Verificar estado de Supabase
@@ -51,6 +51,13 @@ function AppContent() {
   if (isFirmaRoute) {
     const passengerId = currentHash.replace('#/firma/', '');
     return <RiskWaiverSignView passengerId={passengerId} />;
+  }
+
+  if (currentHash === '#/terminos') {
+    return <LegalView section="terminos" />;
+  }
+  if (currentHash === '#/privacidad') {
+    return <LegalView section="privacidad" />;
   }
 
   // Check if guide is approved
@@ -75,6 +82,8 @@ function AppContent() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [acceptedTermsAdmin, setAcceptedTermsAdmin] = useState(false);
+  const [acceptedTermsGuide, setAcceptedTermsGuide] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [passwordResetSent, setPasswordResetSent] = useState(false);
 
@@ -113,16 +122,23 @@ function AppContent() {
   useEffect(() => {
     const handleOpenPricing = () => setIsPricingModalOpen(true);
     const handleOpenDownload = () => setIsDownloadModalOpen(true);
+    const handleDemoBlocked = () => notifyWarning('Esto es una demo: los cambios no se guardan.');
     window.addEventListener('rumbo_open_pricing', handleOpenPricing);
     window.addEventListener('rumbo_open_download', handleOpenDownload);
+    window.addEventListener('rumbo_demo_blocked', handleDemoBlocked);
     return () => {
       window.removeEventListener('rumbo_open_pricing', handleOpenPricing);
       window.removeEventListener('rumbo_open_download', handleOpenDownload);
+      window.removeEventListener('rumbo_demo_blocked', handleDemoBlocked);
     };
   }, []);
 
   const handleSaveAgency = async () => {
     if (!agency) return;
+    if (isAgencyLogoUploading) {
+      notifyWarning('Espera a que el logo termine de subirse antes de guardar.');
+      return;
+    }
     await db.updateAgency(agency.id, {
       name: editAgencyName,
       city: editAgencyCity,
@@ -135,6 +151,10 @@ function AppContent() {
 
   const handleSaveUserProfile = async () => {
     if (!user || !supabase) return;
+    if (isUserAvatarUploading) {
+      notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
+      return;
+    }
 
     await supabase.from('users').update({
       full_name: editUserName,
@@ -173,6 +193,10 @@ function AppContent() {
   const [joinCode, setJoinCode] = useState('');
   const [registerLogo, setRegisterLogo] = useState('');
   const [registerAvatar, setRegisterAvatar] = useState('');
+  const [isRegisterLogoUploading, setIsRegisterLogoUploading] = useState(false);
+  const [isRegisterAvatarUploading, setIsRegisterAvatarUploading] = useState(false);
+  const [isAgencyLogoUploading, setIsAgencyLogoUploading] = useState(false);
+  const [isUserAvatarUploading, setIsUserAvatarUploading] = useState(false);
   const [previewAgency, setPreviewAgency] = useState<any>(null);
 
   const [resetPasswordState, setResetPasswordState] = useState('');
@@ -230,6 +254,20 @@ function AppContent() {
     }
   };
 
+  // @ts-ignore
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL || '';
+  // @ts-ignore
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || '';
+
+  const handleDemoLogin = async () => {
+    const res = await signIn(demoEmail, demoPassword);
+    if (res.success) {
+      navigateToHash('#/dashboard');
+    } else {
+      notifyError('La demo no está disponible en este momento.');
+    }
+  };
+
   const handleAdminRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !fullName || !agencyName || !city) {
@@ -238,6 +276,14 @@ function AppContent() {
     }
     if (password.length < 6) {
       notifyWarning('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (!acceptedTermsAdmin) {
+      notifyWarning('Debes aceptar los Términos y Condiciones para continuar.');
+      return;
+    }
+    if (isRegisterLogoUploading) {
+      notifyWarning('Espera a que el logo termine de subirse antes de continuar.');
       return;
     }
     const res = await signUpAdmin(email, password, fullName, agencyName, city, registerLogo);
@@ -259,6 +305,14 @@ function AppContent() {
     }
     if (password.length < 6) {
       notifyWarning('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (!acceptedTermsGuide) {
+      notifyWarning('Debes aceptar los Términos y Condiciones para continuar.');
+      return;
+    }
+    if (isRegisterAvatarUploading) {
+      notifyWarning('Espera a que la foto termine de subirse antes de continuar.');
       return;
     }
     const res = await signUpGuide(email, password, fullName, joinCode, phone, registerAvatar);
@@ -370,6 +424,13 @@ function AppContent() {
                     className="font-bold text-[#0F6BA8] hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto mt-1">
                     <UserPlus className="w-4 h-4" /> Unirme como Guía</button></p>
                 </div>
+
+                {demoEmail && demoPassword && (
+                  <button type="button" onClick={handleDemoLogin}
+                    className="w-full py-2.5 border-2 border-dashed border-pine/40 text-pine rounded-xl text-xs font-bold cursor-pointer hover:bg-pine/5 transition-colors">
+                    Ver Demo (sin registrarte)
+                  </button>
+                )}
               </div>
             )}
 
@@ -401,7 +462,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
-                    <FileUpload onUpload={(base64) => setRegisterLogo(base64)} currentUrl={registerLogo} placeholderText="Arrastra el logo o haz clic" />
+                    <FileUpload onUpload={(url) => setRegisterLogo(url)} currentUrl={registerLogo} placeholderText="Arrastra el logo o haz clic" folder="logos" onUploadingChange={setIsRegisterLogoUploading} />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Correo:</label>
@@ -413,8 +474,16 @@ function AppContent() {
                     <input type="password" required minLength={6} placeholder="******" value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
-                  <button type="submit" className="w-full py-3 bg-[#1F4D3A] hover:bg-[#173b2c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
-                    Crear Agencia & Cuenta
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" required checked={acceptedTermsAdmin} onChange={(e) => setAcceptedTermsAdmin(e.target.checked)}
+                      className="mt-0.5 rounded text-pine" />
+                    <span className="text-[11px] text-gray-600">
+                      Acepto los <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Términos y Condiciones</a> y la{' '}
+                      <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
+                    </span>
+                  </label>
+                  <button type="submit" disabled={isRegisterLogoUploading} className="w-full py-3 bg-[#1F4D3A] hover:bg-[#173b2c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isRegisterLogoUploading ? 'Subiendo logo...' : 'Crear Agencia & Cuenta'}
                   </button>
                 </form>
               </div>
@@ -451,7 +520,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Foto de Perfil:</label>
-                    <FileUpload onUpload={(base64) => setRegisterAvatar(base64)} currentUrl={registerAvatar} placeholderText="Arrastra foto o haz clic" />
+                    <FileUpload onUpload={(url) => setRegisterAvatar(url)} currentUrl={registerAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" onUploadingChange={setIsRegisterAvatarUploading} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -470,8 +539,16 @@ function AppContent() {
                     <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
-                  <button type="submit" className="w-full py-3 bg-ocean hover:bg-[#0c598c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
-                    Completar Enlace
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" required checked={acceptedTermsGuide} onChange={(e) => setAcceptedTermsGuide(e.target.checked)}
+                      className="mt-0.5 rounded text-pine" />
+                    <span className="text-[11px] text-gray-600">
+                      Acepto los <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Términos y Condiciones</a> y la{' '}
+                      <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
+                    </span>
+                  </label>
+                  <button type="submit" disabled={isRegisterAvatarUploading} className="w-full py-3 bg-ocean hover:bg-[#0c598c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isRegisterAvatarUploading ? 'Subiendo foto...' : 'Completar Enlace'}
                   </button>
                 </form>
               </div>
@@ -698,6 +775,12 @@ function AppContent() {
           </div>
         </header>
 
+        {isDemoMode && (
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-[11px] font-semibold text-center py-1.5 px-3">
+            🧪 Estás en modo demo: los cambios no se guardan en la base de datos.
+          </div>
+        )}
+
         <main className="flex-1 p-3 sm:p-6 pb-24 md:pb-8">
           {activeTab === 'dashboard' && <DashboardView onNavigate={(h) => navigateToHash(h)} />}
           {activeTab === 'activities' && <ActivitiesView />}
@@ -748,16 +831,25 @@ function AppContent() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
-                <FileUpload onUpload={(base64) => setEditAgencyLogo(base64)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" />
+                <FileUpload onUpload={(url) => setEditAgencyLogo(url)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" folder="logos" onUploadingChange={setIsAgencyLogoUploading} />
               </div>
-              <div>
+              <div className="relative">
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Plantilla WhatsApp:</label>
                 <textarea value={editAgencyWspTemplate} onChange={(e) => setEditAgencyWspTemplate(e.target.value)}
-                  placeholder="Hola {pasajero}, te recordamos..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-24 outline-none focus:ring-2 focus:ring-pine/30" />
+                  disabled={(agency.subscription_plan || 'free') === 'free'}
+                  placeholder="Hola {pasajero}, te recordamos..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-24 outline-none focus:ring-2 focus:ring-pine/30 disabled:bg-gray-50 disabled:text-gray-400" />
+                {(agency.subscription_plan || 'free') === 'free' && (
+                  <div className="absolute inset-x-0 bottom-0 top-[22px] bg-white/70 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-center p-2 border border-dashed border-gray-200">
+                    <Lock className="w-4 h-4 text-pine mb-1" />
+                    <p className="text-[10px] text-gray-600 font-semibold">Personalizar mensajes requiere Plan Premium o Pro.</p>
+                    <button type="button" onClick={() => { setIsAgencyModalOpen(false); setIsPricingModalOpen(true); }}
+                      className="mt-1.5 px-3 py-1 bg-pine text-white font-bold rounded-lg text-[9px] cursor-pointer hover:bg-pine-hover transition-colors">Mejorar plan</button>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                 <button onClick={() => setIsAgencyModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl">Cancelar</button>
-                <button onClick={handleSaveAgency} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl">Guardar</button>
+                <button onClick={handleSaveAgency} disabled={isAgencyLogoUploading} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">{isAgencyLogoUploading ? 'Subiendo logo...' : 'Guardar'}</button>
               </div>
             </div>
           </div>
@@ -783,11 +875,11 @@ function AppContent() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Avatar:</label>
-                <FileUpload onUpload={(base64) => setEditUserAvatar(base64)} currentUrl={editUserAvatar} placeholderText="Arrastra foto o haz clic" />
+                <FileUpload onUpload={(url) => setEditUserAvatar(url)} currentUrl={editUserAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" onUploadingChange={setIsUserAvatarUploading} />
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                 <button onClick={() => setIsProfileModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl">Cancelar</button>
-                <button onClick={handleSaveUserProfile} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl">Actualizar</button>
+                <button onClick={handleSaveUserProfile} disabled={isUserAvatarUploading} className="px-4 py-2 bg-pine text-white text-xs font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">{isUserAvatarUploading ? 'Subiendo foto...' : 'Actualizar'}</button>
               </div>
             </div>
           </div>

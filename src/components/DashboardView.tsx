@@ -44,7 +44,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   // New Departure Form
   const [newActivityId, setNewActivityId] = useState('');
   const [newGuideIds, setNewGuideIds] = useState<string[]>([]);
-  const [editingGuidesDepId, setEditingGuidesDepId] = useState<string | null>(null);
+  const [editingDepartureId, setEditingDepartureId] = useState<string | null>(null);
   const [newDepartureDate, setNewDepartureDate] = useState('');
   const [newTime, setNewTime] = useState('09:00');
   const [newNotes, setNewNotes] = useState('');
@@ -62,6 +62,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [paxMedical, setPaxMedical] = useState('');
   const [paxEmergencyPhone, setPaxEmergencyPhone] = useState('');
   const [paxCustomPrice, setPaxCustomPrice] = useState('');
+  const [paxIsGroupBooking, setPaxIsGroupBooking] = useState(false);
+  const [paxCompanyName, setPaxCompanyName] = useState('');
+  const [paxGroupMembersText, setPaxGroupMembersText] = useState('');
 
   const loadData = async () => {
     if (!agencyId) return;
@@ -99,22 +102,48 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
 
   const filteredDepartures = departures.filter(d => d.departure_date === selectedDate);
 
-  const handleCreateDeparture = async (e: React.FormEvent) => {
+  const resetDepartureForm = () => {
+    setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
+    setEditingDepartureId(null);
+  };
+
+  const handleOpenEditDeparture = (dep: Departure) => {
+    setEditingDepartureId(dep.id);
+    setNewActivityId(dep.activity_id);
+    setNewGuideIds(dep.guide_ids && dep.guide_ids.length > 0 ? dep.guide_ids : dep.guide_id ? [dep.guide_id] : []);
+    setNewDepartureDate(dep.departure_date);
+    setNewTime(dep.departure_time);
+    setNewNotes(dep.notes || '');
+    setIsAddDepartureOpen(true);
+  };
+
+  const handleSubmitDeparture = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newActivityId) { notifyWarning('Selecciona una actividad.'); return; }
     const scheduledDate = newDepartureDate || selectedDate;
-    await db.createDeparture(agencyId, {
-      activity_id: newActivityId,
-      guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
-      guide_ids: newGuideIds,
-      departure_date: scheduledDate,
-      departure_time: newTime,
-      status: 'programada',
-      notes: newNotes
-    });
+    if (editingDepartureId) {
+      await db.updateDeparture(editingDepartureId, {
+        activity_id: newActivityId,
+        guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
+        guide_ids: newGuideIds,
+        departure_date: scheduledDate,
+        departure_time: newTime,
+        notes: newNotes
+      });
+    } else {
+      await db.createDeparture(agencyId, {
+        activity_id: newActivityId,
+        guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
+        guide_ids: newGuideIds,
+        departure_date: scheduledDate,
+        departure_time: newTime,
+        status: 'programada',
+        notes: newNotes
+      });
+    }
     setIsAddDepartureOpen(false);
     setSelectedDate(scheduledDate);
-    setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
+    resetDepartureForm();
     await loadData();
   };
 
@@ -137,11 +166,15 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       medical_issues: paxMedical || undefined,
       emergency_phone: paxEmergencyPhone || undefined,
       custom_price: paxCustomPrice ? Number(paxCustomPrice) : undefined,
+      is_group_booking: paxIsGroupBooking,
+      company_name: paxIsGroupBooking && paxCompanyName ? paxCompanyName : undefined,
+      group_members_text: paxIsGroupBooking && paxGroupMembersText ? paxGroupMembersText : undefined,
     });
     setIsAddPassengerOpen(false);
     setPaxName(''); setPaxPhone(''); setPaxCount(1); setPaxNotes(''); setPaxAge('');
     setPaxHasMinor(false); setPaxMinorName(''); setPaxMinorAge(''); setPaxDietary('');
     setPaxMedical(''); setPaxCustomPrice(''); setPaxEmergencyPhone('');
+    setPaxIsGroupBooking(false); setPaxCompanyName(''); setPaxGroupMembersText('');
     await loadData();
   };
 
@@ -269,8 +302,15 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         <strong className="text-xs text-gray-850">{p.full_name}</strong>
                       </div>
                       <p className="text-[10px] text-gray-500 font-mono mt-0.5">{p.phone}</p>
+                      {p.is_group_booking && (
+                        <p className="text-[10px] text-ocean mt-0.5">
+                          🏢 {p.company_name ? p.company_name : 'Reserva grupal'}
+                          {p.group_members_text && <span className="text-gray-400"> · {p.group_members_text.split('\n').filter(Boolean).length} integrantes listados</span>}
+                        </p>
+                      )}
                       <div className="mt-1 flex flex-wrap gap-1">
                         <span className="text-[8.5px] bg-[#E8F1F7] text-[#0F6BA8] font-bold px-1.5 py-0.5 rounded">{p.pax_count} PAX</span>
+                        {p.is_group_booking && <span className="text-[8.5px] bg-ocean/10 text-ocean border px-1.5 py-0.5 rounded font-bold">🏢 Grupal</span>}
                         {p.checked_in && <span className="text-[8.5px] bg-emerald-100 text-emerald-800 border px-1.5 py-0.5 rounded font-bold">✓ Check-in</span>}
                         {p.age !== undefined && <span className="text-[8.5px] bg-gray-100 text-gray-750 font-bold px-1.5 py-0.5 rounded">Edad: {p.age}</span>}
                         {p.has_minor && <span className="text-[8.5px] bg-indigo-50 text-indigo-700 border px-1.5 py-0.5 rounded">👦 Menor</span>}
@@ -295,7 +335,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         <Pencil className="w-3.5 h-3.5" />
                       </a>
                     )}
-                    <a href={dep.status === 'cancelada' ? getPassengerCancellationLink(p, dep, activeAct) : getPassengerReminderLink(p, dep, activeAct, agency?.whatsapp_template)}
+                    <a href={dep.status === 'cancelada' ? getPassengerCancellationLink(p, dep, activeAct) : getPassengerReminderLink(p, dep, activeAct, (agency?.subscription_plan || 'free') !== 'free' ? agency?.whatsapp_template : undefined)}
                       target="_blank" rel="noopener noreferrer" className="p-1 rounded border text-xs font-semibold flex items-center justify-center bg-emerald-50 text-emerald-800">
                       <Send className="w-3.5 h-3.5" />
                     </a>
@@ -388,7 +428,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
               <span className="text-xs px-2 py-0.5 bg-sky text-ocean rounded-full font-bold">{filteredDepartures.length}</span>
             </h2>
             {isAdmin && (
-              <button onClick={() => { setNewDepartureDate(selectedDate); setIsAddDepartureOpen(true); }}
+              <button onClick={() => { resetDepartureForm(); setNewDepartureDate(selectedDate); setIsAddDepartureOpen(true); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-pine text-white rounded-xl text-xs font-semibold shadow-sm cursor-pointer hover:bg-pine-hover transition-colors">
                 <Plus className="w-3.5 h-3.5" /> Programar
               </button>
@@ -424,11 +464,20 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         <p className="text-xs text-gray-400">{bookedSum}/{act.capacity_max} pasajeros</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <ArrowRight className={`w-4 h-4 ${isSelected ? 'text-pine' : 'text-gray-300'}`} />
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-1.5">
+                        {isAdmin && dep.status !== 'finalizada' && dep.status !== 'cancelada' && (
+                          <button onClick={(e) => { e.stopPropagation(); handleOpenEditDeparture(dep); }}
+                            title="Editar salida"
+                            className="p-1 rounded border bg-white hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                        <ArrowRight className={`w-4 h-4 ${isSelected ? 'text-pine' : 'text-gray-300'}`} />
+                      </div>
                       {dep.status !== 'cancelada' && weather?.condition === 'tormenta' && (
                         <button onClick={(e) => { e.stopPropagation(); handleWeatherSuspension(dep.id); }}
-                          className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 mt-2 cursor-pointer hover:bg-rose-100 transition-colors">
+                          className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 cursor-pointer hover:bg-rose-100 transition-colors">
                           <AlertTriangle className="w-2.5 h-2.5 inline" /> Suspender
                         </button>
                       )}
@@ -437,28 +486,15 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                   <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-3">
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap">
                       <User className="w-3.5 h-3.5 text-ocean shrink-0" />
-                      {isAdmin ? (
-                        <button onClick={(e) => { e.stopPropagation(); setEditingGuidesDepId(editingGuidesDepId === dep.id ? null : dep.id); }}
-                          className="flex items-center gap-1 flex-wrap cursor-pointer">
-                          {getDepartureGuideNames(dep).length > 0 ? (
-                            getDepartureGuideNames(dep).map((name, i) => (
-                              <span key={i} className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 py-0.5 rounded transition-colors">{name}</span>
-                            ))
-                          ) : (
-                            <span className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 py-0.5 rounded transition-colors">Sin guía</span>
-                          )}
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {getDepartureGuideNames(dep).length > 0 ? (
-                            getDepartureGuideNames(dep).map((name, i) => (
-                              <span key={i} className="font-medium text-gray-700">{name}{i < getDepartureGuideNames(dep).length - 1 ? ',' : ''}</span>
-                            ))
-                          ) : (
-                            <span>Sin guía</span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {getDepartureGuideNames(dep).length > 0 ? (
+                          getDepartureGuideNames(dep).map((name, i) => (
+                            <span key={i} className="font-medium text-gray-700 border border-gray-100 bg-gray-50 px-1.5 py-0.5 rounded">{name}</span>
+                          ))
+                        ) : (
+                          <span>Sin guía</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                       {dep.status === 'programada' && (
@@ -486,13 +522,13 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         </div>
       </div>
 
-      {/* MODAL: Add Departure */}
+      {/* MODAL: Add/Edit Departure */}
       {isAddDepartureOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="absolute inset-0" onClick={() => setIsAddDepartureOpen(false)} />
+          <div className="absolute inset-0" onClick={() => { setIsAddDepartureOpen(false); resetDepartureForm(); }} />
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
-            <h3 className="font-display font-medium text-lg text-pine mb-4">Programar Nueva Salida</h3>
-            <form onSubmit={handleCreateDeparture} className="flex flex-col gap-4">
+            <h3 className="font-display font-medium text-lg text-pine mb-4">{editingDepartureId ? 'Editar Salida' : 'Programar Nueva Salida'}</h3>
+            <form onSubmit={handleSubmitDeparture} className="flex flex-col gap-4">
               <select required value={newActivityId} onChange={(e) => setNewActivityId(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs cursor-pointer">
                 <option value="">Selecciona actividad...</option>
@@ -517,8 +553,8 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
               <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} placeholder="Notas..."
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none" />
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setIsAddDepartureOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">Crear</button>
+                <button type="button" onClick={() => { setIsAddDepartureOpen(false); resetDepartureForm(); }} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
+                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">{editingDepartureId ? 'Guardar cambios' : 'Crear'}</button>
               </div>
             </form>
           </div>
@@ -532,11 +568,19 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
             <h3 className="font-display font-medium text-lg text-pine mb-4">Registrar Pasajero</h3>
             <form onSubmit={handleAddPassenger} className="flex flex-col gap-4">
-              <input type="text" required placeholder="Nombre completo" value={paxName} onChange={(e) => setPaxName(e.target.value)}
+              <label className="flex items-center gap-2 cursor-pointer bg-sky/20 border border-sky rounded-xl px-3 py-2">
+                <input type="checkbox" checked={paxIsGroupBooking} onChange={(e) => setPaxIsGroupBooking(e.target.checked)} className="rounded text-pine" />
+                <span className="text-xs font-semibold text-ocean">Es una reserva grupal / de empresa</span>
+              </label>
+              <input type="text" required placeholder={paxIsGroupBooking ? 'Nombre del representante' : 'Nombre completo'} value={paxName} onChange={(e) => setPaxName(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+              {paxIsGroupBooking && (
+                <input type="text" placeholder="Nombre de la empresa (opcional)" value={paxCompanyName} onChange={(e) => setPaxCompanyName(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+              )}
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">WhatsApp</label>
+                  <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">WhatsApp {paxIsGroupBooking && 'del representante'}</label>
                   <input type="tel" required placeholder="+56 9 1234 5678" value={paxPhone} onChange={(e) => setPaxPhone(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 </div>
@@ -546,6 +590,14 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 </div>
               </div>
+              {paxIsGroupBooking && (
+                <div>
+                  <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Lista de integrantes (opcional, un nombre por línea)</label>
+                  <textarea value={paxGroupMembersText} onChange={(e) => setPaxGroupMembersText(e.target.value)}
+                    placeholder={'Juan Pérez\nMaría López\n...'}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none" />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <input type="number" placeholder="Edad" value={paxAge} onChange={(e) => setPaxAge(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />

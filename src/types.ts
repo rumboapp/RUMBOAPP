@@ -19,6 +19,7 @@ export interface Agency {
   longitude: number;
   subscription_plan?: 'free' | 'premium' | 'pro';
   whatsapp_template?: string;
+  is_demo?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -95,6 +96,9 @@ export interface Passenger {
   signed_risk_waiver?: boolean;
   signature_data?: string;
   signed_at?: string;
+  is_group_booking?: boolean;
+  company_name?: string;
+  group_members_text?: string;
 }
 
 export interface Notification {
@@ -122,6 +126,7 @@ export interface AuthContextType {
   role: AgencyRole | null;
   isAdmin: boolean;
   loading: boolean;
+  isDemoMode: boolean;
   refreshAgency: () => void;
   signOut: () => void;
   signIn: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
