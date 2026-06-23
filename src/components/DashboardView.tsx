@@ -321,7 +321,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         <Pencil className="w-3.5 h-3.5" />
                       </a>
                     )}
-                    <a href={dep.status === 'cancelada' ? getPassengerCancellationLink(p, dep, activeAct) : getPassengerReminderLink(p, dep, activeAct, agency?.whatsapp_template)}
+                    <a href={dep.status === 'cancelada' ? getPassengerCancellationLink(p, dep, activeAct) : getPassengerReminderLink(p, dep, activeAct, (agency?.subscription_plan || 'free') !== 'free' ? agency?.whatsapp_template : undefined)}
                       target="_blank" rel="noopener noreferrer" className="p-1 rounded border text-xs font-semibold flex items-center justify-center bg-emerald-50 text-emerald-800">
                       <Send className="w-3.5 h-3.5" />
                     </a>

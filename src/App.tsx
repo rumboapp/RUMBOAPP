@@ -750,10 +750,19 @@ function AppContent() {
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
                 <FileUpload onUpload={(base64) => setEditAgencyLogo(base64)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" />
               </div>
-              <div>
+              <div className="relative">
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Plantilla WhatsApp:</label>
                 <textarea value={editAgencyWspTemplate} onChange={(e) => setEditAgencyWspTemplate(e.target.value)}
-                  placeholder="Hola {pasajero}, te recordamos..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-24 outline-none focus:ring-2 focus:ring-pine/30" />
+                  disabled={(agency.subscription_plan || 'free') === 'free'}
+                  placeholder="Hola {pasajero}, te recordamos..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-24 outline-none focus:ring-2 focus:ring-pine/30 disabled:bg-gray-50 disabled:text-gray-400" />
+                {(agency.subscription_plan || 'free') === 'free' && (
+                  <div className="absolute inset-x-0 bottom-0 top-[22px] bg-white/70 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-center p-2 border border-dashed border-gray-200">
+                    <Lock className="w-4 h-4 text-pine mb-1" />
+                    <p className="text-[10px] text-gray-600 font-semibold">Personalizar mensajes requiere Plan Premium o Pro.</p>
+                    <button type="button" onClick={() => { setIsAgencyModalOpen(false); setIsPricingModalOpen(true); }}
+                      className="mt-1.5 px-3 py-1 bg-pine text-white font-bold rounded-lg text-[9px] cursor-pointer hover:bg-pine-hover transition-colors">Mejorar plan</button>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                 <button onClick={() => setIsAgencyModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl">Cancelar</button>
