@@ -401,9 +401,6 @@ export const db = {
   },
 
   async createDeparture(agencyId: string, data: Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>): Promise<Departure> {
-    if (blockIfDemo()) {
-      return { ...data, id: 'demo-dep', agency_id: agencyId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-    }
     const newDeparture: Departure = {
       ...data,
       id: 'dep-' + Math.random().toString(36).substr(2, 9),
@@ -442,7 +439,6 @@ export const db = {
   },
 
   async updateDeparture(id: string, data: Partial<Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Departure | null> {
-    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('departures')
@@ -455,7 +451,6 @@ export const db = {
   },
 
   async deleteDeparture(id: string): Promise<void> {
-    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('passengers').delete().eq('departure_id', id);
     await supabase.from('departures').delete().eq('id', id);
@@ -487,9 +482,6 @@ export const db = {
   },
 
   async createPassenger(data: Omit<Passenger, 'id' | 'created_at'>): Promise<Passenger> {
-    if (blockIfDemo()) {
-      return { ...data, id: 'demo-pax', created_at: new Date().toISOString() };
-    }
     const newPassenger: Passenger = {
       ...data,
       id: 'pax-' + Math.random().toString(36).substr(2, 9),
@@ -505,7 +497,6 @@ export const db = {
   },
 
   async updatePassenger(id: string, data: Partial<Omit<Passenger, 'id' | 'created_at'>>): Promise<Passenger | null> {
-    if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('passengers')
@@ -518,7 +509,6 @@ export const db = {
   },
 
   async deletePassenger(id: string): Promise<void> {
-    if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('passengers').delete().eq('id', id);
     dispatchDbUpdate();
