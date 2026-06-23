@@ -18,6 +18,7 @@ import { CityAutocomplete } from './components/CityAutocomplete';
 import { PricingModal } from './components/PricingModal';
 import { DownloadAppModal } from './components/DownloadAppModal';
 import RiskWaiverSignView from './components/RiskWaiverSignView';
+import LegalView from './components/LegalView';
 import { 
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2, 
   LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight, 
@@ -53,6 +54,13 @@ function AppContent() {
     return <RiskWaiverSignView passengerId={passengerId} />;
   }
 
+  if (currentHash === '#/terminos') {
+    return <LegalView section="terminos" />;
+  }
+  if (currentHash === '#/privacidad') {
+    return <LegalView section="privacidad" />;
+  }
+
   // Check if guide is approved
   const [isGuideApproved, setIsGuideApproved] = useState(true);
 
@@ -75,6 +83,8 @@ function AppContent() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [acceptedTermsAdmin, setAcceptedTermsAdmin] = useState(false);
+  const [acceptedTermsGuide, setAcceptedTermsGuide] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [passwordResetSent, setPasswordResetSent] = useState(false);
 
@@ -240,6 +250,10 @@ function AppContent() {
       notifyWarning('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
+    if (!acceptedTermsAdmin) {
+      notifyWarning('Debes aceptar los Términos y Condiciones para continuar.');
+      return;
+    }
     const res = await signUpAdmin(email, password, fullName, agencyName, city, registerLogo);
     if (res.requiresConfirmation) {
       setConfirmationEmail(email);
@@ -259,6 +273,10 @@ function AppContent() {
     }
     if (password.length < 6) {
       notifyWarning('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (!acceptedTermsGuide) {
+      notifyWarning('Debes aceptar los Términos y Condiciones para continuar.');
       return;
     }
     const res = await signUpGuide(email, password, fullName, joinCode, phone, registerAvatar);
@@ -413,6 +431,14 @@ function AppContent() {
                     <input type="password" required minLength={6} placeholder="******" value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" required checked={acceptedTermsAdmin} onChange={(e) => setAcceptedTermsAdmin(e.target.checked)}
+                      className="mt-0.5 rounded text-pine" />
+                    <span className="text-[11px] text-gray-600">
+                      Acepto los <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Términos y Condiciones</a> y la{' '}
+                      <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
+                    </span>
+                  </label>
                   <button type="submit" className="w-full py-3 bg-[#1F4D3A] hover:bg-[#173b2c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
                     Crear Agencia & Cuenta
                   </button>
@@ -470,6 +496,14 @@ function AppContent() {
                     <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" required checked={acceptedTermsGuide} onChange={(e) => setAcceptedTermsGuide(e.target.checked)}
+                      className="mt-0.5 rounded text-pine" />
+                    <span className="text-[11px] text-gray-600">
+                      Acepto los <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Términos y Condiciones</a> y la{' '}
+                      <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
+                    </span>
+                  </label>
                   <button type="submit" className="w-full py-3 bg-ocean hover:bg-[#0c598c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
                     Completar Enlace
                   </button>
