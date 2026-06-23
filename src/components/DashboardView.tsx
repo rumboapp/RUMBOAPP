@@ -62,6 +62,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [paxMedical, setPaxMedical] = useState('');
   const [paxEmergencyPhone, setPaxEmergencyPhone] = useState('');
   const [paxCustomPrice, setPaxCustomPrice] = useState('');
+  const [paxIsGroupBooking, setPaxIsGroupBooking] = useState(false);
+  const [paxCompanyName, setPaxCompanyName] = useState('');
+  const [paxGroupMembersText, setPaxGroupMembersText] = useState('');
 
   const loadData = async () => {
     if (!agencyId) return;
@@ -163,11 +166,15 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       medical_issues: paxMedical || undefined,
       emergency_phone: paxEmergencyPhone || undefined,
       custom_price: paxCustomPrice ? Number(paxCustomPrice) : undefined,
+      is_group_booking: paxIsGroupBooking,
+      company_name: paxIsGroupBooking && paxCompanyName ? paxCompanyName : undefined,
+      group_members_text: paxIsGroupBooking && paxGroupMembersText ? paxGroupMembersText : undefined,
     });
     setIsAddPassengerOpen(false);
     setPaxName(''); setPaxPhone(''); setPaxCount(1); setPaxNotes(''); setPaxAge('');
     setPaxHasMinor(false); setPaxMinorName(''); setPaxMinorAge(''); setPaxDietary('');
     setPaxMedical(''); setPaxCustomPrice(''); setPaxEmergencyPhone('');
+    setPaxIsGroupBooking(false); setPaxCompanyName(''); setPaxGroupMembersText('');
     await loadData();
   };
 
@@ -295,8 +302,15 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         <strong className="text-xs text-gray-850">{p.full_name}</strong>
                       </div>
                       <p className="text-[10px] text-gray-500 font-mono mt-0.5">{p.phone}</p>
+                      {p.is_group_booking && (
+                        <p className="text-[10px] text-ocean mt-0.5">
+                          🏢 {p.company_name ? p.company_name : 'Reserva grupal'}
+                          {p.group_members_text && <span className="text-gray-400"> · {p.group_members_text.split('\n').filter(Boolean).length} integrantes listados</span>}
+                        </p>
+                      )}
                       <div className="mt-1 flex flex-wrap gap-1">
                         <span className="text-[8.5px] bg-[#E8F1F7] text-[#0F6BA8] font-bold px-1.5 py-0.5 rounded">{p.pax_count} PAX</span>
+                        {p.is_group_booking && <span className="text-[8.5px] bg-ocean/10 text-ocean border px-1.5 py-0.5 rounded font-bold">🏢 Grupal</span>}
                         {p.checked_in && <span className="text-[8.5px] bg-emerald-100 text-emerald-800 border px-1.5 py-0.5 rounded font-bold">✓ Check-in</span>}
                         {p.age !== undefined && <span className="text-[8.5px] bg-gray-100 text-gray-750 font-bold px-1.5 py-0.5 rounded">Edad: {p.age}</span>}
                         {p.has_minor && <span className="text-[8.5px] bg-indigo-50 text-indigo-700 border px-1.5 py-0.5 rounded">👦 Menor</span>}
@@ -554,11 +568,19 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
             <h3 className="font-display font-medium text-lg text-pine mb-4">Registrar Pasajero</h3>
             <form onSubmit={handleAddPassenger} className="flex flex-col gap-4">
-              <input type="text" required placeholder="Nombre completo" value={paxName} onChange={(e) => setPaxName(e.target.value)}
+              <label className="flex items-center gap-2 cursor-pointer bg-sky/20 border border-sky rounded-xl px-3 py-2">
+                <input type="checkbox" checked={paxIsGroupBooking} onChange={(e) => setPaxIsGroupBooking(e.target.checked)} className="rounded text-pine" />
+                <span className="text-xs font-semibold text-ocean">Es una reserva grupal / de empresa</span>
+              </label>
+              <input type="text" required placeholder={paxIsGroupBooking ? 'Nombre del representante' : 'Nombre completo'} value={paxName} onChange={(e) => setPaxName(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+              {paxIsGroupBooking && (
+                <input type="text" placeholder="Nombre de la empresa (opcional)" value={paxCompanyName} onChange={(e) => setPaxCompanyName(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+              )}
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">WhatsApp</label>
+                  <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">WhatsApp {paxIsGroupBooking && 'del representante'}</label>
                   <input type="tel" required placeholder="+56 9 1234 5678" value={paxPhone} onChange={(e) => setPaxPhone(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 </div>
@@ -568,6 +590,14 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 </div>
               </div>
+              {paxIsGroupBooking && (
+                <div>
+                  <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Lista de integrantes (opcional, un nombre por línea)</label>
+                  <textarea value={paxGroupMembersText} onChange={(e) => setPaxGroupMembersText(e.target.value)}
+                    placeholder={'Juan Pérez\nMaría López\n...'}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none" />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <input type="number" placeholder="Edad" value={paxAge} onChange={(e) => setPaxAge(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />

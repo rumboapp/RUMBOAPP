@@ -95,6 +95,9 @@ export interface Passenger {
   signed_risk_waiver?: boolean;
   signature_data?: string;
   signed_at?: string;
+  is_group_booking?: boolean;
+  company_name?: string;
+  group_members_text?: string;
 }
 
 export interface Notification {
