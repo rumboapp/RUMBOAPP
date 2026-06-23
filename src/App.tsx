@@ -419,7 +419,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
-                    <FileUpload onUpload={(base64) => setRegisterLogo(base64)} currentUrl={registerLogo} placeholderText="Arrastra el logo o haz clic" />
+                    <FileUpload onUpload={(url) => setRegisterLogo(url)} currentUrl={registerLogo} placeholderText="Arrastra el logo o haz clic" folder="logos" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Correo:</label>
@@ -477,7 +477,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Foto de Perfil:</label>
-                    <FileUpload onUpload={(base64) => setRegisterAvatar(base64)} currentUrl={registerAvatar} placeholderText="Arrastra foto o haz clic" />
+                    <FileUpload onUpload={(url) => setRegisterAvatar(url)} currentUrl={registerAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -782,7 +782,7 @@ function AppContent() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
-                <FileUpload onUpload={(base64) => setEditAgencyLogo(base64)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" />
+                <FileUpload onUpload={(url) => setEditAgencyLogo(url)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" folder="logos" />
               </div>
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Plantilla WhatsApp:</label>
@@ -826,7 +826,7 @@ function AppContent() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Avatar:</label>
-                <FileUpload onUpload={(base64) => setEditUserAvatar(base64)} currentUrl={editUserAvatar} placeholderText="Arrastra foto o haz clic" />
+                <FileUpload onUpload={(url) => setEditUserAvatar(url)} currentUrl={editUserAvatar} placeholderText="Arrastra foto o haz clic" folder="avatars" />
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                 <button onClick={() => setIsProfileModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl">Cancelar</button>

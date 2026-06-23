@@ -261,7 +261,7 @@ export default function GuidesView() {
                 <input type="tel" required placeholder="WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               </div>
-              <FileUpload onUpload={(base64) => setAvatarUrl(base64)} currentUrl={avatarUrl} placeholderText="Foto de perfil" />
+              <FileUpload onUpload={(url) => setAvatarUrl(url)} currentUrl={avatarUrl} placeholderText="Foto de perfil" folder="avatars" />
               <input type="text" placeholder="Especialidades (separadas por coma)" value={specialtyStr} onChange={(e) => setSpecialtyStr(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               <label className="flex items-center gap-2"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="rounded text-pine" /><span className="text-xs font-semibold">Activo</span></label>
               <div className="flex justify-end gap-2">

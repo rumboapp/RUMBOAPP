@@ -193,7 +193,7 @@ export default function ActivitiesView() {
               </div>
               <input type="text" required placeholder="Punto de encuentro" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               <div>
-                <FileUpload onUpload={(base64) => setPhotoUrl(base64)} currentUrl={photoUrl} placeholderText="Foto de la actividad" />
+                <FileUpload onUpload={(url) => setPhotoUrl(url)} currentUrl={photoUrl} placeholderText="Foto de la actividad" folder="activities" />
                 <input type="text" placeholder="O URL directa" value={photoUrl.startsWith('data:image/') ? '' : photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} className="w-full mt-2 border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               </div>
               <div className="flex justify-end gap-2">

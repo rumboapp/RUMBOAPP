@@ -1,31 +1,57 @@
 import React, { useState, useRef } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 import { useNotification } from '../lib/notification-context';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { uploadImageToStorage, MAX_IMAGE_SIZE_BYTES } from '../lib/storage';
 
 interface FileUploadProps {
-  onUpload: (base64: string) => void;
+  onUpload: (url: string) => void;
   currentUrl?: string;
   placeholderText?: string;
+  folder?: string;
 }
 
-export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra una imagen aquí o haz clic para subir" }: FileUploadProps) {
+export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra una imagen aquí o haz clic para subir", folder = 'misc' }: FileUploadProps) {
   const { notifyWarning } = useNotification();
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(currentUrl || '');
+  const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       notifyWarning('Por favor selecciona una imagen válida.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setPreview(base64);
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      notifyWarning('La imagen supera los 2MB permitidos. Elige una imagen más liviana.');
+      return;
+    }
+
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    setPreview(base64);
+
+    if (!isSupabaseConfigured) {
       onUpload(base64);
-    };
-    reader.readAsDataURL(file);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(file, folder);
+      onUpload(url);
+    } catch (err) {
+      console.error('Error subiendo imagen a Supabase Storage:', err);
+      notifyWarning('No se pudo subir la imagen al almacenamiento en la nube. Se usará una copia temporal.');
+      onUpload(base64);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -61,10 +87,10 @@ export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra u
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
-          dragActive 
-            ? 'border-emerald-600 bg-emerald-50/20 text-emerald-800' 
+        onClick={() => !uploading && inputRef.current?.click()}
+        className={`relative border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+          dragActive
+            ? 'border-emerald-600 bg-emerald-50/20 text-emerald-800'
             : 'border-gray-200 hover:border-emerald-600/50 text-gray-400 hover:text-gray-600 bg-gray-50/50'
         }`}
       >
@@ -75,7 +101,13 @@ export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra u
           className="hidden"
           onChange={handleChange}
         />
-        
+
+        {uploading && (
+          <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-600">
+            <Loader2 className="w-4 h-4 animate-spin" /> Subiendo...
+          </div>
+        )}
+
         {preview ? (
           <div className="relative group w-full flex justify-center items-center">
             <img 
