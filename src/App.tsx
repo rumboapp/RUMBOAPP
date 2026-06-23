@@ -27,13 +27,12 @@ import {
 } from 'lucide-react';
 
 function AppContent() {
-  const { 
-    user, agency, role, isAdmin, loading, signOut, signIn, signUpAdmin, signUpGuide, refreshAgency
+  const {
+    user, agency, role, isAdmin, loading, isDemoMode, signOut, signIn, signUpAdmin, signUpGuide, refreshAgency
   } = useAuth();
   const { notifyError, notifyWarning, notifySuccess } = useNotification();
 
   const [supabaseSyncError, setSupabaseSyncErrorState] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     // Verificar estado de Supabase
@@ -123,11 +122,14 @@ function AppContent() {
   useEffect(() => {
     const handleOpenPricing = () => setIsPricingModalOpen(true);
     const handleOpenDownload = () => setIsDownloadModalOpen(true);
+    const handleDemoBlocked = () => notifyWarning('Esto es una demo: los cambios no se guardan.');
     window.addEventListener('rumbo_open_pricing', handleOpenPricing);
     window.addEventListener('rumbo_open_download', handleOpenDownload);
+    window.addEventListener('rumbo_demo_blocked', handleDemoBlocked);
     return () => {
       window.removeEventListener('rumbo_open_pricing', handleOpenPricing);
       window.removeEventListener('rumbo_open_download', handleOpenDownload);
+      window.removeEventListener('rumbo_demo_blocked', handleDemoBlocked);
     };
   }, []);
 
@@ -237,6 +239,20 @@ function AppContent() {
       navigateToHash('#/dashboard');
     } else {
       notifyError(res.error || 'Error al iniciar sesión.');
+    }
+  };
+
+  // @ts-ignore
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL || '';
+  // @ts-ignore
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || '';
+
+  const handleDemoLogin = async () => {
+    const res = await signIn(demoEmail, demoPassword);
+    if (res.success) {
+      navigateToHash('#/dashboard');
+    } else {
+      notifyError('La demo no está disponible en este momento.');
     }
   };
 
@@ -388,6 +404,13 @@ function AppContent() {
                     className="font-bold text-[#0F6BA8] hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto mt-1">
                     <UserPlus className="w-4 h-4" /> Unirme como Guía</button></p>
                 </div>
+
+                {demoEmail && demoPassword && (
+                  <button type="button" onClick={handleDemoLogin}
+                    className="w-full py-2.5 border-2 border-dashed border-pine/40 text-pine rounded-xl text-xs font-bold cursor-pointer hover:bg-pine/5 transition-colors">
+                    Ver Demo (sin registrarte)
+                  </button>
+                )}
               </div>
             )}
 
@@ -731,6 +754,12 @@ function AppContent() {
             </button>
           </div>
         </header>
+
+        {isDemoMode && (
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-[11px] font-semibold text-center py-1.5 px-3">
+            🧪 Estás en modo demo: los cambios no se guardan en la base de datos.
+          </div>
+        )}
 
         <main className="flex-1 p-3 sm:p-6 pb-24 md:pb-8">
           {activeTab === 'dashboard' && <DashboardView onNavigate={(h) => navigateToHash(h)} />}
