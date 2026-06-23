@@ -205,10 +205,13 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     return guides.find(g => g.id === guideId)?.full_name || 'Guía';
   };
 
-  const getDepartureGuides = (dep: Departure): string => {
+  const getDepartureGuideNames = (dep: Departure): string[] => {
     const ids = dep.guide_ids && dep.guide_ids.length > 0 ? dep.guide_ids : dep.guide_id ? [dep.guide_id] : [];
-    if (ids.length === 0) return 'Sin guía';
-    const names = ids.map(id => guides.find(g => g.id === id)?.full_name).filter(Boolean);
+    return ids.map(id => guides.find(g => g.id === id)?.full_name).filter((n): n is string => Boolean(n));
+  };
+
+  const getDepartureGuides = (dep: Departure): string => {
+    const names = getDepartureGuideNames(dep);
     return names.length > 0 ? names.join(', ') : 'Sin guía';
   };
 
@@ -432,15 +435,29 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-3">
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <User className="w-3.5 h-3.5 text-ocean" />
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap">
+                      <User className="w-3.5 h-3.5 text-ocean shrink-0" />
                       {isAdmin ? (
                         <button onClick={(e) => { e.stopPropagation(); setEditingGuidesDepId(editingGuidesDepId === dep.id ? null : dep.id); }}
-                          className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 rounded cursor-pointer transition-colors">
-                          Guías: {getDepartureGuides(dep)}
+                          className="flex items-center gap-1 flex-wrap cursor-pointer">
+                          {getDepartureGuideNames(dep).length > 0 ? (
+                            getDepartureGuideNames(dep).map((name, i) => (
+                              <span key={i} className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 py-0.5 rounded transition-colors">{name}</span>
+                            ))
+                          ) : (
+                            <span className="font-medium text-gray-700 hover:text-pine border border-dashed border-gray-200 px-1.5 py-0.5 rounded transition-colors">Sin guía</span>
+                          )}
                         </button>
                       ) : (
-                        <span>Guías: {getDepartureGuides(dep)}</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {getDepartureGuideNames(dep).length > 0 ? (
+                            getDepartureGuideNames(dep).map((name, i) => (
+                              <span key={i} className="font-medium text-gray-700">{name}{i < getDepartureGuideNames(dep).length - 1 ? ',' : ''}</span>
+                            ))
+                          ) : (
+                            <span>Sin guía</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
