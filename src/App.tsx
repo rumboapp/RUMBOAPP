@@ -722,8 +722,8 @@ function AppContent() {
               <Smartphone className="w-4 h-4" /> Descargar App
             </button>
             {isDemoMode && (
-              <div className="flex items-center gap-2 mx-1 mt-1 px-3 py-2 rounded-2xl bg-[#f5ead2] text-amber-800 text-[10px] font-semibold">
-                <FlaskConical className="w-3.5 h-3.5 shrink-0" /> Modo demo · los cambios no se guardan
+              <div className="flex items-center gap-2 mx-1 mt-1 px-3.5 py-3 rounded-2xl bg-sky text-pine text-xs font-semibold">
+                <FlaskConical className="w-4 h-4 shrink-0" /> Modo demo · los cambios no se guardan
               </div>
             )}
           </nav>
