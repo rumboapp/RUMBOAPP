@@ -13,6 +13,7 @@ import ActivitiesView from './components/ActivitiesView';
 import GuidesView from './components/GuidesView';
 import ReportsView from './components/ReportsView';
 import PassengerHistoryView from './components/PassengerHistoryView';
+import { WhatsappTemplateEditor } from './components/WhatsappTemplateEditor';
 import NotificationsCenter from './components/NotificationsCenter';
 import { FileUpload } from './components/FileUpload';
 import { CityAutocomplete } from './components/CityAutocomplete';
@@ -872,9 +873,7 @@ function AppContent() {
               </div>
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Plantilla WhatsApp:</label>
-                <textarea value={editAgencyWspTemplate} onChange={(e) => setEditAgencyWspTemplate(e.target.value)}
-                  disabled={(agency.subscription_plan || 'free') === 'free'}
-                  placeholder="Hola {pasajero}, te recordamos..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-24 outline-none focus:ring-2 focus:ring-pine/30 disabled:bg-gray-50 disabled:text-gray-400" />
+                <WhatsappTemplateEditor value={editAgencyWspTemplate} onChange={setEditAgencyWspTemplate} disabled={(agency.subscription_plan || 'free') === 'free'} />
                 {(agency.subscription_plan || 'free') === 'free' && (
                   <div className="absolute inset-x-0 bottom-0 top-[22px] bg-white/70 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-center p-2 border border-dashed border-gray-200">
                     <Lock className="w-4 h-4 text-pine mb-1" />
