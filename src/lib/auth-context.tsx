@@ -442,62 +442,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // 5. Crear membresía (pendiente de aprobación)
-      const memberId = 'mem-' + Math.random().toString(36).substr(2, 9);
-      const { error: memberError } = await supabase.from('agency_members').insert({
-        id: memberId,
-        agency_id: targetAgency.id,
-        user_id: userId,
-        role: AgencyRole.GUIA,
-        created_at: new Date().toISOString()
+      // 5-7. Crear membresía, ficha de guía y notificación al admin
+      // vía función RPC con privilegios elevados: funciona aunque
+      // todavía no exista sesión (email sin confirmar) y no depende de RLS.
+      const { error: rpcError } = await supabase.rpc('complete_guide_signup', {
+        p_user_id: userId,
+        p_join_code: joinCode,
+        p_full_name: name,
+        p_phone: phone,
+        p_email: email.toLowerCase().trim(),
+        p_avatar_url: avatarUrl || ''
       });
 
-      if (memberError) {
-        console.error('Error insertando miembro de agencia:', memberError);
+      if (rpcError) {
+        console.error('Error completando registro de guía:', rpcError);
         setLoading(false);
         return {
           success: false,
-          error: `Error al unir el usuario con la agencia: ${memberError.message}`
+          error: `Error al unir el usuario con la agencia: ${rpcError.message}`
         };
-      }
-
-      // 6. Crear perfil de guía (inactivo hasta aprobación)
-      const { error: guideError } = await supabase.from('guides').insert({
-        id: 'gd-' + Math.random().toString(36).substr(2, 9),
-        agency_id: targetAgency.id,
-        user_id: userId,
-        full_name: name,
-        phone: phone,
-        email: email.toLowerCase().trim(),
-        specialties: ['Turismo general'],
-        active: false,
-        avatar_url: avatarUrl || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-      if (guideError) {
-        console.error('Error creando perfil de guía:', guideError);
-        setLoading(false);
-        return {
-          success: false,
-          error: `Error al inicializar la ficha de guía: ${guideError.message}`
-        };
-      }
-
-      // 7. Notificar al admin
-      const { error: notifError } = await supabase.from('notifications').insert({
-        id: 'not-' + Math.random().toString(36).substr(2, 9),
-        agency_id: targetAgency.id,
-        kind: 'system',
-        title: 'Nueva solicitud de guía',
-        message: `${name} solicitó unirse a tu agencia. Requiere aprobación en el panel de Guías.`,
-        read: false,
-        created_at: new Date().toISOString()
-      });
-
-      if (notifError) {
-        console.warn('Advertencia al crear notificación para admin:', notifError);
       }
 
       if (emailConfirmationRequired) {
