@@ -672,8 +672,8 @@ function AppContent() {
       <aside className="hidden md:flex md:w-64 bg-sage text-white flex-col justify-between p-5 shrink-0">
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 blob bg-white/15 flex items-center justify-center">
-              <Compass className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 blob bg-sky flex items-center justify-center">
+              <Compass className="w-5 h-5 text-sage" />
             </div>
             <div>
               <span className="font-serif text-xl text-white block">Rumbo</span>
@@ -683,27 +683,27 @@ function AppContent() {
 
           <nav className="flex flex-col gap-1.5">
             <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
               <LayoutDashboard className="w-4 h-4" /> Operaciones Diarias
             </button>
             <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
               <ActivitiesIcon className="w-4 h-4" /> Catálogo Actividades
             </button>
             <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
               <Users className="w-4 h-4" /> Equipo de Guías
             </button>
             {isAdmin && (
               <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
                 <LineChart className="w-4 h-4" /> Métricas / Reportes
               </button>
             )}
             {isAdmin && (
               <button onClick={() => setIsPricingModalOpen(true)}
-                className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/75 hover:bg-white/10">
-                <Sparkles className="w-4 h-4 text-yellow-101" /> Planes y Suscripción
+                className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
+                <Sparkles className="w-4 h-4 text-amber-600/70" /> Planes y Suscripción
               </button>
             )}
             <button onClick={() => setIsDownloadModalOpen(true)}
@@ -750,18 +750,13 @@ function AppContent() {
             <div className="text-left">
               <p className="text-sm font-semibold text-pine font-serif">{agency.name} {isAdmin && <Settings className="w-3.5 h-3.5 inline text-pine/60" />}</p>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[10px] text-gray-451">Código: <strong className="font-mono">{agency.join_code}</strong></span>
                 <button onClick={(e) => { e.stopPropagation(); setIsPricingModalOpen(true); }}
                   className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-full border border-gray-405/30">
                   {agency.subscription_plan || 'free'}
                 </button>
               </div>
             </div>
-            {isSupabaseConfigured ? (
-              <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-150 text-pine px-2.5 py-1 rounded-full font-bold ml-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-pine animate-pulse" /> Sincronizado
-              </span>
-            ) : (
+            {!isSupabaseConfigured && (
               <span className="inline-flex items-center gap-1 text-[10px] bg-orange-850/10 text-orange-850 px-2.5 py-1 rounded-full font-bold ml-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-850" /> Sin Configurar
               </span>

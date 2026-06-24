@@ -14,7 +14,7 @@ import { Activity, Departure, Passenger, Guide } from '../types';
 import { 
   Calendar, Clock, User, Phone, Users, Check, X, Eye, FileSpreadsheet, Printer, CloudSun,
   MapPin, ClipboardList, Plus, ArrowRight, Send, AlertTriangle, ShieldCheck,
-  PenTool, Copy, Compass, Pencil
+  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -142,6 +142,30 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
     setEditingDepartureId(null);
   };
+
+  const goToAdjacentPeriod = (direction: 1 | -1) => {
+    const d = new Date(selectedDate);
+    if (viewMode === 'week') d.setDate(d.getDate() + direction * 7);
+    else if (viewMode === 'month') d.setMonth(d.getMonth() + direction);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const periodLabel = (() => {
+    if (viewMode === 'week') {
+      const start = new Date(weekDays[0]);
+      const end = new Date(weekDays[6]);
+      const sameMonth = start.getMonth() === end.getMonth();
+      const startStr = start.toLocaleDateString('es-AR', { day: 'numeric', month: sameMonth ? undefined : 'short' });
+      const endStr = end.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+      return `${startStr} - ${endStr}`;
+    }
+    if (viewMode === 'month') {
+      const d = new Date(selectedDate);
+      const label = d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+    return '';
+  })();
 
   const handleOpenEditDeparture = (dep: Departure) => {
     setEditingDepartureId(dep.id);
@@ -464,6 +488,18 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'month' ? 'bg-pine text-white' : 'text-gray-505'}`}>Mes</button>
         </div>
       </div>
+
+      {viewMode !== 'list' && (
+        <div className="flex items-center justify-center gap-3">
+          <button onClick={() => goToAdjacentPeriod(-1)} className="p-2 bg-white border border-gray-405/20 rounded-full cursor-pointer hover:bg-sky-80 transition-colors">
+            <ChevronLeft className="w-4 h-4 text-pine" />
+          </button>
+          <p className="font-serif text-sm text-pine min-w-[160px] text-center capitalize">{periodLabel}</p>
+          <button onClick={() => goToAdjacentPeriod(1)} className="p-2 bg-white border border-gray-405/20 rounded-full cursor-pointer hover:bg-sky-80 transition-colors">
+            <ChevronRight className="w-4 h-4 text-pine" />
+          </button>
+        </div>
+      )}
 
       {viewMode === 'week' && (
         <div className="grid grid-cols-7 gap-2">
