@@ -42,7 +42,7 @@ export default function NotificationsCenter({ agencyId }: NotificationsCenterPro
 
   return (
     <div className="relative">
-      <button onClick={() => setIsOpen(!isOpen)} className="relative p-2 text-gray-600 hover:text-pine rounded-full transition-all">
+      <button onClick={() => setIsOpen(!isOpen)} className="relative p-2 text-white md:text-gray-600 hover:text-white md:hover:text-pine rounded-full transition-all">
         <Bell className="w-6 h-6" />
         {unreadCount > 0 && <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">{unreadCount}</span>}
       </button>

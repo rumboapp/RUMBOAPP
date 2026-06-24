@@ -515,8 +515,8 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       )}
 
       {/* Calendar Tabs */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+        <div className="flex gap-2 overflow-x-auto pb-1 w-full md:w-auto">
           {[0, 1, 2, 3].map((offset) => {
             const d = new Date(); d.setDate(d.getDate() + offset);
             const dateStr = d.toISOString().split('T')[0];
@@ -533,13 +533,13 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
             <Calendar className="w-3.5 h-3.5" /> Elegir día...
           </button>
         </div>
-        <div className="flex bg-white border border-gray-405/20 rounded-full p-1 shrink-0">
+        <div className="flex bg-white border border-gray-405/20 rounded-full p-1 shrink-0 self-start md:self-auto">
           <button onClick={() => setViewMode('list')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-pine text-white' : 'text-gray-505'}`}>Día</button>
           <button onClick={() => setViewMode('week')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'week' ? 'bg-pine text-white' : 'text-gray-505'}`}>Semana</button>
           <button onClick={() => setViewMode('month')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'month' ? 'bg-pine text-white' : 'text-gray-505'}`}>Mes</button>
+            className={`hidden md:inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'month' ? 'bg-pine text-white' : 'text-gray-505'}`}>Mes</button>
         </div>
       </div>
 
@@ -556,23 +556,26 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       )}
 
       {viewMode === 'week' && (
-        <div className="grid grid-cols-7 gap-2">
+        <div className="flex flex-col gap-2 md:grid md:grid-cols-7 md:gap-2">
           {weekDays.map((dateStr) => {
             const d = new Date(dateStr);
             const isToday = dateStr === new Date().toISOString().split('T')[0];
             const dayDeps = departures.filter(dep => dep.departure_date === dateStr).sort((a, b) => a.departure_time.localeCompare(b.departure_time));
             return (
               <div key={dateStr} onClick={() => openAddDepartureForDate(dateStr)}
-                className={`rounded-2xl p-2 min-h-[170px] flex flex-col gap-1.5 cursor-pointer transition-colors ${isToday ? 'bg-emerald-150 border-2 border-pine' : 'bg-white border border-gray-405/15 hover:border-pine/40'}`}>
-                <p className={`text-[9px] font-bold uppercase text-center ${isToday ? 'text-pine' : 'text-gray-451'}`}>{d.toLocaleDateString('es-AR', { weekday: 'short' })}</p>
-                <p className={`text-sm font-serif text-center mb-1 ${isToday ? 'text-pine' : 'text-gray-850'}`}>{d.getDate()}</p>
-                <div className="flex flex-col gap-1 overflow-y-auto">
+                className={`rounded-2xl p-2.5 md:min-h-[170px] flex flex-row md:flex-col gap-2 md:gap-1.5 cursor-pointer transition-colors ${isToday ? 'bg-emerald-150 border-2 border-pine' : 'bg-white border border-gray-405/15 hover:border-pine/40'}`}>
+                <div className="flex flex-row md:flex-col items-center gap-1.5 md:gap-0 shrink-0 w-16 md:w-auto">
+                  <p className={`text-[9px] font-bold uppercase text-center ${isToday ? 'text-pine' : 'text-gray-451'}`}>{d.toLocaleDateString('es-AR', { weekday: 'short' })}</p>
+                  <p className={`text-sm font-serif text-center md:mb-1 ${isToday ? 'text-pine' : 'text-gray-850'}`}>{d.getDate()}</p>
+                </div>
+                <div className="flex flex-col gap-1 overflow-y-auto flex-1 min-w-0">
+                  {dayDeps.length === 0 && <p className="text-[10px] text-gray-405 md:hidden">Sin salidas</p>}
                   {dayDeps.map((dep) => {
                     const act = activities.find(a => a.id === dep.activity_id);
                     return (
                       <button key={dep.id}
                         onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
-                        className="text-left text-[10px] leading-tight px-2 py-1.5 rounded-xl bg-sage text-sky hover:bg-pine-hover transition-colors font-semibold truncate cursor-pointer">
+                        className="text-left text-[11px] md:text-[10px] leading-tight px-2 py-1.5 rounded-xl bg-sage text-sky hover:bg-pine-hover transition-colors font-semibold truncate cursor-pointer">
                         {dep.departure_time} {act?.name}
                       </button>
                     );
