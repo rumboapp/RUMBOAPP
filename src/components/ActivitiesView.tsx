@@ -116,7 +116,7 @@ export default function ActivitiesView() {
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-1 sm:px-4">
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-white rounded-2xl p-5 border border-gray-100 shadow-card">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-display font-medium text-pine">Catálogo de Actividades</h1>
+          <h1 className="text-2xl sm:text-3xl font-serif text-pine">Catálogo de Actividades</h1>
           <p className="text-xs text-gray-400 mt-1">Define excursiones, precios y capacidades.</p>
           <div className="flex items-center gap-2 mt-2 text-[11px]">
             <span className="font-semibold text-gray-500 bg-gray-50 border px-2.5 py-0.5 rounded-full">

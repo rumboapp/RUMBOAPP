@@ -110,7 +110,7 @@ export default function ReportsView() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-1 sm:px-4">
       <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div><h1 className="text-2xl sm:text-3xl font-display font-medium text-pine">Métricas & Reportes</h1></div>
+        <div><h1 className="text-2xl sm:text-3xl font-serif text-pine">Métricas & Reportes</h1></div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded-xl">
             <Filter className="w-3.5 h-3.5 text-gray-400" />
