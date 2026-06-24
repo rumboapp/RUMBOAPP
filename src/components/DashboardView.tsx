@@ -14,7 +14,7 @@ import { Activity, Departure, Passenger, Guide } from '../types';
 import { 
   Calendar, Clock, User, Phone, Users, Check, X, Eye, FileSpreadsheet, Printer, CloudSun,
   MapPin, ClipboardList, Plus, ArrowRight, Send, AlertTriangle, ShieldCheck,
-  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight
+  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight, Trash2
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -176,6 +176,20 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     setNewTime(dep.departure_time);
     setNewNotes(dep.notes || '');
     setIsAddDepartureOpen(true);
+  };
+
+  const handleDeleteDeparture = async (dep: Departure, activityName: string) => {
+    const confirmed = await confirmAction({
+      title: 'Eliminar salida',
+      message: `¿Quieres eliminar la salida de "${activityName}" del ${dep.departure_date}? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (confirmed) {
+      if (selectedDeparture?.id === dep.id) setSelectedDeparture(null);
+      await db.deleteDeparture(dep.id);
+      await loadData();
+    }
   };
 
   const handleSubmitDeparture = async (e: React.FormEvent) => {
@@ -656,6 +670,13 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                             title="Editar salida"
                             className="p-1 rounded border bg-white hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors">
                             <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteDeparture(dep, act.name); }}
+                            title="Eliminar salida"
+                            className="p-1 rounded border bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 cursor-pointer transition-colors">
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         )}
                         <ArrowRight className={`w-4 h-4 ${isSelected ? 'text-pine' : 'text-gray-300'}`} />
