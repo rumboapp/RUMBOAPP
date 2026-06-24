@@ -30,7 +30,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState<'list' | 'week'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'week' | 'month'>('list');
 
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
@@ -114,6 +114,29 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       return dd.toISOString().split('T')[0];
     });
   })();
+
+  const monthDays = (() => {
+    const d = new Date(selectedDate);
+    const firstOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    const lastOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const startOffset = firstOfMonth.getDay() === 0 ? 6 : firstOfMonth.getDay() - 1;
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(firstOfMonth.getDate() - startOffset);
+    const totalCells = Math.ceil((startOffset + lastOfMonth.getDate()) / 7) * 7;
+    return Array.from({ length: totalCells }, (_, i) => {
+      const dd = new Date(gridStart);
+      dd.setDate(gridStart.getDate() + i);
+      return { dateStr: dd.toISOString().split('T')[0], inMonth: dd.getMonth() === d.getMonth(), day: dd.getDate() };
+    });
+  })();
+
+  const openAddDepartureForDate = (dateStr: string) => {
+    resetDepartureForm();
+    setSelectedDate(dateStr);
+    setNewDepartureDate(dateStr);
+    setIsAddDepartureOpen(true);
+    setViewMode('list');
+  };
 
   const resetDepartureForm = () => {
     setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
@@ -437,6 +460,8 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'list' ? 'bg-pine text-white' : 'text-gray-505'}`}>Día</button>
           <button onClick={() => setViewMode('week')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'week' ? 'bg-pine text-white' : 'text-gray-505'}`}>Semana</button>
+          <button onClick={() => setViewMode('month')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'month' ? 'bg-pine text-white' : 'text-gray-505'}`}>Mes</button>
         </div>
       </div>
 
@@ -447,7 +472,8 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
             const isToday = dateStr === new Date().toISOString().split('T')[0];
             const dayDeps = departures.filter(dep => dep.departure_date === dateStr).sort((a, b) => a.departure_time.localeCompare(b.departure_time));
             return (
-              <div key={dateStr} className={`rounded-2xl p-2 min-h-[170px] flex flex-col gap-1.5 ${isToday ? 'bg-emerald-150 border-2 border-pine' : 'bg-white border border-gray-405/15'}`}>
+              <div key={dateStr} onClick={() => openAddDepartureForDate(dateStr)}
+                className={`rounded-2xl p-2 min-h-[170px] flex flex-col gap-1.5 cursor-pointer transition-colors ${isToday ? 'bg-emerald-150 border-2 border-pine' : 'bg-white border border-gray-405/15 hover:border-pine/40'}`}>
                 <p className={`text-[9px] font-bold uppercase text-center ${isToday ? 'text-pine' : 'text-gray-451'}`}>{d.toLocaleDateString('es-AR', { weekday: 'short' })}</p>
                 <p className={`text-sm font-serif text-center mb-1 ${isToday ? 'text-pine' : 'text-gray-850'}`}>{d.getDate()}</p>
                 <div className="flex flex-col gap-1 overflow-y-auto">
@@ -455,12 +481,43 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     const act = activities.find(a => a.id === dep.activity_id);
                     return (
                       <button key={dep.id}
-                        onClick={() => { setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
+                        onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
                         className="text-left text-[10px] leading-tight px-2 py-1.5 rounded-xl bg-sky-80 hover:bg-pine hover:text-white transition-colors font-semibold truncate cursor-pointer">
                         {dep.departure_time} {act?.name}
                       </button>
                     );
                   })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {viewMode === 'month' && (
+        <div className="grid grid-cols-7 gap-1.5">
+          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((lbl) => (
+            <p key={lbl} className="text-[9px] font-bold uppercase text-center text-gray-451 pb-1">{lbl}</p>
+          ))}
+          {monthDays.map(({ dateStr, inMonth, day }) => {
+            const isToday = dateStr === new Date().toISOString().split('T')[0];
+            const dayDeps = departures.filter(dep => dep.departure_date === dateStr).sort((a, b) => a.departure_time.localeCompare(b.departure_time));
+            return (
+              <div key={dateStr} onClick={() => openAddDepartureForDate(dateStr)}
+                className={`rounded-xl p-1.5 min-h-[80px] flex flex-col gap-1 cursor-pointer transition-colors ${!inMonth ? 'opacity-40' : ''} ${isToday ? 'bg-emerald-150 border-2 border-pine' : 'bg-white border border-gray-405/15 hover:border-pine/40'}`}>
+                <p className={`text-[10px] font-serif text-center ${isToday ? 'text-pine' : 'text-gray-850'}`}>{day}</p>
+                <div className="flex flex-col gap-0.5 overflow-hidden">
+                  {dayDeps.slice(0, 2).map((dep) => {
+                    const act = activities.find(a => a.id === dep.activity_id);
+                    return (
+                      <button key={dep.id}
+                        onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
+                        className="text-left text-[8px] leading-tight px-1.5 py-1 rounded-lg bg-sky-80 hover:bg-pine hover:text-white transition-colors font-semibold truncate cursor-pointer">
+                        {dep.departure_time} {act?.name}
+                      </button>
+                    );
+                  })}
+                  {dayDeps.length > 2 && <span className="text-[8px] text-gray-451 px-1.5">+{dayDeps.length - 2} más</span>}
                 </div>
               </div>
             );
