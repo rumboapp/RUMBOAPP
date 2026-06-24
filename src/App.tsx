@@ -12,6 +12,7 @@ import DashboardView from './components/DashboardView';
 import ActivitiesView from './components/ActivitiesView';
 import GuidesView from './components/GuidesView';
 import ReportsView from './components/ReportsView';
+import PassengerHistoryView from './components/PassengerHistoryView';
 import NotificationsCenter from './components/NotificationsCenter';
 import { FileUpload } from './components/FileUpload';
 import { CityAutocomplete } from './components/CityAutocomplete';
@@ -23,7 +24,7 @@ import {
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2,
   LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight,
   ArrowLeft, ArrowRight, X, Calendar, Eye, EyeOff, Sparkles, Building, AlertCircle, UserPlus, Settings, UserCheck,
-  Smartphone, Tablet, Plus
+  Smartphone, Tablet, Plus, History
 } from 'lucide-react';
 
 function AppContent() {
@@ -217,7 +218,7 @@ function AppContent() {
       else if (hash === '#/login') { setAuthView('login'); }
       else if (user && agency) {
         const tab = hash.replace('#/', '');
-        const validTabs = ['dashboard', 'activities', 'guides', 'reports'];
+        const validTabs = ['dashboard', 'activities', 'guides', 'reports', 'history'];
         if (validTabs.includes(tab)) {
           if (!isAdmin && tab === 'reports') {
             setActiveTab('dashboard');
@@ -705,6 +706,10 @@ function AppContent() {
                 <LineChart className="w-4 h-4" /> Métricas / Reportes
               </button>
             )}
+            <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); }}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'history' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
+              <History className="w-4 h-4" /> Historial Pasajeros
+            </button>
             {isAdmin && (
               <button onClick={() => setIsPricingModalOpen(true)}
                 className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
@@ -787,6 +792,7 @@ function AppContent() {
           {activeTab === 'activities' && <ActivitiesView />}
           {activeTab === 'guides' && <GuidesView />}
           {activeTab === 'reports' && <ReportsView />}
+          {activeTab === 'history' && <PassengerHistoryView />}
         </main>
       </div>
 
@@ -810,6 +816,10 @@ function AppContent() {
                 <UserPlus className="w-4 h-4" /> Nuevo Guía
               </button>
             )}
+            <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); setIsQuickActionsOpen(false); }}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
+              <History className="w-4 h-4" /> Historial Pasajeros
+            </button>
           </div>
         </div>
       )}

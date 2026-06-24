@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS activities (
   meeting_point TEXT,
   photo_url TEXT,
   active BOOLEAN DEFAULT TRUE,
+  whatsapp_template TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
