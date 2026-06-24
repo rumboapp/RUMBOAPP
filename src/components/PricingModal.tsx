@@ -340,7 +340,7 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
             <div className="bg-pine/5 border border-pine/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-700 mt-4 leading-normal">
               <div className="text-center sm:text-left">
                 <span className="font-bold text-pine block mb-1">📱 ¿Quieres operar en terreno sin conexión WiFi/Celular?</span>
-                Instala la App Oficial de Rumbo en tu Android (con instalador rápido .APK) o en tu iPhone en pocos clics.
+                Agrega un acceso directo de Rumbo en tu Android o iPhone en pocos clics, y ábrela como una app nativa.
               </div>
               <button
                 type="button"
@@ -349,7 +349,7 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
                 }}
                 className="px-4 py-2 bg-pine hover:bg-pine/90 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider shrink-0 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-3xs"
               >
-                Descargar Aplicación Móvil
+                Agregar Acceso Directo
               </button>
             </div>
           </>
