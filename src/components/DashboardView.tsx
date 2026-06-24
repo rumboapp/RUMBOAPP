@@ -363,29 +363,29 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-1 sm:px-4">
-      <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-pine rounded-3xl p-4 px-5 text-white shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 blob bg-white/15"><Compass className="w-5 h-5 text-emerald-200" /></div>
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 blob bg-pine flex items-center justify-center shrink-0"><Compass className="w-5 h-5 text-white" /></div>
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] text-emerald-200 font-bold uppercase">
+            <div className="flex items-center gap-1.5 text-[10px] text-gray-451 font-bold uppercase">
               <MapPin className="w-3 h-3" /> {agency?.city || 'Puerto Varas'}
             </div>
-            <h1 className="text-xl font-serif">Operaciones de hoy</h1>
+            <h1 className="text-3xl font-serif text-pine">Operaciones de hoy</h1>
           </div>
         </div>
-        <div className="flex items-center gap-3.5 bg-white/10 rounded-xl p-2 px-4 border border-white/10 shrink-0">
+        <div className="flex items-center gap-3.5 bg-white rounded-2xl p-2.5 px-4 border border-gray-405/15 shrink-0 shadow-card">
           {loadingWeather ? (
-            <span className="text-[10px] text-emerald-200">Cargando clima...</span>
+            <span className="text-[10px] text-gray-451">Cargando clima...</span>
           ) : weather ? (
             <div className="flex items-center justify-between w-full gap-4">
               <div>
-                <p className="text-[11px] text-white font-semibold">{weather.description}</p>
-                <p className="text-[9px] text-emerald-100/60">V: {weather.wind_speed}km/h | H: {weather.humidity}%</p>
+                <p className="text-[11px] text-gray-850 font-semibold">{weather.description}</p>
+                <p className="text-[9px] text-gray-451">V: {weather.wind_speed}km/h | H: {weather.humidity}%</p>
               </div>
-              <span className="text-xl font-bold">{weather.temperature}°C</span>
+              <span className="text-xl font-serif text-pine">{weather.temperature}°C</span>
             </div>
           ) : (
-            <span className="text-xs text-white/50">Clima offline</span>
+            <span className="text-xs text-gray-405">Clima offline</span>
           )}
         </div>
       </div>
