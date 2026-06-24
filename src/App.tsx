@@ -667,67 +667,67 @@ function AppContent() {
 
   // 3. MAIN APP SHELL
   return (
-    <div className="min-h-screen bg-[#E8F1F7]/40 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-sky flex flex-col md:flex-row font-sans">
       {/* SIDEBAR DESKTOP */}
-      <aside className="hidden md:flex md:w-64 bg-pine text-white flex-col justify-between p-5 border-r border-[#1F4D3A] shrink-0">
+      <aside className="hidden md:flex md:w-64 bg-sky text-gray-850 flex-col justify-between p-5 shrink-0">
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 blob bg-pine flex items-center justify-center">
               <Compass className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="font-display font-black text-lg tracking-wider block">Rumbo</span>
-              <span className="text-[10px] text-[#E8F1F7]/60 font-bold block uppercase tracking-widest">Aventura</span>
+              <span className="font-serif text-xl text-pine block">Rumbo</span>
+              <span className="text-[10px] text-gray-451 font-bold block uppercase tracking-widest">Aventura</span>
             </div>
           </div>
 
           <nav className="flex flex-col gap-1.5">
             <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-white/12 text-white font-bold' : 'text-white/70 hover:bg-white/5'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
               <LayoutDashboard className="w-4 h-4" /> Operaciones Diarias
             </button>
             <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-white/12 text-white font-bold' : 'text-white/70 hover:bg-white/5'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
               <ActivitiesIcon className="w-4 h-4" /> Catálogo Actividades
             </button>
             <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-white/12 text-white font-bold' : 'text-white/70 hover:bg-white/5'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
               <Users className="w-4 h-4" /> Equipo de Guías
             </button>
             {isAdmin && (
               <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-white/12 text-white font-bold' : 'text-white/70 hover:bg-white/5'}`}>
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
                 <LineChart className="w-4 h-4" /> Métricas / Reportes
               </button>
             )}
             {isAdmin && (
               <button onClick={() => setIsPricingModalOpen(true)}
-                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer text-white/70 hover:bg-white/5">
-                <Sparkles className="w-4 h-4 text-amber-400" /> Planes y Suscripción
+                className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-gray-505 hover:bg-sky-80">
+                <Sparkles className="w-4 h-4 text-orange-850" /> Planes y Suscripción
               </button>
             )}
             <button onClick={() => setIsDownloadModalOpen(true)}
-              className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer text-emerald-400 hover:bg-white/5">
+              className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-pine hover:bg-sky-80">
               <Smartphone className="w-4 h-4" /> Descargar App
             </button>
           </nav>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-white/10 pt-4">
-          <div onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2.5 hover:bg-white/5 p-1.5 rounded-xl cursor-pointer transition-colors">
+        <div className="flex flex-col gap-4 border-t border-gray-405/30 pt-4">
+          <div onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2.5 hover:bg-sky-80 p-1.5 rounded-2xl cursor-pointer transition-colors">
             {user.avatar_url ? (
-              <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-lg object-cover border border-white/15" />
+              <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-xl object-cover border border-gray-405/30" />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-xl bg-pine/10 flex items-center justify-center font-bold text-xs text-pine">
                 {user.full_name?.substr(0, 2).toUpperCase() || 'US'}
               </div>
             )}
             <div className="truncate text-left">
-              <p className="text-xs font-bold text-white flex items-center gap-1">{user.full_name}<UserCheck className="w-3 h-3 text-[#58A6FF]" /></p>
-              <span className="text-[10px] text-[#E8F1F7]/60 block">{isAdmin ? '👑 Administrador' : '🧭 Guía'}</span>
+              <p className="text-xs font-bold text-gray-850 flex items-center gap-1">{user.full_name}<UserCheck className="w-3 h-3 text-ocean" /></p>
+              <span className="text-[10px] text-gray-451 block">{isAdmin ? '👑 Administrador' : '🧭 Guía'}</span>
             </div>
           </div>
-          <button onClick={signOut} className="flex items-center justify-center gap-2 py-2 px-3 bg-white/5 hover:bg-red-900/40 text-white rounded-xl text-xs font-semibold cursor-pointer transition-colors">
+          <button onClick={signOut} className="flex items-center justify-center gap-2 py-2 px-3 bg-sky-80 hover:bg-red-650/10 text-gray-505 rounded-2xl text-xs font-semibold cursor-pointer transition-colors">
             <LogOut className="w-4 h-4" /> Cerrar Sesión
           </button>
         </div>
@@ -735,35 +735,35 @@ function AppContent() {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="bg-pine text-white md:bg-white md:text-gray-900 border-b border-gray-100 p-4 px-5 flex items-center justify-between z-30">
+        <header className="bg-pine text-white md:bg-sky md:text-gray-900 p-4 px-5 flex items-center justify-between z-30">
           <div className="flex items-center gap-2.5 md:hidden">
-            <img src={agency.logo_url} alt={agency.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+            <img src={agency.logo_url} alt={agency.name} className="w-8 h-8 rounded-xl object-cover shrink-0" />
             <div className="leading-tight">
               <span className="font-bold text-xs block text-white truncate max-w-[160px]">{agency.name}</span>
               <span className="text-[9px] text-white/70">{isAdmin ? '👑 Admin' : '🧭 Guía'}</span>
             </div>
           </div>
 
-          <div onClick={() => isAdmin && setIsAgencyModalOpen(true)} 
-            className={`hidden md:flex items-center gap-3.5 p-1.5 rounded-2xl transition-colors ${isAdmin ? 'hover:bg-gray-50 cursor-pointer' : ''}`}>
-            <img src={agency.logo_url} alt={agency.name} className="w-10 h-10 rounded-xl object-cover border border-gray-100" />
+          <div onClick={() => isAdmin && setIsAgencyModalOpen(true)}
+            className={`hidden md:flex items-center gap-3.5 p-1.5 rounded-2xl transition-colors ${isAdmin ? 'hover:bg-sky-80 cursor-pointer' : ''}`}>
+            <img src={agency.logo_url} alt={agency.name} className="w-10 h-10 rounded-2xl object-cover border border-gray-405/20" />
             <div className="text-left">
-              <p className="text-sm font-semibold text-pine font-display">{agency.name} {isAdmin && <Settings className="w-3.5 h-3.5 inline text-pine/60" />}</p>
+              <p className="text-sm font-semibold text-pine font-serif">{agency.name} {isAdmin && <Settings className="w-3.5 h-3.5 inline text-pine/60" />}</p>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[10px] text-gray-400">Código: <strong className="font-mono">{agency.join_code}</strong></span>
+                <span className="text-[10px] text-gray-451">Código: <strong className="font-mono">{agency.join_code}</strong></span>
                 <button onClick={(e) => { e.stopPropagation(); setIsPricingModalOpen(true); }}
-                  className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded border">
+                  className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-full border border-gray-405/30">
                   {agency.subscription_plan || 'free'}
                 </button>
               </div>
             </div>
             {isSupabaseConfigured ? (
-              <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full font-bold border border-emerald-150 ml-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Sincronizado
+              <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-150 text-pine px-2.5 py-1 rounded-full font-bold ml-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-pine animate-pulse" /> Sincronizado
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-200 ml-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Sin Configurar
+              <span className="inline-flex items-center gap-1 text-[10px] bg-orange-850/10 text-orange-850 px-2.5 py-1 rounded-full font-bold ml-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-850" /> Sin Configurar
               </span>
             )}
           </div>
@@ -793,46 +793,46 @@ function AppContent() {
       {/* MOBILE BOTTOM NAV */}
       {isQuickActionsOpen && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setIsQuickActionsOpen(false)}>
-          <div className="absolute bottom-20 right-3 bg-white rounded-2xl shadow-pop border border-gray-100 p-1.5 flex flex-col gap-0.5 min-w-[180px] animate-modal-in">
+          <div className="absolute bottom-20 right-3 bg-white rounded-2xl shadow-pop border border-gray-405/15 p-1.5 flex flex-col gap-0.5 min-w-[180px] animate-modal-in">
             {isAdmin && (
               <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); setIsQuickActionsOpen(false); }}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky cursor-pointer transition-colors">
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
                 <ActivitiesIcon className="w-4 h-4" /> Nueva Actividad
               </button>
             )}
             <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); setIsQuickActionsOpen(false); }}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky cursor-pointer transition-colors">
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
               <Calendar className="w-4 h-4" /> Nueva Salida
             </button>
             {isAdmin && (
               <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); setIsQuickActionsOpen(false); }}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky cursor-pointer transition-colors">
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
                 <UserPlus className="w-4 h-4" /> Nuevo Guía
               </button>
             )}
           </div>
         </div>
       )}
-      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-150 z-40 flex items-center justify-around p-2 md:hidden">
+      <nav className="fixed bottom-0 inset-x-0 bg-sky border-t border-gray-405/20 z-40 flex items-center justify-around p-2 md:hidden">
         <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
-          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'dashboard' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'dashboard' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
           <LayoutDashboard className="w-5 h-5" /> Operaciones
         </button>
         <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
-          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'activities' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'activities' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
           <ActivitiesIcon className="w-5 h-5" /> Catálogo
         </button>
         <button onClick={() => setIsQuickActionsOpen((v) => !v)}
-          className="flex items-center justify-center w-12 h-12 rounded-2xl bg-pine text-white shadow-pop cursor-pointer hover:bg-pine-hover transition-colors -mt-4">
+          className="flex items-center justify-center w-12 h-12 blob bg-pine text-white shadow-pop cursor-pointer hover:bg-pine-hover transition-colors -mt-4">
           <Plus className={`w-5 h-5 transition-transform ${isQuickActionsOpen ? 'rotate-45' : ''}`} />
         </button>
         <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
-          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'guides' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+          className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'guides' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
           <Users className="w-5 h-5" /> Guías
         </button>
         {isAdmin ? (
           <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl text-[9px] font-bold ${activeTab === 'reports' ? 'text-pine bg-sky' : 'text-gray-400'}`}>
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'reports' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
             <LineChart className="w-5 h-5" /> Métricas
           </button>
         ) : <div className="w-[58px]" />}
