@@ -152,6 +152,11 @@ function AppContent() {
 
   const handleSaveUserProfile = async () => {
     if (!user || !supabase) return;
+    if (isDemoMode) {
+      window.dispatchEvent(new Event('rumbo_demo_blocked'));
+      setIsProfileModalOpen(false);
+      return;
+    }
     if (isUserAvatarUploading) {
       notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
       return;
