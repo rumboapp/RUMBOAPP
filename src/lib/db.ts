@@ -66,6 +66,13 @@ const demoSessionDepartures: Departure[] = [];
 const demoSessionPassengers: Passenger[] = [];
 const demoSessionNotifications: Notification[] = [];
 
+// Para "borrar"/"editar" registros reales (pre-existentes en Supabase) sin
+// tocar la base de datos: se ocultan/sobreescriben solo en la sesión.
+const demoDeletedDepartureIds = new Set<string>();
+const demoDepartureOverrides = new Map<string, Partial<Departure>>();
+const demoDeletedPassengerIds = new Set<string>();
+const demoPassengerOverrides = new Map<string, Partial<Passenger>>();
+
 // ============================================================
 // FUNCIONES DE BASE DE DATOS - SUPABASE FIRST
 // ============================================================
@@ -387,7 +394,10 @@ export const db = {
       .order('departure_time', { ascending: true });
     const departures = (data || []) as Departure[];
     if (demoModeActive) {
-      return [...departures, ...demoSessionDepartures.filter(d => d.agency_id === agencyId)]
+      const real = departures
+        .filter(d => !demoDeletedDepartureIds.has(d.id))
+        .map(d => demoDepartureOverrides.has(d.id) ? { ...d, ...demoDepartureOverrides.get(d.id) } : d);
+      return [...real, ...demoSessionDepartures.filter(d => d.agency_id === agencyId)]
         .sort((a, b) => `${a.departure_date} ${a.departure_time}`.localeCompare(`${b.departure_date} ${b.departure_time}`));
     }
     return departures;
@@ -458,10 +468,17 @@ export const db = {
   async updateDeparture(id: string, data: Partial<Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Departure | null> {
     if (demoModeActive) {
       const idx = demoSessionDepartures.findIndex(d => d.id === id);
-      if (idx === -1) return null;
-      demoSessionDepartures[idx] = { ...demoSessionDepartures[idx], ...data, updated_at: new Date().toISOString() };
+      if (idx !== -1) {
+        demoSessionDepartures[idx] = { ...demoSessionDepartures[idx], ...data, updated_at: new Date().toISOString() };
+        dispatchDbUpdate();
+        return demoSessionDepartures[idx];
+      }
+      const existing = demoDepartureOverrides.get(id);
+      const merged = { ...existing, ...data, updated_at: new Date().toISOString() };
+      demoDepartureOverrides.set(id, merged);
       dispatchDbUpdate();
-      return demoSessionDepartures[idx];
+      const original = await this.getDeparture(id);
+      return original ? { ...original, ...merged } : null;
     }
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
@@ -477,7 +494,11 @@ export const db = {
   async deleteDeparture(id: string): Promise<void> {
     if (demoModeActive) {
       const idx = demoSessionDepartures.findIndex(d => d.id === id);
-      if (idx !== -1) demoSessionDepartures.splice(idx, 1);
+      if (idx !== -1) {
+        demoSessionDepartures.splice(idx, 1);
+      } else {
+        demoDeletedDepartureIds.add(id);
+      }
       for (let i = demoSessionPassengers.length - 1; i >= 0; i--) {
         if (demoSessionPassengers[i].departure_id === id) demoSessionPassengers.splice(i, 1);
       }
@@ -501,7 +522,10 @@ export const db = {
       .order('created_at', { ascending: true });
     const passengers = (data || []) as Passenger[];
     if (demoModeActive) {
-      return [...passengers, ...demoSessionPassengers.filter(p => p.departure_id === departureId)];
+      const real = passengers
+        .filter(p => !demoDeletedPassengerIds.has(p.id) && !demoDeletedDepartureIds.has(p.departure_id))
+        .map(p => demoPassengerOverrides.has(p.id) ? { ...p, ...demoPassengerOverrides.get(p.id) } : p);
+      return [...real, ...demoSessionPassengers.filter(p => p.departure_id === departureId)];
     }
     return passengers;
   },
@@ -510,7 +534,12 @@ export const db = {
     if (!isSupabaseConfigured || !supabase) return [];
     const { data } = await supabase.from('passengers').select('*');
     const passengers = (data || []) as Passenger[];
-    if (demoModeActive) return [...passengers, ...demoSessionPassengers];
+    if (demoModeActive) {
+      const real = passengers
+        .filter(p => !demoDeletedPassengerIds.has(p.id) && !demoDeletedDepartureIds.has(p.departure_id))
+        .map(p => demoPassengerOverrides.has(p.id) ? { ...p, ...demoPassengerOverrides.get(p.id) } : p);
+      return [...real, ...demoSessionPassengers];
+    }
     return passengers;
   },
 
@@ -544,10 +573,17 @@ export const db = {
   async updatePassenger(id: string, data: Partial<Omit<Passenger, 'id' | 'created_at'>>): Promise<Passenger | null> {
     if (demoModeActive) {
       const idx = demoSessionPassengers.findIndex(p => p.id === id);
-      if (idx === -1) return null;
-      demoSessionPassengers[idx] = { ...demoSessionPassengers[idx], ...data };
+      if (idx !== -1) {
+        demoSessionPassengers[idx] = { ...demoSessionPassengers[idx], ...data };
+        dispatchDbUpdate();
+        return demoSessionPassengers[idx];
+      }
+      const existing = demoPassengerOverrides.get(id);
+      const merged = { ...existing, ...data };
+      demoPassengerOverrides.set(id, merged);
       dispatchDbUpdate();
-      return demoSessionPassengers[idx];
+      const original = await this.getPassenger(id);
+      return original ? { ...original, ...merged } : null;
     }
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
@@ -563,7 +599,11 @@ export const db = {
   async deletePassenger(id: string): Promise<void> {
     if (demoModeActive) {
       const idx = demoSessionPassengers.findIndex(p => p.id === id);
-      if (idx !== -1) demoSessionPassengers.splice(idx, 1);
+      if (idx !== -1) {
+        demoSessionPassengers.splice(idx, 1);
+      } else {
+        demoDeletedPassengerIds.add(id);
+      }
       dispatchDbUpdate();
       return;
     }
