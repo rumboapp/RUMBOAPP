@@ -25,7 +25,7 @@ import {
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2,
   LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight,
   ArrowLeft, ArrowRight, X, Calendar, Eye, EyeOff, Sparkles, Building, AlertCircle, UserPlus, Settings, UserCheck,
-  Smartphone, Tablet, Plus, History
+  Smartphone, Tablet, Plus, History, FlaskConical
 } from 'lucide-react';
 
 function AppContent() {
@@ -783,8 +783,10 @@ function AppContent() {
         </header>
 
         {isDemoMode && (
-          <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-[11px] font-semibold text-center py-1.5 px-3">
-            🧪 Estás en modo demo: los cambios no se guardan en la base de datos.
+          <div className="flex justify-center py-2">
+            <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 text-amber-700 text-[10px] font-semibold px-3 py-1 rounded-full shadow-sm">
+              <FlaskConical className="w-3 h-3" /> Modo demo · los cambios no se guardan
+            </span>
           </div>
         )}
 
