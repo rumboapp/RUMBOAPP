@@ -850,9 +850,9 @@ function AppContent() {
 
       {/* MODALS */}
       {isAgencyModalOpen && agency && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="absolute inset-0" onClick={() => setIsAgencyModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl z-10">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl z-10 my-8">
             <h3 className="font-display font-semibold text-lg text-pine mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
               <Building className="w-5 h-5" /> Editar Agencia
             </h3>
@@ -892,9 +892,9 @@ function AppContent() {
       )}
 
       {isProfileModalOpen && user && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="absolute inset-0" onClick={() => setIsProfileModalOpen(false)} />
-          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10 my-8">
             <h3 className="font-display font-semibold text-lg text-pine mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
               <User className="w-5 h-5" /> Editar Perfil
             </h3>
