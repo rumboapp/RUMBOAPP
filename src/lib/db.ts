@@ -60,6 +60,12 @@ function blockIfDemo(): boolean {
   return false;
 }
 
+// Estado en memoria, solo de la sesión, para simular escrituras en modo demo
+// sin persistir nada en Supabase. Se descarta al recargar la página.
+const demoSessionDepartures: Departure[] = [];
+const demoSessionPassengers: Passenger[] = [];
+const demoSessionNotifications: Notification[] = [];
+
 // ============================================================
 // FUNCIONES DE BASE DE DATOS - SUPABASE FIRST
 // ============================================================
@@ -379,7 +385,12 @@ export const db = {
       .eq('agency_id', agencyId)
       .order('departure_date', { ascending: true })
       .order('departure_time', { ascending: true });
-    return (data || []) as Departure[];
+    const departures = (data || []) as Departure[];
+    if (demoModeActive) {
+      return [...departures, ...demoSessionDepartures.filter(d => d.agency_id === agencyId)]
+        .sort((a, b) => `${a.departure_date} ${a.departure_time}`.localeCompare(`${b.departure_date} ${b.departure_time}`));
+    }
+    return departures;
   },
 
   async getDeparture(id: string): Promise<Departure | null> {
@@ -409,7 +420,11 @@ export const db = {
       updated_at: new Date().toISOString()
     };
 
-    if (blockIfDemo()) return newDeparture;
+    if (demoModeActive) {
+      demoSessionDepartures.push(newDeparture);
+      dispatchDbUpdate();
+      return newDeparture;
+    }
 
     if (isSupabaseConfigured && supabase) {
       await supabase.from('departures').insert(newDeparture);
@@ -441,7 +456,13 @@ export const db = {
   },
 
   async updateDeparture(id: string, data: Partial<Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Departure | null> {
-    if (blockIfDemo()) return null;
+    if (demoModeActive) {
+      const idx = demoSessionDepartures.findIndex(d => d.id === id);
+      if (idx === -1) return null;
+      demoSessionDepartures[idx] = { ...demoSessionDepartures[idx], ...data, updated_at: new Date().toISOString() };
+      dispatchDbUpdate();
+      return demoSessionDepartures[idx];
+    }
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('departures')
@@ -454,7 +475,15 @@ export const db = {
   },
 
   async deleteDeparture(id: string): Promise<void> {
-    if (blockIfDemo()) return;
+    if (demoModeActive) {
+      const idx = demoSessionDepartures.findIndex(d => d.id === id);
+      if (idx !== -1) demoSessionDepartures.splice(idx, 1);
+      for (let i = demoSessionPassengers.length - 1; i >= 0; i--) {
+        if (demoSessionPassengers[i].departure_id === id) demoSessionPassengers.splice(i, 1);
+      }
+      dispatchDbUpdate();
+      return;
+    }
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('passengers').delete().eq('departure_id', id);
     await supabase.from('departures').delete().eq('id', id);
@@ -470,13 +499,19 @@ export const db = {
       .select('*')
       .eq('departure_id', departureId)
       .order('created_at', { ascending: true });
-    return (data || []) as Passenger[];
+    const passengers = (data || []) as Passenger[];
+    if (demoModeActive) {
+      return [...passengers, ...demoSessionPassengers.filter(p => p.departure_id === departureId)];
+    }
+    return passengers;
   },
 
   async getAllPassengers(): Promise<Passenger[]> {
     if (!isSupabaseConfigured || !supabase) return [];
     const { data } = await supabase.from('passengers').select('*');
-    return (data || []) as Passenger[];
+    const passengers = (data || []) as Passenger[];
+    if (demoModeActive) return [...passengers, ...demoSessionPassengers];
+    return passengers;
   },
 
   async getPassenger(id: string): Promise<Passenger | null> {
@@ -492,7 +527,11 @@ export const db = {
       created_at: new Date().toISOString()
     };
 
-    if (blockIfDemo()) return newPassenger;
+    if (demoModeActive) {
+      demoSessionPassengers.push(newPassenger);
+      dispatchDbUpdate();
+      return newPassenger;
+    }
 
     if (isSupabaseConfigured && supabase) {
       await supabase.from('passengers').insert(newPassenger);
@@ -503,7 +542,13 @@ export const db = {
   },
 
   async updatePassenger(id: string, data: Partial<Omit<Passenger, 'id' | 'created_at'>>): Promise<Passenger | null> {
-    if (blockIfDemo()) return null;
+    if (demoModeActive) {
+      const idx = demoSessionPassengers.findIndex(p => p.id === id);
+      if (idx === -1) return null;
+      demoSessionPassengers[idx] = { ...demoSessionPassengers[idx], ...data };
+      dispatchDbUpdate();
+      return demoSessionPassengers[idx];
+    }
     if (!isSupabaseConfigured || !supabase) return null;
     const { data: result } = await supabase
       .from('passengers')
@@ -516,7 +561,12 @@ export const db = {
   },
 
   async deletePassenger(id: string): Promise<void> {
-    if (blockIfDemo()) return;
+    if (demoModeActive) {
+      const idx = demoSessionPassengers.findIndex(p => p.id === id);
+      if (idx !== -1) demoSessionPassengers.splice(idx, 1);
+      dispatchDbUpdate();
+      return;
+    }
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('passengers').delete().eq('id', id);
     dispatchDbUpdate();
@@ -531,7 +581,12 @@ export const db = {
       .select('*')
       .eq('agency_id', agencyId)
       .order('created_at', { ascending: false });
-    return (data || []) as Notification[];
+    const notifications = (data || []) as Notification[];
+    if (demoModeActive) {
+      return [...demoSessionNotifications.filter(n => n.agency_id === agencyId), ...notifications]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    }
+    return notifications;
   },
 
   async createNotification(agencyId: string, kind: 'departure_created' | 'system' | 'weather_alert', title: string, message: string, departureId: string | null = null): Promise<Notification> {
@@ -546,7 +601,11 @@ export const db = {
       created_at: new Date().toISOString()
     };
 
-    if (blockIfDemo()) return newNot;
+    if (demoModeActive) {
+      demoSessionNotifications.push(newNot);
+      dispatchDbUpdate();
+      return newNot;
+    }
 
     if (isSupabaseConfigured && supabase) {
       await supabase.from('notifications').insert(newNot);
@@ -557,14 +616,23 @@ export const db = {
   },
 
   async markNotificationAsRead(id: string): Promise<void> {
-    if (blockIfDemo()) return;
+    if (demoModeActive) {
+      const not = demoSessionNotifications.find(n => n.id === id);
+      if (not) not.read = true;
+      dispatchDbUpdate();
+      return;
+    }
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('notifications').update({ read: true }).eq('id', id);
     dispatchDbUpdate();
   },
 
   async markAllAsRead(agencyId: string): Promise<void> {
-    if (blockIfDemo()) return;
+    if (demoModeActive) {
+      demoSessionNotifications.filter(n => n.agency_id === agencyId).forEach(n => { n.read = true; });
+      dispatchDbUpdate();
+      return;
+    }
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('notifications').update({ read: true }).eq('agency_id', agencyId);
     dispatchDbUpdate();
