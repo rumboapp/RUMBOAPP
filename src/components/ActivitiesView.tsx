@@ -10,6 +10,7 @@ import { useNotification } from '../lib/notification-context';
 import { Activity } from '../types';
 import { Plus, Edit, Trash2, Clock, Users, Sparkles, Lock } from 'lucide-react';
 import { FileUpload } from './FileUpload';
+import { WhatsappTemplateEditor } from './WhatsappTemplateEditor';
 
 export default function ActivitiesView() {
   const { agency, isAdmin } = useAuth();
@@ -204,10 +205,8 @@ export default function ActivitiesView() {
               <input type="text" required placeholder="Punto de encuentro" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               <div className="relative">
                 <label className="text-[10px] font-semibold text-gray-500 block mb-1">Plantilla WhatsApp de esta actividad (opcional)</label>
-                <textarea value={wspTemplate} onChange={(e) => setWspTemplate(e.target.value)} disabled={isFreePlan}
-                  placeholder={'Hola {pasajero}, te recordamos tu excursión {actividad} el {fecha} a las {hora}hs en {punto_encuentro}.'}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none disabled:bg-gray-50 disabled:text-gray-400" />
-                <p className="text-[9px] text-gray-400 mt-1">Si la dejas vacía, se usa la plantilla general de la agencia (o el mensaje por defecto). Placeholders: {'{pasajero} {actividad} {fecha} {hora} {punto_encuentro} {pasajeros}'}</p>
+                <WhatsappTemplateEditor value={wspTemplate} onChange={setWspTemplate} disabled={isFreePlan} />
+                <p className="text-[9px] text-gray-400 mt-1">Si la dejas vacía, se usa la plantilla general de la agencia (o el mensaje sugerido).</p>
                 {isFreePlan && (
                   <div className="absolute inset-x-0 bottom-0 top-[16px] bg-white/70 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-center p-2 border border-dashed border-gray-200">
                     <Lock className="w-4 h-4 text-pine mb-1" />
