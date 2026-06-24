@@ -751,7 +751,7 @@ function AppContent() {
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="bg-pine text-white md:bg-sky md:text-gray-900 p-4 px-5 flex items-center justify-between z-30">
-          <div className="flex items-center gap-2.5 md:hidden">
+          <div onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2.5 md:hidden cursor-pointer">
             <img src={agency.logo_url} alt={agency.name} className="w-8 h-8 rounded-xl object-cover shrink-0" />
             <div className="leading-tight">
               <span className="font-bold text-xs block text-white truncate max-w-[160px]">{agency.name}</span>
@@ -818,6 +818,21 @@ function AppContent() {
             <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); setIsQuickActionsOpen(false); }}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
               <History className="w-4 h-4" /> Historial Pasajeros
+            </button>
+            <div className="border-t border-gray-100 my-0.5" />
+            {isAdmin && (
+              <button onClick={() => { setIsPricingModalOpen(true); setIsQuickActionsOpen(false); }}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
+                <Sparkles className="w-4 h-4 text-yellow-soft" /> Planes y Suscripción
+              </button>
+            )}
+            <button onClick={() => { setIsDownloadModalOpen(true); setIsQuickActionsOpen(false); }}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
+              <Smartphone className="w-4 h-4" /> Descargar App
+            </button>
+            <button onClick={() => { setIsProfileModalOpen(true); setIsQuickActionsOpen(false); }}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
+              <Settings className="w-4 h-4" /> Mi Perfil
             </button>
           </div>
         </div>
