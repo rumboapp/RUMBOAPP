@@ -539,7 +539,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
           <button onClick={() => setViewMode('week')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'week' ? 'bg-pine text-white' : 'text-gray-505'}`}>Semana</button>
           <button onClick={() => setViewMode('month')}
-            className={`hidden md:inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'month' ? 'bg-pine text-white' : 'text-gray-505'}`}>Mes</button>
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors ${viewMode === 'month' ? 'bg-pine text-white' : 'text-gray-505'}`}>Mes</button>
         </div>
       </div>
 
@@ -588,7 +588,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       )}
 
       {viewMode === 'month' && (
-        <div className="grid grid-cols-7 gap-1.5">
+        <>
+        {/* Desktop grid */}
+        <div className="hidden md:grid grid-cols-7 gap-1.5">
           {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((lbl) => (
             <p key={lbl} className="text-[9px] font-bold uppercase text-center text-gray-451 pb-1">{lbl}</p>
           ))}
@@ -616,8 +618,38 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
             );
           })}
         </div>
+        {/* Mobile vertical list: only days within the selected month */}
+        <div className="flex flex-col gap-2 md:hidden">
+          {monthDays.filter(({ inMonth }) => inMonth).map(({ dateStr, day }) => {
+            const d = new Date(dateStr);
+            const isToday = dateStr === new Date().toISOString().split('T')[0];
+            const dayDeps = departures.filter(dep => dep.departure_date === dateStr).sort((a, b) => a.departure_time.localeCompare(b.departure_time));
+            return (
+              <div key={dateStr} onClick={() => openAddDepartureForDate(dateStr)}
+                className={`rounded-2xl p-2.5 flex flex-row gap-2 cursor-pointer transition-colors ${isToday ? 'bg-emerald-150 border-2 border-pine' : 'bg-white border border-gray-405/15 hover:border-pine/40'}`}>
+                <div className="flex flex-row items-center gap-1.5 shrink-0 w-16">
+                  <p className={`text-[9px] font-bold uppercase text-center ${isToday ? 'text-pine' : 'text-gray-451'}`}>{d.toLocaleDateString('es-AR', { weekday: 'short' })}</p>
+                  <p className={`text-sm font-serif text-center ${isToday ? 'text-pine' : 'text-gray-850'}`}>{day}</p>
+                </div>
+                <div className="flex flex-col gap-1 overflow-y-auto flex-1 min-w-0">
+                  {dayDeps.length === 0 && <p className="text-[10px] text-gray-405">Sin salidas</p>}
+                  {dayDeps.map((dep) => {
+                    const act = activities.find(a => a.id === dep.activity_id);
+                    return (
+                      <button key={dep.id}
+                        onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
+                        className="text-left text-[11px] leading-tight px-2 py-1.5 rounded-xl bg-sage text-sky hover:bg-pine-hover transition-colors font-semibold truncate cursor-pointer">
+                        {dep.departure_time} {act?.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        </>
       )}
-
       {/* Main Grid */}
       {viewMode === 'list' && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
