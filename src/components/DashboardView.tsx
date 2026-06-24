@@ -518,7 +518,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     return (
                       <button key={dep.id}
                         onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
-                        className="text-left text-[10px] leading-tight px-2 py-1.5 rounded-xl bg-sky-80 hover:bg-pine hover:text-white transition-colors font-semibold truncate cursor-pointer">
+                        className="text-left text-[10px] leading-tight px-2 py-1.5 rounded-xl bg-sage text-sky hover:bg-pine-hover transition-colors font-semibold truncate cursor-pointer">
                         {dep.departure_time} {act?.name}
                       </button>
                     );
@@ -548,7 +548,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     return (
                       <button key={dep.id}
                         onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); setSelectedDeparture(dep); db.getPassengersByDeparture(dep.id).then(setPassengers); setViewMode('list'); }}
-                        className="text-left text-[8px] leading-tight px-1.5 py-1 rounded-lg bg-sky-80 hover:bg-pine hover:text-white transition-colors font-semibold truncate cursor-pointer">
+                        className="text-left text-[8px] leading-tight px-1.5 py-1 rounded-lg bg-sage text-sky hover:bg-pine-hover transition-colors font-semibold truncate cursor-pointer">
                         {dep.departure_time} {act?.name}
                       </button>
                     );
@@ -675,26 +675,46 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
             <h3 className="font-display font-medium text-lg text-pine mb-4">{editingDepartureId ? 'Editar Salida' : 'Programar Nueva Salida'}</h3>
             <form onSubmit={handleSubmitDeparture} className="flex flex-col gap-4">
-              <select required value={newActivityId} onChange={(e) => setNewActivityId(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs cursor-pointer">
-                <option value="">Selecciona actividad...</option>
-                {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
+              <div>
+                <p className="text-[10px] font-semibold text-gray-505 mb-1.5">Actividad</p>
+                <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-1.5">
+                  {activities.map(a => (
+                    <button key={a.id} type="button" onClick={() => setNewActivityId(a.id)}
+                      className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left cursor-pointer transition-colors ${newActivityId === a.id ? 'bg-pine text-white' : 'hover:bg-sky-80'}`}>
+                      <img src={a.photo_url || 'https://images.unsplash.com/photo-1530866495561-507c9faab2ed?w=100'} alt={a.name}
+                        className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                      <span className="text-xs font-semibold truncate">{a.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <input type="date" required value={newDepartureDate} onChange={(e) => setNewDepartureDate(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
                 <input type="time" required value={newTime} onChange={(e) => setNewTime(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               </div>
-              <div className="border border-gray-200 rounded-xl p-2 max-h-32 overflow-y-auto">
-                {guides.map(g => (
-                  <label key={g.id} className="flex items-center gap-2 px-2 py-1 text-xs cursor-pointer">
-                    <input type="checkbox" checked={newGuideIds.includes(g.id)}
-                      onChange={() => setNewGuideIds(prev => prev.includes(g.id) ? prev.filter(id => id !== g.id) : [...prev, g.id])}
-                      className="rounded text-pine" />
-                    <span>{g.full_name}</span>
-                  </label>
-                ))}
+              <div>
+                <p className="text-[10px] font-semibold text-gray-505 mb-1.5">Guías</p>
+                <div className="border border-gray-200 rounded-xl p-1.5 max-h-32 overflow-y-auto flex flex-col gap-1">
+                  {guides.map(g => {
+                    const checked = newGuideIds.includes(g.id);
+                    return (
+                      <button key={g.id} type="button"
+                        onClick={() => setNewGuideIds(prev => prev.includes(g.id) ? prev.filter(id => id !== g.id) : [...prev, g.id])}
+                        className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left cursor-pointer transition-colors ${checked ? 'bg-pine text-white' : 'hover:bg-sky-80'}`}>
+                        {g.avatar_url ? (
+                          <img src={g.avatar_url} alt={g.full_name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${checked ? 'bg-white/20 text-white' : 'bg-sky-80 text-pine'}`}>
+                            {g.full_name?.substr(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="text-xs font-semibold truncate">{g.full_name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} placeholder="Notas..."
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none" />
