@@ -372,7 +372,6 @@ function AppContent() {
       <div className="min-h-screen bg-sky flex flex-col items-center justify-center font-sans">
         <Compass className="w-12 h-12 text-pine animate-spin mb-4" />
         <h2 className="text-pine font-display font-semibold text-lg">Iniciando Rumbo...</h2>
-        <p className="text-xs text-gray-500 mt-1">Conectando con Supabase...</p>
       </div>
     );
   }
