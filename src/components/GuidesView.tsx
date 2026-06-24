@@ -224,7 +224,7 @@ export default function GuidesView() {
                         {g.avatar_url ? <img src={g.avatar_url} alt={g.full_name} className="w-11 h-11 rounded-xl object-cover" /> : <div className="w-11 h-11 rounded-xl bg-sky text-ocean font-bold flex items-center justify-center">{g.full_name.split(' ').map(n => n[0]).join('').substr(0,2).toUpperCase()}</div>}
                         <div>
                           <h4 className="font-bold text-xs">{g.full_name} {isSelf && <span className="text-[8px] bg-slate-900 text-white px-1 rounded">Tú</span>}</h4>
-                          <span className={`text-[8.5px] font-bold px-1.5 rounded border ${role === AgencyRole.ADMIN ? 'bg-orange-50 text-orange-800' : 'bg-indigo-50 text-indigo-700'}`}>{role === AgencyRole.ADMIN ? '👑 Admin' : '🧭 Guía'}</span>
+                          <span className={`text-[8.5px] font-bold px-1.5 rounded ${role === AgencyRole.ADMIN ? 'bg-orange-50 text-orange-800 border border-orange-100' : 'bg-pine text-white'}`}>{role === AgencyRole.ADMIN ? '👑 Admin' : 'Guía'}</span>
                         </div>
                       </div>
                       {isAdmin && (
