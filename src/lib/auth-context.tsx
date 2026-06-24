@@ -269,10 +269,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userId = authData.user.id;
       const emailConfirmationRequired = !authData.session;
 
-      // 2. El trigger o la base de datos deberían crear el perfil, pero esperamos un momento
+      // 2. El trigger on_auth_user_created ya crea el perfil en public.users con
+      // privilegios elevados (SECURITY DEFINER), así que esperamos un momento y
+      // luego intentamos un upsert best-effort solo por si el trigger no corrió.
+      // No bloqueamos el registro si esto falla por RLS (sesión aún sin confirmar).
       await new Promise(r => setTimeout(r, 600));
 
-      // 3. Crear o actualizar el perfil en public.users con upsert
       const { error: userError } = await supabase.from('users').upsert({
         id: userId,
         email: email.toLowerCase().trim(),
@@ -281,12 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (userError) {
-        console.error('Error creando perfil en users:', userError);
-        setLoading(false);
-        return { 
-          success: false, 
-          error: `Error al crear tu perfil en la base de datos: ${userError.message}. Asegúrate de haber ejecutado todo el código de /supabase_schema.sql en el SQL Editor de tu panel de Supabase.` 
-        };
+        console.warn('No se pudo actualizar el perfil en users (el trigger ya debería haberlo creado):', userError);
       }
 
       // 4. Crear la agencia
@@ -422,10 +419,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userId = authData.user.id;
       const emailConfirmationRequired = !authData.session;
 
-      // 3. Esperar que la base de datos procese el usuario
+      // 3. El trigger on_auth_user_created ya crea el perfil en public.users con
+      // privilegios elevados (SECURITY DEFINER). Esperamos un momento y luego
+      // intentamos un upsert best-effort, sin bloquear el registro si falla por RLS.
       await new Promise(r => setTimeout(r, 600));
 
-      // 4. Crear o actualizar perfil en public.users con upsert
       const { error: userError } = await supabase.from('users').upsert({
         id: userId,
         email: email.toLowerCase().trim(),
@@ -434,12 +432,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (userError) {
-        console.error('Error creando perfil en users para guía:', userError);
-        setLoading(false);
-        return {
-          success: false,
-          error: `Error al registrar tu perfil en la base de datos: ${userError.message}. Verifica que hayas ejecutado el script de /supabase_schema.sql.`
-        };
+        console.warn('No se pudo actualizar el perfil en users (el trigger ya debería haberlo creado):', userError);
       }
 
       // 5-7. Crear membresía, ficha de guía y notificación al admin
