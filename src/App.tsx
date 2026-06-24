@@ -721,6 +721,11 @@ function AppContent() {
               className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
               <Smartphone className="w-4 h-4" /> Descargar App
             </button>
+            {isDemoMode && (
+              <div className="flex items-center gap-2 mx-1 mt-1 px-3 py-2 rounded-2xl bg-[#f5ead2] text-amber-800 text-[10px] font-semibold">
+                <FlaskConical className="w-3.5 h-3.5 shrink-0" /> Modo demo · los cambios no se guardan
+              </div>
+            )}
           </nav>
         </div>
 
@@ -781,14 +786,6 @@ function AppContent() {
             </button>
           </div>
         </header>
-
-        {isDemoMode && (
-          <div className="flex justify-center py-2">
-            <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 text-amber-700 text-[10px] font-semibold px-3 py-1 rounded-full shadow-sm">
-              <FlaskConical className="w-3 h-3" /> Modo demo · los cambios no se guardan
-            </span>
-          </div>
-        )}
 
         <main className="flex-1 p-3 sm:p-6 pb-24 md:pb-8">
           {activeTab === 'dashboard' && <DashboardView onNavigate={(h) => navigateToHash(h)} />}
