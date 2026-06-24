@@ -718,7 +718,7 @@ function AppContent() {
             )}
             <button onClick={() => setIsDownloadModalOpen(true)}
               className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
-              <Smartphone className="w-4 h-4" /> Descargar App
+              <Smartphone className="w-4 h-4" /> Agregar Acceso Directo
             </button>
             {isDemoMode && (
               <div className="flex items-center gap-2 mx-1 mt-1 px-3.5 py-3 rounded-2xl bg-sky text-pine text-xs font-semibold">
@@ -828,7 +828,7 @@ function AppContent() {
             )}
             <button onClick={() => { setIsDownloadModalOpen(true); setIsQuickActionsOpen(false); }}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
-              <Smartphone className="w-4 h-4" /> Descargar App
+              <Smartphone className="w-4 h-4" /> Agregar Acceso Directo
             </button>
             <button onClick={() => { setIsProfileModalOpen(true); setIsQuickActionsOpen(false); }}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
