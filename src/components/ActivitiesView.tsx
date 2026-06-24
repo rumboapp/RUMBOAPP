@@ -8,7 +8,7 @@ import { db } from '../lib/db';
 import { useAuth } from '../lib/auth-context';
 import { useNotification } from '../lib/notification-context';
 import { Activity } from '../types';
-import { Plus, Edit, Trash2, Clock, Users, Sparkles } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, Users, Sparkles, Lock } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 
 export default function ActivitiesView() {
@@ -29,7 +29,9 @@ export default function ActivitiesView() {
   const [meetingPoint, setMeetingPoint] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [active, setActive] = useState(true);
+  const [wspTemplate, setWspTemplate] = useState('');
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const isFreePlan = (agency?.subscription_plan || 'free') === 'free';
 
   const loadActivities = async () => {
     if (!agencyId) return;
@@ -60,7 +62,7 @@ export default function ActivitiesView() {
     }
     setEditingActivity(null);
     setName(''); setDescription(''); setDuration(120); setPrice(50000); setCurrency('CLP');
-    setCapacity(15); setMeetingPoint(''); setPhotoUrl(''); setActive(true);
+    setCapacity(15); setMeetingPoint(''); setPhotoUrl(''); setActive(true); setWspTemplate('');
     setIsPhotoUploading(false);
     setIsModalOpen(true);
   };
@@ -70,6 +72,7 @@ export default function ActivitiesView() {
     setName(act.name); setDescription(act.description); setDuration(act.duration_minutes);
     setPrice(act.price); setCurrency(act.currency); setCapacity(act.capacity_max);
     setMeetingPoint(act.meeting_point); setPhotoUrl(act.photo_url); setActive(act.active);
+    setWspTemplate(act.whatsapp_template || '');
     setIsPhotoUploading(false);
     setIsModalOpen(true);
   };
@@ -84,7 +87,7 @@ export default function ActivitiesView() {
       notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
       return;
     }
-    const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrl, active };
+    const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrl, active, whatsapp_template: isFreePlan ? '' : wspTemplate };
     if (editingActivity) {
       await db.updateActivity(editingActivity.id, payload);
     } else {
@@ -199,6 +202,21 @@ export default function ActivitiesView() {
                 </select>
               </div>
               <input type="text" required placeholder="Punto de encuentro" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+              <div className="relative">
+                <label className="text-[10px] font-semibold text-gray-500 block mb-1">Plantilla WhatsApp de esta actividad (opcional)</label>
+                <textarea value={wspTemplate} onChange={(e) => setWspTemplate(e.target.value)} disabled={isFreePlan}
+                  placeholder={'Hola {pasajero}, te recordamos tu excursión {actividad} el {fecha} a las {hora}hs en {punto_encuentro}.'}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none disabled:bg-gray-50 disabled:text-gray-400" />
+                <p className="text-[9px] text-gray-400 mt-1">Si la dejas vacía, se usa la plantilla general de la agencia (o el mensaje por defecto). Placeholders: {'{pasajero} {actividad} {fecha} {hora} {punto_encuentro} {pasajeros}'}</p>
+                {isFreePlan && (
+                  <div className="absolute inset-x-0 bottom-0 top-[16px] bg-white/70 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-center p-2 border border-dashed border-gray-200">
+                    <Lock className="w-4 h-4 text-pine mb-1" />
+                    <p className="text-[10px] text-gray-600 font-semibold">Personalizar mensajes por actividad requiere Plan Premium o Pro.</p>
+                    <button type="button" onClick={() => { setIsModalOpen(false); window.dispatchEvent(new Event('rumbo_open_pricing')); }}
+                      className="mt-1.5 px-3 py-1 bg-pine text-white font-bold rounded-lg text-[9px] cursor-pointer hover:bg-pine-hover transition-colors">Mejorar plan</button>
+                  </div>
+                )}
+              </div>
               <div>
                 <FileUpload onUpload={(url) => setPhotoUrl(url)} currentUrl={photoUrl} placeholderText="Foto de la actividad" folder="activities" onUploadingChange={setIsPhotoUploading} />
                 <input type="text" placeholder="O URL directa" value={photoUrl.startsWith('data:image/') ? '' : photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} className="w-full mt-2 border border-gray-200 rounded-xl px-3 py-2 text-xs" />
