@@ -255,9 +255,9 @@ export default function GuidesView() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10 my-8">
             <h3 className="font-display font-medium text-lg text-pine mb-4">{editingGuide ? 'Editar' : 'Nuevo'} Guía</h3>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input type="text" required placeholder="Nombre" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />

@@ -731,9 +731,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
 
       {/* MODAL: Add/Edit Departure */}
       {isAddDepartureOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
           <div className="absolute inset-0" onClick={() => { setIsAddDepartureOpen(false); resetDepartureForm(); }} />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10 my-8">
             <h3 className="font-display font-medium text-lg text-pine mb-4">{editingDepartureId ? 'Editar Salida' : 'Programar Nueva Salida'}</h3>
             <form onSubmit={handleSubmitDeparture} className="flex flex-col gap-4">
               <div>
@@ -790,9 +790,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
 
       {/* MODAL: Add Passenger */}
       {isAddPassengerOpen && selectedDeparture && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
           <div className="absolute inset-0" onClick={() => { setIsAddPassengerOpen(false); resetPassengerForm(); }} />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10 my-8">
             <h3 className="font-display font-medium text-lg text-pine mb-4">{editingPassengerId ? 'Editar Pasajero' : 'Registrar Pasajero'}</h3>
             <form onSubmit={handleAddPassenger} className="flex flex-col gap-4">
               <label className="flex items-center gap-2 cursor-pointer bg-sky/20 border border-sky rounded-xl px-3 py-2">
