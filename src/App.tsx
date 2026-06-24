@@ -703,7 +703,7 @@ function AppContent() {
             {isAdmin && (
               <button onClick={() => setIsPricingModalOpen(true)}
                 className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
-                <Sparkles className="w-4 h-4 text-yellow-600" /> Planes y Suscripción
+                <Sparkles className="w-4 h-4 text-yellow-soft" /> Planes y Suscripción
               </button>
             )}
             <button onClick={() => setIsDownloadModalOpen(true)}
