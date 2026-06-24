@@ -72,6 +72,7 @@ const demoDeletedDepartureIds = new Set<string>();
 const demoDepartureOverrides = new Map<string, Partial<Departure>>();
 const demoDeletedPassengerIds = new Set<string>();
 const demoPassengerOverrides = new Map<string, Partial<Passenger>>();
+const demoNotificationReadIds = new Set<string>();
 
 // ============================================================
 // FUNCIONES DE BASE DE DATOS - SUPABASE FIRST
@@ -623,7 +624,8 @@ export const db = {
       .order('created_at', { ascending: false });
     const notifications = (data || []) as Notification[];
     if (demoModeActive) {
-      return [...demoSessionNotifications.filter(n => n.agency_id === agencyId), ...notifications]
+      const real = notifications.map(n => demoNotificationReadIds.has(n.id) ? { ...n, read: true } : n);
+      return [...demoSessionNotifications.filter(n => n.agency_id === agencyId), ...real]
         .sort((a, b) => b.created_at.localeCompare(a.created_at));
     }
     return notifications;
@@ -658,7 +660,11 @@ export const db = {
   async markNotificationAsRead(id: string): Promise<void> {
     if (demoModeActive) {
       const not = demoSessionNotifications.find(n => n.id === id);
-      if (not) not.read = true;
+      if (not) {
+        not.read = true;
+      } else {
+        demoNotificationReadIds.add(id);
+      }
       dispatchDbUpdate();
       return;
     }
@@ -670,6 +676,8 @@ export const db = {
   async markAllAsRead(agencyId: string): Promise<void> {
     if (demoModeActive) {
       demoSessionNotifications.filter(n => n.agency_id === agencyId).forEach(n => { n.read = true; });
+      const all = await this.getNotifications(agencyId);
+      all.forEach(n => demoNotificationReadIds.add(n.id));
       dispatchDbUpdate();
       return;
     }
