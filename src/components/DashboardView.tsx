@@ -51,6 +51,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [newNotes, setNewNotes] = useState('');
 
   // New Passenger Form
+  const [editingPassengerId, setEditingPassengerId] = useState<string | null>(null);
   const [paxName, setPaxName] = useState('');
   const [paxPhone, setPaxPhone] = useState('');
   const [paxCount, setPaxCount] = useState(1);
@@ -207,16 +208,42 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     await loadData();
   };
 
+  const resetPassengerForm = () => {
+    setEditingPassengerId(null);
+    setPaxName(''); setPaxPhone(''); setPaxCount(1); setPaxNotes(''); setPaxAge('');
+    setPaxHasMinor(false); setPaxMinorName(''); setPaxMinorAge(''); setPaxDietary('');
+    setPaxMedical(''); setPaxCustomPrice(''); setPaxEmergencyPhone('');
+    setPaxIsGroupBooking(false); setPaxCompanyName(''); setPaxGroupMembersText('');
+  };
+
+  const handleOpenEditPassenger = (p: Passenger) => {
+    setEditingPassengerId(p.id);
+    setPaxName(p.full_name);
+    setPaxPhone(p.phone);
+    setPaxCount(p.pax_count);
+    setPaxNotes(p.notes || '');
+    setPaxAge(p.age !== undefined ? String(p.age) : '');
+    setPaxHasMinor(!!p.has_minor);
+    setPaxMinorName(p.minor_name || '');
+    setPaxMinorAge(p.minor_age !== undefined ? String(p.minor_age) : '');
+    setPaxDietary(p.dietary_restrictions || '');
+    setPaxMedical(p.medical_issues || '');
+    setPaxEmergencyPhone(p.emergency_phone || '');
+    setPaxCustomPrice(p.custom_price !== undefined ? String(p.custom_price) : '');
+    setPaxIsGroupBooking(!!p.is_group_booking);
+    setPaxCompanyName(p.company_name || '');
+    setPaxGroupMembersText(p.group_members_text || '');
+    setIsAddPassengerOpen(true);
+  };
+
   const handleAddPassenger = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDeparture) return;
     if (!paxName || !paxPhone) { notifyWarning('Nombre y celular son requeridos.'); return; }
-    await db.createPassenger({
-      departure_id: selectedDeparture.id,
+    const passengerData = {
       full_name: paxName,
       phone: paxPhone,
       pax_count: Number(paxCount),
-      checked_in: false,
       notes: paxNotes,
       age: paxAge ? Number(paxAge) : undefined,
       has_minor: paxHasMinor,
@@ -229,12 +256,18 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       is_group_booking: paxIsGroupBooking,
       company_name: paxIsGroupBooking && paxCompanyName ? paxCompanyName : undefined,
       group_members_text: paxIsGroupBooking && paxGroupMembersText ? paxGroupMembersText : undefined,
-    });
+    };
+    if (editingPassengerId) {
+      await db.updatePassenger(editingPassengerId, passengerData);
+    } else {
+      await db.createPassenger({
+        departure_id: selectedDeparture.id,
+        checked_in: false,
+        ...passengerData,
+      });
+    }
     setIsAddPassengerOpen(false);
-    setPaxName(''); setPaxPhone(''); setPaxCount(1); setPaxNotes(''); setPaxAge('');
-    setPaxHasMinor(false); setPaxMinorName(''); setPaxMinorAge(''); setPaxDietary('');
-    setPaxMedical(''); setPaxCustomPrice(''); setPaxEmergencyPhone('');
-    setPaxIsGroupBooking(false); setPaxCompanyName(''); setPaxGroupMembersText('');
+    resetPassengerForm();
     await loadData();
   };
 
@@ -383,6 +416,13 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {isAdmin && (
+                      <button onClick={(e) => { e.stopPropagation(); handleOpenEditPassenger(p); }}
+                        title="Editar datos del pasajero"
+                        className="p-1 rounded border bg-white hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/#/firma/${p.id}`); notifySuccess('Enlace copiado al portapapeles'); }}
                       className="p-1 rounded border bg-white hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors">
                       <Copy className="w-3.5 h-3.5" />
@@ -392,7 +432,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                         target="_blank" rel="noopener noreferrer"
                         title="Pedir firma de ficha de riesgo por WhatsApp"
                         className="p-1 rounded border bg-white hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors">
-                        <Pencil className="w-3.5 h-3.5" />
+                        <PenTool className="w-3.5 h-3.5" />
                       </a>
                     )}
                     <a href={dep.status === 'cancelada' ? getPassengerCancellationLink(p, dep, activeAct) : getPassengerReminderLink(p, dep, activeAct, (agency?.subscription_plan || 'free') !== 'free' ? agency?.whatsapp_template : undefined)}
@@ -412,7 +452,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         </div>
 
         {dep.status !== 'cancelada' && dep.status !== 'finalizada' && (
-          <button onClick={(e) => { e.stopPropagation(); setIsAddPassengerOpen(true); }}
+          <button onClick={(e) => { e.stopPropagation(); resetPassengerForm(); setIsAddPassengerOpen(true); }}
             className="mt-2 w-full py-2 border-2 border-dashed border-sky hover:border-pine text-ocean hover:text-pine font-semibold rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors">
             <Plus className="w-4 h-4" /> Registrar Pasajero
           </button>
@@ -730,9 +770,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       {/* MODAL: Add Passenger */}
       {isAddPassengerOpen && selectedDeparture && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-          <div className="absolute inset-0" onClick={() => setIsAddPassengerOpen(false)} />
+          <div className="absolute inset-0" onClick={() => { setIsAddPassengerOpen(false); resetPassengerForm(); }} />
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 z-10">
-            <h3 className="font-display font-medium text-lg text-pine mb-4">Registrar Pasajero</h3>
+            <h3 className="font-display font-medium text-lg text-pine mb-4">{editingPassengerId ? 'Editar Pasajero' : 'Registrar Pasajero'}</h3>
             <form onSubmit={handleAddPassenger} className="flex flex-col gap-4">
               <label className="flex items-center gap-2 cursor-pointer bg-sky/20 border border-sky rounded-xl px-3 py-2">
                 <input type="checkbox" checked={paxIsGroupBooking} onChange={(e) => setPaxIsGroupBooking(e.target.checked)} className="rounded text-pine" />
@@ -791,8 +831,8 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
               <textarea value={paxNotes} onChange={(e) => setPaxNotes(e.target.value)} placeholder="Notas..."
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-14 resize-none" />
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setIsAddPassengerOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">Registrar</button>
+                <button type="button" onClick={() => { setIsAddPassengerOpen(false); resetPassengerForm(); }} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
+                <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">{editingPassengerId ? 'Guardar Cambios' : 'Registrar'}</button>
               </div>
             </form>
           </div>
