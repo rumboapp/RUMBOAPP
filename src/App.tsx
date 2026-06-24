@@ -362,8 +362,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#E8F1F7] flex flex-col items-center justify-center font-sans">
-        <Compass className="w-12 h-12 text-[#1F4D3A] animate-spin mb-4" />
+      <div className="min-h-screen bg-sky flex flex-col items-center justify-center font-sans">
+        <Compass className="w-12 h-12 text-pine animate-spin mb-4" />
         <h2 className="text-pine font-display font-semibold text-lg">Iniciando Rumbo...</h2>
         <p className="text-xs text-gray-500 mt-1">Conectando con Supabase...</p>
       </div>
@@ -373,17 +373,17 @@ function AppContent() {
   // 1. PUBLIC AUTHENTICATION SCREENS
   if (!user) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-emerald-900 via-emerald-800 to-green-700 font-sans flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-white/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#0F6BA8]/10 blur-3xl pointer-events-none" />
+      <div className="w-full min-h-screen bg-sky font-sans flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] blob bg-pine/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] blob bg-ocean/15 blur-3xl pointer-events-none" />
 
         <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-150 relative z-10">
           <div className="text-center mb-6 border-b border-gray-100 pb-5">
-            <div className="w-12 h-12 bg-[#1F4D3A] text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+            <div className="w-12 h-12 blob bg-pine text-white flex items-center justify-center mx-auto mb-3 shadow-md">
               <Compass className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-display font-black text-[#1F4D3A] tracking-tight">Rumbo</h1>
-            <p className="text-[10px] text-[#0F6BA8] font-bold tracking-wider uppercase mt-1">Gestión & Logística de Aventura</p>
+            <h1 className="text-2xl font-serif text-pine tracking-tight">Rumbo</h1>
+            <p className="text-[10px] text-ocean font-bold tracking-wider uppercase mt-1">Gestión & Logística de Aventura</p>
           </div>
 
 
@@ -404,7 +404,7 @@ function AppContent() {
                     <div className="flex justify-between items-baseline mb-1">
                       <label className="text-xs font-semibold text-gray-700">Contraseña:</label>
                       <button type="button" onClick={() => { setAuthView('forgot'); navigateToHash('#/forgot-password'); }}
-                        className="text-[11px] text-[#0F6BA8] hover:underline cursor-pointer font-bold">¿Olvidaste tu clave?</button>
+                        className="text-[11px] text-ocean hover:underline cursor-pointer font-bold">¿Olvidaste tu clave?</button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
@@ -422,7 +422,7 @@ function AppContent() {
                   <p>¿Quieres registrar una nueva agencia? <button onClick={() => { setAuthView('register'); navigateToHash('#/register'); }}
                     className="font-bold text-pine hover:underline cursor-pointer">Registrar Agencia</button></p>
                   <p>¿Eres un guía? <button onClick={() => { setAuthView('join-guide'); navigateToHash('#/join-guide'); }}
-                    className="font-bold text-[#0F6BA8] hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto mt-1">
+                    className="font-bold text-ocean hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto mt-1">
                     <UserPlus className="w-4 h-4" /> Unirme como Guía</button></p>
                 </div>
 
@@ -483,7 +483,7 @@ function AppContent() {
                       <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="text-pine font-semibold underline">Política de Privacidad</a> de Rumbo.
                     </span>
                   </label>
-                  <button type="submit" disabled={isRegisterLogoUploading} className="w-full py-3 bg-[#1F4D3A] hover:bg-[#173b2c] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="submit" disabled={isRegisterLogoUploading} className="w-full py-3 bg-pine hover:bg-pine-hover text-white rounded-xl text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     {isRegisterLogoUploading ? 'Subiendo logo...' : 'Crear Agencia & Cuenta'}
                   </button>
                 </form>
@@ -626,10 +626,10 @@ function AppContent() {
   // 2. LOGGED IN WITHOUT AGENCY
   if (!agency) {
     return (
-      <div className="min-h-screen bg-[#E8F1F7] flex items-center justify-center p-4 font-sans">
+      <div className="min-h-screen bg-sky flex items-center justify-center p-4 font-sans">
         <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-xl">
           <div className="text-center mb-6">
-            <Building className="w-12 h-12 text-[#1F4D3A] mx-auto mb-3" />
+            <Building className="w-12 h-12 text-pine mx-auto mb-3" />
             <h2 className="text-2xl font-display font-bold text-pine">Sin Agencia asignada</h2>
             <p className="text-xs text-gray-500 mt-1">Crea una agencia o únete a una existente.</p>
           </div>
@@ -650,7 +650,7 @@ function AppContent() {
   // 2.2 GUIDE NOT APPROVED
   if (!isGuideApproved) {
     return (
-      <div className="min-h-screen bg-[#E8F1F7] flex items-center justify-center p-4 font-sans">
+      <div className="min-h-screen bg-sky flex items-center justify-center p-4 font-sans">
         <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-xl text-center">
           <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8" />
@@ -669,65 +669,65 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-sky flex flex-col md:flex-row font-sans">
       {/* SIDEBAR DESKTOP */}
-      <aside className="hidden md:flex md:w-64 bg-sky text-gray-850 flex-col justify-between p-5 shrink-0">
+      <aside className="hidden md:flex md:w-64 bg-sage text-white flex-col justify-between p-5 shrink-0">
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 blob bg-pine flex items-center justify-center">
+            <div className="w-10 h-10 blob bg-white/15 flex items-center justify-center">
               <Compass className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="font-serif text-xl text-pine block">Rumbo</span>
-              <span className="text-[10px] text-gray-451 font-bold block uppercase tracking-widest">Aventura</span>
+              <span className="font-serif text-xl text-white block">Rumbo</span>
+              <span className="text-[10px] text-white/60 font-bold block uppercase tracking-widest">Aventura</span>
             </div>
           </div>
 
           <nav className="flex flex-col gap-1.5">
             <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
               <LayoutDashboard className="w-4 h-4" /> Operaciones Diarias
             </button>
             <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
               <ActivitiesIcon className="w-4 h-4" /> Catálogo Actividades
             </button>
             <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
               <Users className="w-4 h-4" /> Equipo de Guías
             </button>
             {isAdmin && (
               <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-pine text-white font-bold' : 'text-gray-505 hover:bg-sky-80'}`}>
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-sky text-pine font-bold' : 'text-white/75 hover:bg-white/10'}`}>
                 <LineChart className="w-4 h-4" /> Métricas / Reportes
               </button>
             )}
             {isAdmin && (
               <button onClick={() => setIsPricingModalOpen(true)}
-                className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-gray-505 hover:bg-sky-80">
-                <Sparkles className="w-4 h-4 text-orange-850" /> Planes y Suscripción
+                className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/75 hover:bg-white/10">
+                <Sparkles className="w-4 h-4 text-yellow-101" /> Planes y Suscripción
               </button>
             )}
             <button onClick={() => setIsDownloadModalOpen(true)}
-              className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-pine hover:bg-sky-80">
+              className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
               <Smartphone className="w-4 h-4" /> Descargar App
             </button>
           </nav>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-gray-405/30 pt-4">
-          <div onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2.5 hover:bg-sky-80 p-1.5 rounded-2xl cursor-pointer transition-colors">
+        <div className="flex flex-col gap-4 border-t border-white/15 pt-4">
+          <div onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2.5 hover:bg-white/10 p-1.5 rounded-2xl cursor-pointer transition-colors">
             {user.avatar_url ? (
-              <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-xl object-cover border border-gray-405/30" />
+              <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-xl object-cover border border-white/25" />
             ) : (
-              <div className="w-8 h-8 rounded-xl bg-pine/10 flex items-center justify-center font-bold text-xs text-pine">
+              <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center font-bold text-xs text-white">
                 {user.full_name?.substr(0, 2).toUpperCase() || 'US'}
               </div>
             )}
             <div className="truncate text-left">
-              <p className="text-xs font-bold text-gray-850 flex items-center gap-1">{user.full_name}<UserCheck className="w-3 h-3 text-ocean" /></p>
-              <span className="text-[10px] text-gray-451 block">{isAdmin ? '👑 Administrador' : '🧭 Guía'}</span>
+              <p className="text-xs font-bold text-white flex items-center gap-1">{user.full_name}<UserCheck className="w-3 h-3 text-sky" /></p>
+              <span className="text-[10px] text-white/60 block">{isAdmin ? '👑 Administrador' : '🧭 Guía'}</span>
             </div>
           </div>
-          <button onClick={signOut} className="flex items-center justify-center gap-2 py-2 px-3 bg-sky-80 hover:bg-red-650/10 text-gray-505 rounded-2xl text-xs font-semibold cursor-pointer transition-colors">
+          <button onClick={signOut} className="flex items-center justify-center gap-2 py-2 px-3 bg-white/10 hover:bg-red-650/40 text-white rounded-2xl text-xs font-semibold cursor-pointer transition-colors">
             <LogOut className="w-4 h-4" /> Cerrar Sesión
           </button>
         </div>
