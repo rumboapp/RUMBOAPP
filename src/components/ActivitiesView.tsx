@@ -136,7 +136,7 @@ export default function ActivitiesView() {
             <span className="font-semibold text-gray-500 bg-gray-50 border px-2.5 py-0.5 rounded-full">
               {activities.length} de {agency?.subscription_plan === 'pro' ? 50 : agency?.subscription_plan === 'premium' ? 10 : 3}
             </span>
-            {isAdmin && (
+            {isAdmin && agency?.subscription_plan !== 'pro' && (
               <button onClick={() => window.dispatchEvent(new Event('rumbo_open_pricing'))}
                 className="text-pine font-bold hover:underline flex items-center gap-0.5 cursor-pointer transition-colors">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Subir de Plan
