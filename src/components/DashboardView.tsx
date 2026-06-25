@@ -192,10 +192,41 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     }
   };
 
+  const WEEKLY_DEPARTURE_LIMITS: Record<string, number> = { free: 5, premium: Infinity, pro: Infinity };
+
+  const getWeekRange = (dateStr: string): [string, string] => {
+    const d = new Date(`${dateStr}T00:00:00`);
+    const day = d.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const toStr = (dt: Date) => dt.toISOString().split('T')[0];
+    return [toStr(monday), toStr(sunday)];
+  };
+
   const handleSubmitDeparture = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newActivityId) { notifyWarning('Selecciona una actividad.'); return; }
     const scheduledDate = newDepartureDate || selectedDate;
+
+    if (!editingDepartureId) {
+      const plan = agency?.subscription_plan || 'free';
+      const limit = WEEKLY_DEPARTURE_LIMITS[plan] ?? WEEKLY_DEPARTURE_LIMITS.free;
+      if (Number.isFinite(limit)) {
+        const [weekStart, weekEnd] = getWeekRange(scheduledDate);
+        const departuresThisWeek = departures.filter(
+          dep => dep.departure_date >= weekStart && dep.departure_date <= weekEnd
+        ).length;
+        if (departuresThisWeek >= limit) {
+          notifyWarning(`Tu plan Free permite agendar hasta ${limit} salidas por semana. Sube de plan para agendar más.`);
+          window.dispatchEvent(new Event('rumbo_open_pricing'));
+          return;
+        }
+      }
+    }
+
     if (editingDepartureId) {
       await db.updateDeparture(editingDepartureId, {
         activity_id: newActivityId,

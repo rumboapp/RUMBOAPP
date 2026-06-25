@@ -63,7 +63,7 @@ export function getSupabaseErrorMessage(error: any): string {
   if (msg.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos.';
   if (msg.includes('Email not confirmed')) return 'Tu correo no ha sido confirmado. Revisa tu bandeja de entrada.';
   if (msg.includes('User already registered')) return 'Este correo ya está registrado. Intenta iniciar sesión.';
-  if (msg.includes('Password should be at least 6 characters')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (msg.includes('Password should be at least 8 characters')) return 'La contraseña debe tener al menos 8 caracteres.';
   if (msg.includes('Unable to validate')) return 'Datos de acceso inválidos.';
   return msg;
 }

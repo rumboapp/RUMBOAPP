@@ -233,8 +233,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'Por favor completa todos los campos.' };
     }
 
-    if (pass.length < 6) {
-      return { success: false, error: 'La contraseña debe tener al menos 6 caracteres.' };
+    if (pass.length < 8) {
+      return { success: false, error: 'La contraseña debe tener al menos 8 caracteres.' };
     }
 
     setLoading(true);
@@ -332,8 +332,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'Por favor completa todos los campos.' };
     }
 
-    if (pass.length < 6) {
-      return { success: false, error: 'La contraseña debe tener al menos 6 caracteres.' };
+    if (pass.length < 8) {
+      return { success: false, error: 'La contraseña debe tener al menos 8 caracteres.' };
     }
 
     setLoading(true);
