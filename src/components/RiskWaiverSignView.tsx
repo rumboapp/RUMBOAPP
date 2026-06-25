@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/db';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useNotification } from '../lib/notification-context';
 import { Passenger, Departure, Activity } from '../types';
 import { ShieldCheck, PenTool, Check } from 'lucide-react';
@@ -21,17 +22,27 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
   const [signature, setSignature] = useState('');
   const [isSigned, setIsSigned] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const loadData = async () => {
-    const p = await db.getPassenger(passengerId);
-    if (!p) return;
-    setPassenger(p);
-    const d = await db.getDeparture(p.departure_id);
-    if (d) setDeparture(d);
-    if (d) {
-      const a = await db.getActivity(d.activity_id);
-      if (a) setActivity(a);
+    if (!isSupabaseConfigured || !supabase) {
+      const p = await db.getPassenger(passengerId);
+      if (!p) { setLoadError(true); return; }
+      setPassenger(p);
+      const d = await db.getDeparture(p.departure_id);
+      if (d) setDeparture(d);
+      if (d) {
+        const a = await db.getActivity(d.activity_id);
+        if (a) setActivity(a);
+      }
+      return;
     }
+
+    const { data, error } = await supabase.rpc('get_passenger_for_signature', { p_passenger_id: passengerId });
+    if (error || !data) { setLoadError(true); return; }
+    setPassenger(data.passenger);
+    setDeparture(data.departure);
+    setActivity(data.activity);
   };
 
   useEffect(() => {
@@ -41,14 +52,35 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
   const handleSign = async () => {
     if (!signature.trim()) { notifyWarning('Por favor ingresa tu nombre completo como firma.'); return; }
     setIsSubmitting(true);
-    await db.updatePassenger(passengerId, {
-      signed_risk_waiver: true,
-      signature_data: signature,
-      signed_at: new Date().toISOString()
-    });
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.rpc('sign_risk_waiver', { p_passenger_id: passengerId, p_signature: signature });
+      if (error) {
+        notifyWarning('No se pudo registrar la firma. Intenta nuevamente.');
+        setIsSubmitting(false);
+        return;
+      }
+    } else {
+      await db.updatePassenger(passengerId, {
+        signed_risk_waiver: true,
+        signature_data: signature,
+        signed_at: new Date().toISOString()
+      });
+    }
     setIsSigned(true);
     setIsSubmitting(false);
   };
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#E8F1F7] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 shadow-xl text-center max-w-sm">
+          <ShieldCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-gray-500">No pudimos cargar esta declaración de riesgo.</p>
+          <p className="text-xs text-gray-400 mt-2">El enlace puede haber expirado o ser inválido. Contacta a la agencia para que te reenvíe el link.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!passenger || !departure || !activity) {
     return (
