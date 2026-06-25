@@ -112,6 +112,16 @@ export default function ActivitiesView() {
   };
 
   const handleToggleActive = async (act: Activity) => {
+    if (!act.active) {
+      const currentPlan = agency?.subscription_plan || 'free';
+      const planLimits = { free: 3, premium: 10, pro: 50 };
+      const limit = planLimits[currentPlan as keyof typeof planLimits] || 3;
+      const activeCount = activities.filter(a => a.active).length;
+      if (activeCount >= limit) {
+        notifyWarning(`Tu plan ${currentPlan} permite hasta ${limit} actividades activas. Pausa otra o mejora tu plan para activar esta.`);
+        return;
+      }
+    }
     await db.updateActivity(act.id, { active: !act.active });
     await loadActivities();
   };

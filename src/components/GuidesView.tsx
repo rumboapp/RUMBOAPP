@@ -107,6 +107,16 @@ export default function GuidesView() {
   };
 
   const handleToggleActive = async (g: Guide) => {
+    if (!g.active) {
+      const currentPlan = agency?.subscription_plan || 'free';
+      const planLimits = { free: 2, premium: 20, pro: 100 };
+      const limit = planLimits[currentPlan as keyof typeof planLimits] || 2;
+      const activeCount = guides.filter(x => x.active).length;
+      if (activeCount >= limit) {
+        notifyWarning(`Tu plan ${currentPlan} permite hasta ${limit} guías activos. Pausa otro o mejora tu plan para activar este.`);
+        return;
+      }
+    }
     await db.updateGuide(g.id, { active: !g.active });
     await loadData();
   };
