@@ -28,6 +28,9 @@ import {
   Smartphone, Tablet, Plus, History, FlaskConical
 } from 'lucide-react';
 
+const isPasswordValid = (pass: string) => pass.length >= 8 && /[a-zA-Z]/.test(pass) && /[0-9]/.test(pass);
+const PASSWORD_HINT = 'La contraseña debe tener al menos 8 caracteres, incluyendo letras y números.';
+
 function AppContent() {
   const {
     user, agency, role, isAdmin, loading, isDemoMode, signOut, signIn, signUpAdmin, signUpGuide, refreshAgency
@@ -282,8 +285,8 @@ function AppContent() {
       notifyWarning('Por favor completa todos los campos.');
       return;
     }
-    if (password.length < 8) {
-      notifyWarning('La contraseña debe tener al menos 8 caracteres.');
+    if (!isPasswordValid(password)) {
+      notifyWarning(PASSWORD_HINT);
       return;
     }
     if (!acceptedTermsAdmin) {
@@ -311,8 +314,8 @@ function AppContent() {
       notifyWarning('Por favor completa todos los campos.');
       return;
     }
-    if (password.length < 8) {
-      notifyWarning('La contraseña debe tener al menos 8 caracteres.');
+    if (!isPasswordValid(password)) {
+      notifyWarning(PASSWORD_HINT);
       return;
     }
     if (!acceptedTermsGuide) {
@@ -350,8 +353,8 @@ function AppContent() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetPasswordState || resetPasswordState.length < 8) {
-      notifyWarning('La contraseña debe tener al menos 8 caracteres.');
+    if (!isPasswordValid(resetPasswordState)) {
+      notifyWarning(PASSWORD_HINT);
       return;
     }
 
@@ -477,7 +480,7 @@ function AppContent() {
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1">Contraseña (mín. 6):</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">Contraseña (mín. 8, con letras y números):</label>
                     <input type="password" required minLength={8} placeholder="******" value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
@@ -542,7 +545,7 @@ function AppContent() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1">Contraseña (mín. 6):</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">Contraseña (mín. 8, con letras y números):</label>
                     <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
@@ -592,7 +595,7 @@ function AppContent() {
               <div className="flex flex-col gap-5 text-left">
                 <h3 className="font-display font-semibold text-2xl text-pine">Nueva Contraseña</h3>
                 <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
-                  <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" value={resetPasswordState} onChange={(e) => setResetPasswordState(e.target.value)}
+                  <input type="password" required minLength={8} placeholder="Mín. 8 caracteres, con letras y números" value={resetPasswordState} onChange={(e) => setResetPasswordState(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none" />
                   <button type="submit" className="w-full py-3 bg-pine text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
                     Actualizar Contraseña
