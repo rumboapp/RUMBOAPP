@@ -59,10 +59,10 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
       features: [
         'Hasta 3 actividades / excursiones',
         'Hasta 2 guías de turismo activos',
-        'Métricas limitadas a totales del día',
-        'Salidas y reservas de pasajeros ilimitadas',
-        'Widget de Clima básico para Puerto Varas',
-        'Envío individual de WhatsApps manuales'
+        'Hasta 5 salidas programadas por semana',
+        'Reportes y métricas básicas',
+        'Historial de pasajeros con vista bloqueada',
+        'Widget de clima y exportación de listados de pasajeros'
       ],
       color: 'border-gray-200 bg-white text-gray-800',
       badgeColor: 'bg-gray-100 text-gray-600',
@@ -78,10 +78,10 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
       features: [
         'Hasta 10 actividades / excursiones',
         'Hasta 20 guías de turismo en plantel',
-        'Filtro avanzado por rango de fechas',
-        'Métricas históricas y gráficos de rendimiento',
-        'Visualización fluida de pasajeros recurrentes',
-        'Soporte prioritario por correo electrónico'
+        'Salidas semanales ilimitadas',
+        'Reportes avanzados: desempeño por guía, demografía y tendencias',
+        'Historial de pasajeros sin restricciones',
+        'Plantillas personalizadas de WhatsApp por actividad'
       ],
       color: 'border-pine bg-pine/5 ring-2 ring-pine/20 relative',
       badgeColor: 'bg-pine text-white',
@@ -97,11 +97,11 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
       guidesLimit: 100,
       features: [
         'Hasta 50 actividades / excursiones',
-        'Hasta 100 guías de turismo con aprobación',
-        'Métricas totales y reportes exportables',
-        'Exportación masiva a planillas Excel y PDF',
-        'Personalización de logotipo e imagen de marca',
-        'Soporte prioritario 24/7 y asistencia remota'
+        'Hasta 100 guías de turismo en plantel',
+        'Salidas semanales ilimitadas',
+        'Todos los reportes y analíticas avanzadas',
+        'Historial de pasajeros sin restricciones',
+        'Plantillas personalizadas de WhatsApp por actividad'
       ],
       color: 'border-indigo-150 bg-indigo-50/25 hover:border-indigo-300 transition-colors',
       badgeColor: 'bg-indigo-600 text-white',

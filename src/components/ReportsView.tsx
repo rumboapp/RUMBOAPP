@@ -189,7 +189,7 @@ export default function ReportsView() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
-          {isFreePlan && renderLockOverlay('pro')}
+          {isFreePlan && renderLockOverlay('premium')}
           <h3 className="font-semibold text-pine text-md flex items-center gap-2"><Baby className="w-5 h-5" /> Demografía</h3>
           <div className="flex flex-col gap-4 mt-5">
             <div className="flex justify-between border-b border-gray-50 pb-2"><span className="text-xs">Adultos</span><strong className="text-sm font-mono">{totalAdultsCount}</strong></div>
@@ -201,7 +201,7 @@ export default function ReportsView() {
           </div>
         </div>
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
-          {isFreePlan && renderLockOverlay('pro')}
+          {isFreePlan && renderLockOverlay('premium')}
           <h3 className="font-semibold text-pine text-md flex items-center gap-2"><CalendarDays className="w-5 h-5" /> Fechas de Mayor Volumen</h3>
           <div className="flex flex-col gap-3.5 mt-5">
             {sortedDates.length === 0 ? <p className="text-xs text-center py-8">Sin datos</p> : sortedDates.map((item, dIdx) => {
@@ -216,7 +216,7 @@ export default function ReportsView() {
           </div>
         </div>
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
-          {isFreePlan && renderLockOverlay('pro')}
+          {isFreePlan && renderLockOverlay('premium')}
           <h3 className="font-semibold text-pine text-md flex items-center gap-2"><HeartPulse className="w-5 h-5 text-rose-500" /> Alertas de Salud</h3>
           <div className="grid grid-cols-2 gap-2 mt-4">
             <div className="p-2.5 rounded-xl bg-rose-50 text-rose-800 border"><strong className="text-lg font-mono">{medicalAlertsList.length}</strong><span className="text-[9px] block">Avisos Médicos</span></div>
