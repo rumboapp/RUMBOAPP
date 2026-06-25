@@ -14,7 +14,7 @@ import { Activity, Departure, Passenger, Guide } from '../types';
 import { 
   Calendar, Clock, User, Phone, Users, Check, X, Eye, FileSpreadsheet, Printer, CloudSun,
   MapPin, ClipboardList, Plus, ArrowRight, Send, AlertTriangle, ShieldCheck,
-  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight, Trash2
+  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight, Trash2, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -67,6 +67,18 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [paxIsGroupBooking, setPaxIsGroupBooking] = useState(false);
   const [paxCompanyName, setPaxCompanyName] = useState('');
   const [paxGroupMembersText, setPaxGroupMembersText] = useState('');
+  const [paxRutPassport, setPaxRutPassport] = useState('');
+  const [paxNationality, setPaxNationality] = useState('');
+  const [paxEmergencyContactName, setPaxEmergencyContactName] = useState('');
+  const [paxPreviousExperience, setPaxPreviousExperience] = useState(false);
+  const [paxPreviousExperienceDetail, setPaxPreviousExperienceDetail] = useState('');
+  const [paxAllergies, setPaxAllergies] = useState('');
+  const [paxContraindicatedMeds, setPaxContraindicatedMeds] = useState('');
+  const [paxRecentInjuries, setPaxRecentInjuries] = useState('');
+  const [paxPregnancy, setPaxPregnancy] = useState(false);
+  const [paxHeartConditions, setPaxHeartConditions] = useState(false);
+  const [paxPersonalInsurance, setPaxPersonalInsurance] = useState('');
+  const [isWaiverSectionOpen, setIsWaiverSectionOpen] = useState(false);
 
   const loadData = async () => {
     if (!agencyId) return;
@@ -259,6 +271,11 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     setPaxHasMinor(false); setPaxMinorName(''); setPaxMinorAge(''); setPaxDietary('');
     setPaxMedical(''); setPaxCustomPrice(''); setPaxEmergencyPhone('');
     setPaxIsGroupBooking(false); setPaxCompanyName(''); setPaxGroupMembersText('');
+    setPaxRutPassport(''); setPaxNationality(''); setPaxEmergencyContactName('');
+    setPaxPreviousExperience(false); setPaxPreviousExperienceDetail('');
+    setPaxAllergies(''); setPaxContraindicatedMeds(''); setPaxRecentInjuries('');
+    setPaxPregnancy(false); setPaxHeartConditions(false); setPaxPersonalInsurance('');
+    setIsWaiverSectionOpen(false);
   };
 
   const handleOpenEditPassenger = (p: Passenger) => {
@@ -278,6 +295,17 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     setPaxIsGroupBooking(!!p.is_group_booking);
     setPaxCompanyName(p.company_name || '');
     setPaxGroupMembersText(p.group_members_text || '');
+    setPaxRutPassport(p.rut_passport || '');
+    setPaxNationality(p.nationality || '');
+    setPaxEmergencyContactName(p.emergency_contact_name || '');
+    setPaxPreviousExperience(!!p.previous_experience);
+    setPaxPreviousExperienceDetail(p.previous_experience_detail || '');
+    setPaxAllergies(p.allergies || '');
+    setPaxContraindicatedMeds(p.contraindicated_medications || '');
+    setPaxRecentInjuries(p.recent_injuries || '');
+    setPaxPregnancy(!!p.pregnancy);
+    setPaxHeartConditions(!!p.heart_conditions);
+    setPaxPersonalInsurance(p.personal_insurance || '');
     setIsAddPassengerOpen(true);
   };
 
@@ -301,6 +329,17 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
       is_group_booking: paxIsGroupBooking,
       company_name: paxIsGroupBooking && paxCompanyName ? paxCompanyName : undefined,
       group_members_text: paxIsGroupBooking && paxGroupMembersText ? paxGroupMembersText : undefined,
+      rut_passport: paxRutPassport || undefined,
+      nationality: paxNationality || undefined,
+      emergency_contact_name: paxEmergencyContactName || undefined,
+      previous_experience: paxPreviousExperience,
+      previous_experience_detail: paxPreviousExperience && paxPreviousExperienceDetail ? paxPreviousExperienceDetail : undefined,
+      allergies: paxAllergies || undefined,
+      contraindicated_medications: paxContraindicatedMeds || undefined,
+      recent_injuries: paxRecentInjuries || undefined,
+      pregnancy: paxPregnancy,
+      heart_conditions: paxHeartConditions,
+      personal_insurance: paxPersonalInsurance || undefined,
     };
     if (editingPassengerId) {
       await db.updatePassenger(editingPassengerId, passengerData);
@@ -917,6 +956,54 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
               )}
               <textarea value={paxNotes} onChange={(e) => setPaxNotes(e.target.value)} placeholder="Notas..."
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-14 resize-none" />
+
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setIsWaiverSectionOpen(!isWaiverSectionOpen)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
+                  <span className="text-xs font-semibold text-gray-600 flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> Datos de salud y declaración de riesgo (opcional)</span>
+                  {isWaiverSectionOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                </button>
+                {isWaiverSectionOpen && (
+                  <div className="p-3 flex flex-col gap-3">
+                    <p className="text-[9px] text-gray-400">Si dejas estos campos vacíos, el pasajero podrá completarlos él mismo al firmar la declaración de riesgo.</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" placeholder="RUT o Pasaporte" value={paxRutPassport} onChange={(e) => setPaxRutPassport(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                      <input type="text" placeholder="Nacionalidad" value={paxNationality} onChange={(e) => setPaxNationality(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                    </div>
+                    <input type="text" placeholder="Nombre contacto de emergencia" value={paxEmergencyContactName} onChange={(e) => setPaxEmergencyContactName(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={paxPreviousExperience} onChange={(e) => setPaxPreviousExperience(e.target.checked)} className="rounded text-pine" />
+                      <span className="text-xs font-semibold">Tiene experiencia previa en la actividad</span>
+                    </label>
+                    {paxPreviousExperience && (
+                      <input type="text" placeholder="Detalle de la experiencia" value={paxPreviousExperienceDetail} onChange={(e) => setPaxPreviousExperienceDetail(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                    )}
+                    <input type="text" placeholder="Alergias" value={paxAllergies} onChange={(e) => setPaxAllergies(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                    <input type="text" placeholder="Medicamentos contraindicados" value={paxContraindicatedMeds} onChange={(e) => setPaxContraindicatedMeds(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                    <input type="text" placeholder="Cirugías recientes o lesiones" value={paxRecentInjuries} onChange={(e) => setPaxRecentInjuries(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={paxPregnancy} onChange={(e) => setPaxPregnancy(e.target.checked)} className="rounded text-pine" />
+                        <span className="text-xs font-semibold">Embarazo</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={paxHeartConditions} onChange={(e) => setPaxHeartConditions(e.target.checked)} className="rounded text-pine" />
+                        <span className="text-xs font-semibold">Problemas cardíacos</span>
+                      </label>
+                    </div>
+                    <input type="text" placeholder="Seguro personal (opcional)" value={paxPersonalInsurance} onChange={(e) => setPaxPersonalInsurance(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => { setIsAddPassengerOpen(false); resetPassengerForm(); }} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>
                 <button type="submit" className="px-4 py-2 bg-pine text-white text-xs font-semibold rounded-xl cursor-pointer hover:bg-pine-hover transition-colors">{editingPassengerId ? 'Guardar Cambios' : 'Registrar'}</button>

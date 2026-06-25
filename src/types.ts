@@ -100,6 +100,17 @@ export interface Passenger {
   is_group_booking?: boolean;
   company_name?: string;
   group_members_text?: string;
+  rut_passport?: string;
+  nationality?: string;
+  emergency_contact_name?: string;
+  previous_experience?: boolean;
+  previous_experience_detail?: string;
+  allergies?: string;
+  contraindicated_medications?: string;
+  recent_injuries?: string;
+  pregnancy?: boolean;
+  heart_conditions?: boolean;
+  personal_insurance?: string;
 }
 
 export interface Notification {
