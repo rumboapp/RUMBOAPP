@@ -157,14 +157,21 @@ Deno.serve(async (req: Request) => {
       subscriptionStatus = 'cancelled';
     }
 
+    // Si la agencia paga de verdad, limpiamos cualquier trial gratuito pendiente:
+    // así el cron que revierte trials vencidos nunca le baja el plan a un cliente que ya paga.
+    const agencyUpdate: Record<string, unknown> = {
+      subscription_plan: subscriptionPlan,
+      subscription_status: subscriptionStatus,
+      mp_preapproval_id: preapprovalId,
+      updated_at: new Date().toISOString(),
+    };
+    if (mpStatus === 'authorized') {
+      agencyUpdate.trial_expires_at = null;
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('agencies')
-      .update({
-        subscription_plan: subscriptionPlan,
-        subscription_status: subscriptionStatus,
-        mp_preapproval_id: preapprovalId,
-        updated_at: new Date().toISOString(),
-      })
+      .update(agencyUpdate)
       .eq('id', agencyId);
 
     if (updateError) {

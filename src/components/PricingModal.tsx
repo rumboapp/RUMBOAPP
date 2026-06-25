@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { supabase } from '../lib/supabaseClient';
 import { useNotification } from '../lib/notification-context';
-import { Check, Sparkles, HelpCircle, X, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
+import { Check, Sparkles, HelpCircle, X, CreditCard, ExternalLink, Loader2, Gift } from 'lucide-react';
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -12,14 +12,41 @@ interface PricingModalProps {
 
 export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: PricingModalProps) {
   const { agency, user, refreshAgency } = useAuth();
-  const { notifyError } = useNotification();
+  const { notifyError, notifySuccess, notifyWarning } = useNotification();
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<'premium' | 'pro' | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   if (!isOpen || !agency) return null;
 
   const currentPlan = agency.subscription_plan || 'free';
+  const trialActive = !!agency.trial_expires_at && new Date(agency.trial_expires_at) > new Date();
+
+  const handleRedeemCode = async () => {
+    if (!supabase || !promoCode.trim()) return;
+    setIsRedeeming(true);
+    try {
+      const { data, error } = await supabase.rpc('redeem_promo_code', {
+        p_agency_id: agency.id,
+        p_code: promoCode.trim().toUpperCase(),
+      });
+      if (error || !data?.success) {
+        notifyWarning(data?.message || 'Código inválido, expirado o ya utilizado por tu agencia.');
+        setIsRedeeming(false);
+        return;
+      }
+      notifySuccess(data.message || '¡Código aplicado! Tu plan se actualizó.');
+      setPromoCode('');
+      await refreshAgency();
+    } catch (err) {
+      console.error('Error inesperado redimiendo código:', err);
+      notifyError('No se pudo aplicar el código. Intenta nuevamente.');
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
 
   const PLAN_DETAILS = [
     {
@@ -216,6 +243,43 @@ export function PricingModal({ isOpen, onClose, highlightedRequiredTier }: Prici
           </div>
         ) : (
           <>
+            {/* TRIAL ACTIVE BANNER */}
+            {trialActive && (
+              <div className="bg-amber-50 border border-amber-150 rounded-2xl p-4 mb-6 flex items-center gap-3 text-xs text-amber-800">
+                <Gift className="w-5 h-5 text-amber-600 shrink-0" />
+                <span>
+                  Estás en periodo de prueba gratuita hasta el{' '}
+                  <strong>{new Date(agency.trial_expires_at!).toLocaleDateString('es-CL')}</strong>. Al finalizar, tu agencia vuelve automáticamente al Plan Gratuito salvo que te suscribas antes.
+                </span>
+              </div>
+            )}
+
+            {/* PROMO CODE REDEMPTION */}
+            {!trialActive && currentPlan === 'free' && (
+              <div className="bg-pine/5 border border-pine/15 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center gap-3">
+                <Gift className="w-5 h-5 text-pine shrink-0" />
+                <span className="text-xs text-gray-700 flex-1 text-center sm:text-left">¿Tienes un código de prueba gratuita? Canjéalo aquí.</span>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    placeholder="CÓDIGO"
+                    disabled={isRedeeming}
+                    className="flex-1 sm:w-32 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold uppercase outline-none focus:border-pine"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRedeemCode}
+                    disabled={isRedeeming || !promoCode.trim()}
+                    className="px-4 py-2 bg-pine text-white rounded-xl text-xs font-bold hover:bg-pine-hover disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  >
+                    {isRedeeming ? 'Validando...' : 'Canjear'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* PRICING PLANS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {PLAN_DETAILS.map((plan) => {
