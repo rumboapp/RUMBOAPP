@@ -172,10 +172,15 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Error al actualizar la agencia' }), { status: 500 });
     }
 
-    // Si el plan bajó (o quedó en free por cancelación/pausa), pausamos el
-    // excedente de actividades/guías por sobre el nuevo límite, para evitar
-    // que se aproveche un plan superior temporal y se conserve el cupo extra.
-    await enforcePlanLimits(supabaseAdmin, agencyId, subscriptionPlan);
+    // Pausamos el excedente sobre el nuevo límite en cualquier cambio de
+    // estado confirmado (autorizado, cancelado o pausado) — cubre tanto la
+    // baja a Free (cancelled/paused) como la baja de Pro a Premium (una
+    // nueva suscripción que queda "authorized" con un monto menor).
+    // Nunca se aplica en "pending": ahí "free" es solo un estado transitorio
+    // mientras se confirma el primer pago, no una baja de plan real.
+    if (mpStatus === 'authorized' || mpStatus === 'cancelled' || mpStatus === 'paused') {
+      await enforcePlanLimits(supabaseAdmin, agencyId, subscriptionPlan);
+    }
 
     console.log(`Agencia ${agencyId} actualizada: plan=${subscriptionPlan} status=${subscriptionStatus}`);
     return new Response(JSON.stringify({ received: true, agencyId, subscriptionPlan, subscriptionStatus }), { status: 200 });
