@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-export const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 export async function uploadImageToStorage(file: File, folder: string): Promise<string> {
   if (!supabase) throw new Error('Supabase no está configurado.');

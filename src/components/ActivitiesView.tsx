@@ -193,18 +193,31 @@ export default function ActivitiesView() {
               <input type="text" required placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
               <textarea required placeholder="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs h-20 resize-none" />
               <div className="grid grid-cols-2 gap-3">
-                <input type="number" required min={30} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" placeholder="Duración (min)" />
-                <input type="number" required min={1} max={100} value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" placeholder="Capacidad" />
+                <div>
+                  <label className="text-[10px] font-semibold text-gray-500 block mb-1">Duración (minutos)</label>
+                  <input type="number" required min={30} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" placeholder="Duración (min)" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-gray-500 block mb-1">Capacidad máxima (pax)</label>
+                  <input type="number" required min={1} max={100} value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" placeholder="Capacidad" />
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
+                  <label className="text-[10px] font-semibold text-gray-500 block mb-1">Precio</label>
                   <input type="number" required min={100} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" placeholder="Precio" />
                 </div>
+                <div>
+                <label className="text-[10px] font-semibold text-gray-500 block mb-1">Moneda</label>
                 <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs">
                   <option value="CLP">CLP</option><option value="ARS">ARS</option><option value="USD">USD</option>
                 </select>
+                </div>
               </div>
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 block mb-1">Punto de encuentro</label>
               <input type="text" required placeholder="Punto de encuentro" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+              </div>
               <div className="relative">
                 <label className="text-[10px] font-semibold text-gray-500 block mb-1">Plantilla WhatsApp de esta actividad (opcional)</label>
                 <WhatsappTemplateEditor value={wspTemplate} onChange={setWspTemplate} disabled={isFreePlan} />
