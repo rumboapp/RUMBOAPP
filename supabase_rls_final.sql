@@ -228,3 +228,62 @@ end;
 $$;
 
 grant execute on function complete_guide_signup(text, text, text, text, text, text) to anon, authenticated;
+
+-- ──────────────────────────────────────────────
+-- 10) Función RPC para completar el registro de un admin/agencia
+-- (SECURITY DEFINER: corre aunque la sesión todavía no esté
+-- activa por falta de confirmación de email, igual que
+-- complete_guide_signup).
+-- ──────────────────────────────────────────────
+create or replace function complete_admin_signup(
+  p_user_id text,
+  p_email text,
+  p_full_name text,
+  p_agency_name text,
+  p_city text,
+  p_latitude numeric,
+  p_longitude numeric,
+  p_logo_url text default ''
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_agency_id text;
+  v_join_code text;
+  v_notif_id text;
+begin
+  if not exists (select 1 from auth.users where id = p_user_id::uuid) then
+    raise exception 'Usuario no encontrado';
+  end if;
+
+  insert into users (id, email, full_name, avatar_url)
+  values (p_user_id, lower(trim(p_email)), p_full_name, coalesce(p_logo_url, ''))
+  on conflict (id) do update set email = excluded.email, full_name = excluded.full_name;
+
+  if exists (select 1 from agencies where owner_id = p_user_id) then
+    select id into v_agency_id from agencies where owner_id = p_user_id limit 1;
+    return json_build_object('success', true, 'already_owner', true, 'agency_id', v_agency_id);
+  end if;
+
+  v_agency_id := 'agc-' || substr(md5(random()::text), 1, 9);
+  v_join_code := upper(substr(regexp_replace(p_agency_name, '[^A-Za-z0-9]', '', 'g'), 1, 4)) || floor(1000 + random() * 9000)::text;
+
+  insert into agencies (id, owner_id, name, join_code, logo_url, city, latitude, longitude, subscription_plan, created_at, updated_at)
+  values (
+    v_agency_id, p_user_id, p_agency_name, v_join_code,
+    coalesce(nullif(p_logo_url, ''), 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=150'),
+    p_city, p_latitude, p_longitude, 'free', now(), now()
+  );
+
+  v_notif_id := 'not-' || substr(md5(random()::text), 1, 9);
+  insert into notifications (id, agency_id, kind, title, message, read, created_at)
+  values (v_notif_id, v_agency_id, 'system', '¡Bienvenido a Rumbo!', 'Tu agencia ' || p_agency_name || ' ha sido creada. Código de guías: ' || v_join_code, false, now());
+
+  return json_build_object('success', true, 'agency_id', v_agency_id, 'join_code', v_join_code);
+end;
+$$;
+
+grant execute on function complete_admin_signup(text, text, text, text, text, numeric, numeric, text) to anon, authenticated;
