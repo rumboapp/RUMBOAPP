@@ -18,6 +18,7 @@ export interface Agency {
   latitude: number;
   longitude: number;
   subscription_plan?: 'free' | 'premium' | 'pro';
+  trial_expires_at?: string | null;
   whatsapp_template?: string;
   is_demo?: boolean;
   created_at: string;
