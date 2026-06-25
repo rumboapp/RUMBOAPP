@@ -269,68 +269,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userId = authData.user.id;
       const emailConfirmationRequired = !authData.session;
 
-      // 2. El trigger on_auth_user_created ya crea el perfil en public.users con
-      // privilegios elevados (SECURITY DEFINER), así que esperamos un momento y
-      // luego intentamos un upsert best-effort solo por si el trigger no corrió.
-      // No bloqueamos el registro si esto falla por RLS (sesión aún sin confirmar).
-      await new Promise(r => setTimeout(r, 600));
-
-      const { error: userError } = await supabase.from('users').upsert({
-        id: userId,
-        email: email.toLowerCase().trim(),
-        full_name: name,
-        avatar_url: logoUrl || ''
-      });
-
-      if (userError) {
-        console.warn('No se pudo actualizar el perfil en users (el trigger ya debería haberlo creado):', userError);
-      }
-
-      // 4. Crear la agencia
-      const joinCode = agencyName.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() + 
-                       Math.floor(1000 + Math.random() * 9000);
-
+      // 2-5. Crear perfil, agencia y notificación de bienvenida vía función
+      // RPC con privilegios elevados: funciona aunque todavía no exista
+      // sesión (email sin confirmar) y no depende de RLS, igual que
+      // complete_guide_signup para el flujo de guías.
       const { getCoordinatesForCity } = await import('./cities');
       const coords = getCoordinatesForCity(city);
 
-      const newAgency = {
-        id: 'agc-' + Math.random().toString(36).substr(2, 9),
-        owner_id: userId,
-        name: agencyName,
-        join_code: joinCode,
-        logo_url: logoUrl || 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=150',
-        city: city,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        subscription_plan: 'free',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const { error: rpcError } = await supabase.rpc('complete_admin_signup', {
+        p_user_id: userId,
+        p_email: email.toLowerCase().trim(),
+        p_full_name: name,
+        p_agency_name: agencyName,
+        p_city: city,
+        p_latitude: coords.latitude,
+        p_longitude: coords.longitude,
+        p_logo_url: logoUrl || ''
+      });
 
-      const { error: agencyError } = await supabase.from('agencies').insert(newAgency);
-
-      if (agencyError) {
-        console.error('Error creando agencia:', agencyError);
+      if (rpcError) {
+        console.error('Error completando registro de agencia:', rpcError);
         setLoading(false);
         return {
           success: false,
-          error: `Error al registrar tu agencia en la tabla 'agencies': ${agencyError.message}. Verifica que ejecutaras el script de /supabase_schema.sql.`
+          error: `Error al registrar tu agencia: ${rpcError.message}`
         };
-      }
-
-      // 5. Crear notificación de bienvenida
-      const { error: notifError } = await supabase.from('notifications').insert({
-        id: 'not-' + Math.random().toString(36).substr(2, 9),
-        agency_id: newAgency.id,
-        kind: 'system',
-        title: '¡Bienvenido a Rumbo!',
-        message: `Tu agencia ${agencyName} ha sido creada. Código de guías: ${joinCode}`,
-        read: false,
-        created_at: new Date().toISOString()
-      });
-
-      if (notifError) {
-        console.warn('Advertencia al insertar notificación inicial:', notifError);
       }
 
       if (emailConfirmationRequired) {
