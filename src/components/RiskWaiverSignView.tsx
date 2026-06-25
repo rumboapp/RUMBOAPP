@@ -24,11 +24,22 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
+  const [rutPassport, setRutPassport] = useState('');
+  const [nationality, setNationality] = useState('');
+  const [previousExperience, setPreviousExperience] = useState(false);
+  const [previousExperienceDetail, setPreviousExperienceDetail] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [contraindicatedMeds, setContraindicatedMeds] = useState('');
+  const [recentInjuries, setRecentInjuries] = useState('');
+  const [pregnancy, setPregnancy] = useState(false);
+  const [heartConditions, setHeartConditions] = useState(false);
+  const [personalInsurance, setPersonalInsurance] = useState('');
+
   const loadData = async () => {
     if (!isSupabaseConfigured || !supabase) {
       const p = await db.getPassenger(passengerId);
       if (!p) { setLoadError(true); return; }
-      setPassenger(p);
+      applyPassenger(p);
       const d = await db.getDeparture(p.departure_id);
       if (d) setDeparture(d);
       if (d) {
@@ -40,9 +51,23 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
 
     const { data, error } = await supabase.rpc('get_passenger_for_signature', { p_passenger_id: passengerId });
     if (error || !data) { setLoadError(true); return; }
-    setPassenger(data.passenger);
+    applyPassenger(data.passenger);
     setDeparture(data.departure);
     setActivity(data.activity);
+  };
+
+  const applyPassenger = (p: Passenger) => {
+    setPassenger(p);
+    setRutPassport(p.rut_passport || '');
+    setNationality(p.nationality || '');
+    setPreviousExperience(!!p.previous_experience);
+    setPreviousExperienceDetail(p.previous_experience_detail || '');
+    setAllergies(p.allergies || '');
+    setContraindicatedMeds(p.contraindicated_medications || '');
+    setRecentInjuries(p.recent_injuries || '');
+    setPregnancy(!!p.pregnancy);
+    setHeartConditions(!!p.heart_conditions);
+    setPersonalInsurance(p.personal_insurance || '');
   };
 
   useEffect(() => {
@@ -50,10 +75,25 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
   }, [passengerId]);
 
   const handleSign = async () => {
+    if (!rutPassport.trim()) { notifyWarning('Por favor ingresa tu RUT o pasaporte.'); return; }
+    if (!nationality.trim()) { notifyWarning('Por favor ingresa tu nacionalidad.'); return; }
     if (!signature.trim()) { notifyWarning('Por favor ingresa tu nombre completo como firma.'); return; }
     setIsSubmitting(true);
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.rpc('sign_risk_waiver', { p_passenger_id: passengerId, p_signature: signature });
+      const { error } = await supabase.rpc('sign_risk_waiver', {
+        p_passenger_id: passengerId,
+        p_signature: signature,
+        p_rut_passport: rutPassport,
+        p_nationality: nationality,
+        p_previous_experience: previousExperience,
+        p_previous_experience_detail: previousExperienceDetail || null,
+        p_allergies: allergies || null,
+        p_contraindicated_medications: contraindicatedMeds || null,
+        p_recent_injuries: recentInjuries || null,
+        p_pregnancy: pregnancy,
+        p_heart_conditions: heartConditions,
+        p_personal_insurance: personalInsurance || null,
+      });
       if (error) {
         notifyWarning('No se pudo registrar la firma. Intenta nuevamente.');
         setIsSubmitting(false);
@@ -63,7 +103,17 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
       await db.updatePassenger(passengerId, {
         signed_risk_waiver: true,
         signature_data: signature,
-        signed_at: new Date().toISOString()
+        signed_at: new Date().toISOString(),
+        rut_passport: rutPassport,
+        nationality: nationality,
+        previous_experience: previousExperience,
+        previous_experience_detail: previousExperienceDetail || undefined,
+        allergies: allergies || undefined,
+        contraindicated_medications: contraindicatedMeds || undefined,
+        recent_injuries: recentInjuries || undefined,
+        pregnancy,
+        heart_conditions: heartConditions,
+        personal_insurance: personalInsurance || undefined,
       });
     }
     setIsSigned(true);
@@ -121,16 +171,80 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
           </div>
         </div>
 
+        {/* 1. Datos del participante */}
+        <div className="mb-5">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Datos del participante / Participant details</p>
+          <div className="grid grid-cols-1 gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
+            <p className="text-xs text-gray-700"><span className="font-semibold">Nombre completo:</span> {passenger.full_name}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">RUT o Pasaporte *</label>
+                <input type="text" value={rutPassport} onChange={(e) => setRutPassport(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="12.345.678-9" />
+              </div>
+              <div>
+                <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Nacionalidad *</label>
+                <input type="text" value={nationality} onChange={(e) => setNationality(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Chilena" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Declaración de salud y experiencia */}
+        <div className="mb-5">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Declaración de salud y experiencia / Health &amp; experience</p>
+          <div className="flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={previousExperience} onChange={(e) => setPreviousExperience(e.target.checked)} className="rounded text-pine" />
+              <span className="text-xs text-gray-700">Tengo experiencia previa en esta actividad</span>
+            </label>
+            {previousExperience && (
+              <input type="text" value={previousExperienceDetail} onChange={(e) => setPreviousExperienceDetail(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Cuéntanos brevemente" />
+            )}
+            <div>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Alergias</label>
+              <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguna" />
+            </div>
+            <div>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Medicamentos contraindicados</label>
+              <input type="text" value={contraindicatedMeds} onChange={(e) => setContraindicatedMeds(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguno" />
+            </div>
+            <div>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Operaciones recientes o lesiones</label>
+              <input type="text" value={recentInjuries} onChange={(e) => setRecentInjuries(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguna" />
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={pregnancy} onChange={(e) => setPregnancy(e.target.checked)} className="rounded text-pine" />
+                <span className="text-xs text-gray-700">Embarazo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={heartConditions} onChange={(e) => setHeartConditions(e.target.checked)} className="rounded text-pine" />
+                <span className="text-xs text-gray-700">Problemas cardíacos</span>
+              </label>
+            </div>
+            <div>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Seguro personal</label>
+              <input type="text" value={personalInsurance} onChange={(e) => setPersonalInsurance(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Opcional" />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Aceptación de riesgo */}
         <div className="bg-gray-50 rounded-2xl p-4 text-xs text-gray-700 leading-relaxed mb-6 border border-gray-100">
-          <p className="font-bold mb-2">Por favor lee cuidadosamente:</p>
-          <p>Yo, <strong>{passenger.full_name}</strong>, declaro que participo voluntariamente en la actividad de aventura <strong>{activity.name}</strong> organizada por <strong>Rumbo</strong>.</p>
-          <p className="mt-2">Entiendo los riesgos inherentes y declaro que:</p>
-          <ul className="list-disc ml-4 mt-1 space-y-1">
-            <li>Mi estado de salud permite participar.</li>
-            <li>Asumo la responsabilidad por mi participación.</li>
-            <li>Autorizo atención médica de emergencia si es necesario.</li>
-            <li>Libero a la agencia de responsabilidad por riesgos inherentes.</li>
-          </ul>
+          <p className="font-bold mb-2">Aceptación de riesgo / Risk acceptance:</p>
+          <p>
+            Yo, <strong>{passenger.full_name}</strong>, declaro que he sido informado detalladamente sobre los riesgos que implica la actividad <strong>{activity.name}</strong> (caídas, condiciones climáticas cambiantes, fatiga, inmersión en agua, entre otros), organizada por <strong>Rumbo</strong>. Declaro estar en condiciones físicas y psíquicas compatibles con la actividad. Me comprometo a seguir estrictamente las instrucciones del guía y utilizar el equipo de seguridad proporcionado. El prestador no se hace responsable por conductas temerarias o incumplimiento de instrucciones.
+          </p>
+          <p className="mt-2 text-gray-500">
+            I declare that I have been informed in detail about the risks involved in this activity (falls, changing weather conditions, fatigue, water immersion, among others). I declare that I am in physical and mental conditions compatible with the activity. I agree to strictly follow the guide's instructions and use the provided safety equipment. The provider is not responsible for reckless behavior or failure to follow instructions.
+          </p>
         </div>
 
         <div className="mb-4">
@@ -146,10 +260,6 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
           className="w-full py-3.5 bg-pine text-white rounded-xl text-sm font-bold shadow-md hover:bg-[#173b2c] disabled:opacity-50 transition-all">
           {isSubmitting ? 'Procesando...' : 'Confirmar y Firmar'}
         </button>
-
-        <p className="text-[10px] text-gray-400 text-center mt-4">
-          Este documento tiene validez legal. Fecha: {new Date().toLocaleDateString('es-AR')}
-        </p>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import { useAuth } from '../lib/auth-context';
 import { Departure, Passenger, Activity, Guide } from '../types';
-import { History, Search, Building2, Sparkles, CalendarRange } from 'lucide-react';
+import { History, Search, Building2, Sparkles, CalendarRange, ShieldCheck, X, Check } from 'lucide-react';
 
 type QuickRange = 'all' | 'today' | 'week' | 'month' | 'custom';
 
@@ -27,6 +27,7 @@ export default function PassengerHistoryView() {
   const [activityFilter, setActivityFilter] = useState('all');
   const [companyFilter, setCompanyFilter] = useState('');
   const [searchName, setSearchName] = useState('');
+  const [fichaPassenger, setFichaPassenger] = useState<Passenger | null>(null);
 
   const loadData = async () => {
     if (!agencyId) return;
@@ -150,6 +151,7 @@ export default function PassengerHistoryView() {
                     <th className="text-left px-4 py-3">Guía</th>
                     <th className="text-left px-4 py-3">Empresa</th>
                     <th className="text-left px-4 py-3">Pax</th>
+                    <th className="text-left px-4 py-3">Ficha</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -162,6 +164,16 @@ export default function PassengerHistoryView() {
                       <td className="px-4 py-3 text-gray-500">{getDepartureGuideNames(departure)}</td>
                       <td className="px-4 py-3 text-gray-500">{passenger.company_name || '—'}</td>
                       <td className="px-4 py-3"><span className="bg-sky text-ocean font-bold px-2 py-0.5 rounded-full">{passenger.pax_count}</span></td>
+                      <td className="px-4 py-3">
+                        {passenger.signed_risk_waiver ? (
+                          <button onClick={() => setFichaPassenger(passenger)}
+                            className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg cursor-pointer hover:bg-emerald-100 transition-colors">
+                            <ShieldCheck className="w-3.5 h-3.5" /> Ver ficha
+                          </button>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-gray-400">Pendiente</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -179,6 +191,41 @@ export default function PassengerHistoryView() {
           </div>
         )}
       </div>
+
+      {fichaPassenger && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-y-auto">
+          <div className="absolute inset-0" onClick={() => setFichaPassenger(null)} />
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 z-10 my-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-medium text-lg text-pine flex items-center gap-2"><ShieldCheck className="w-5 h-5" /> Ficha de Declaración de Riesgo</h3>
+              <button onClick={() => setFichaPassenger(null)} className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"><X className="w-4 h-4 text-gray-400" /></button>
+            </div>
+            <div className="flex flex-col gap-4 text-xs">
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-2 gap-2">
+                <p><span className="font-semibold text-gray-500">Nombre:</span> {fichaPassenger.full_name}</p>
+                <p><span className="font-semibold text-gray-500">RUT/Pasaporte:</span> {fichaPassenger.rut_passport || '—'}</p>
+                <p><span className="font-semibold text-gray-500">Nacionalidad:</span> {fichaPassenger.nationality || '—'}</p>
+                <p><span className="font-semibold text-gray-500">Contacto emergencia:</span> {fichaPassenger.emergency_contact_name || '—'}</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col gap-1.5">
+                <p className="font-semibold text-gray-500 uppercase text-[9px] tracking-wide mb-1">Salud y experiencia</p>
+                <p><span className="font-semibold text-gray-500">Experiencia previa:</span> {fichaPassenger.previous_experience ? `Sí — ${fichaPassenger.previous_experience_detail || ''}` : 'No'}</p>
+                <p><span className="font-semibold text-gray-500">Alergias:</span> {fichaPassenger.allergies || '—'}</p>
+                <p><span className="font-semibold text-gray-500">Medicamentos contraindicados:</span> {fichaPassenger.contraindicated_medications || '—'}</p>
+                <p><span className="font-semibold text-gray-500">Operaciones/lesiones recientes:</span> {fichaPassenger.recent_injuries || '—'}</p>
+                <p><span className="font-semibold text-gray-500">Embarazo:</span> {fichaPassenger.pregnancy ? 'Sí' : 'No'}</p>
+                <p><span className="font-semibold text-gray-500">Problemas cardíacos:</span> {fichaPassenger.heart_conditions ? 'Sí' : 'No'}</p>
+                <p><span className="font-semibold text-gray-500">Seguro personal:</span> {fichaPassenger.personal_insurance || '—'}</p>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex flex-col gap-1.5">
+                <p className="font-semibold text-emerald-700 uppercase text-[9px] tracking-wide flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Firma</p>
+                <p className="font-semibold text-gray-800">{fichaPassenger.signature_data || '—'}</p>
+                <p className="text-[10px] text-gray-500">Firmado el {fichaPassenger.signed_at ? new Date(fichaPassenger.signed_at).toLocaleString('es-CL') : '—'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

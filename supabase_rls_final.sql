@@ -345,3 +345,69 @@ end;
 $$;
 
 grant execute on function sign_risk_waiver(text, text) to anon, authenticated;
+
+-- ──────────────────────────────────────────────
+-- 12) Campos ampliados de la ficha de declaración de riesgo
+-- (RUT/Pasaporte, nacionalidad, salud, seguro, experiencia previa)
+-- ──────────────────────────────────────────────
+alter table passengers add column if not exists rut_passport text;
+alter table passengers add column if not exists nationality text;
+alter table passengers add column if not exists emergency_contact_name text;
+alter table passengers add column if not exists previous_experience boolean;
+alter table passengers add column if not exists previous_experience_detail text;
+alter table passengers add column if not exists allergies text;
+alter table passengers add column if not exists contraindicated_medications text;
+alter table passengers add column if not exists recent_injuries text;
+alter table passengers add column if not exists pregnancy boolean;
+alter table passengers add column if not exists heart_conditions boolean;
+alter table passengers add column if not exists personal_insurance text;
+
+-- sign_risk_waiver ahora también guarda los datos que el pasajero
+-- completa en el momento de firmar, si no venían precargados por el admin.
+create or replace function sign_risk_waiver(
+  p_passenger_id text,
+  p_signature text,
+  p_rut_passport text default null,
+  p_nationality text default null,
+  p_emergency_contact_name text default null,
+  p_previous_experience boolean default null,
+  p_previous_experience_detail text default null,
+  p_allergies text default null,
+  p_contraindicated_medications text default null,
+  p_recent_injuries text default null,
+  p_pregnancy boolean default null,
+  p_heart_conditions boolean default null,
+  p_personal_insurance text default null
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update passengers
+  set signed_risk_waiver = true,
+      signature_data = p_signature,
+      signed_at = now(),
+      rut_passport = coalesce(p_rut_passport, rut_passport),
+      nationality = coalesce(p_nationality, nationality),
+      emergency_contact_name = coalesce(p_emergency_contact_name, emergency_contact_name),
+      previous_experience = coalesce(p_previous_experience, previous_experience),
+      previous_experience_detail = coalesce(p_previous_experience_detail, previous_experience_detail),
+      allergies = coalesce(p_allergies, allergies),
+      contraindicated_medications = coalesce(p_contraindicated_medications, contraindicated_medications),
+      recent_injuries = coalesce(p_recent_injuries, recent_injuries),
+      pregnancy = coalesce(p_pregnancy, pregnancy),
+      heart_conditions = coalesce(p_heart_conditions, heart_conditions),
+      personal_insurance = coalesce(p_personal_insurance, personal_insurance)
+  where id = p_passenger_id;
+
+  if not found then
+    raise exception 'Pasajero no encontrado';
+  end if;
+
+  return json_build_object('success', true);
+end;
+$$;
+
+grant execute on function sign_risk_waiver(text, text, text, text, text, boolean, text, text, text, text, boolean, boolean, text) to anon, authenticated;
