@@ -750,6 +750,9 @@ function AppContent() {
           <button onClick={signOut} className="flex items-center justify-center gap-2 py-2 px-3 bg-white/10 hover:bg-red-650/40 text-white rounded-2xl text-xs font-semibold cursor-pointer transition-colors">
             <LogOut className="w-4 h-4" /> Cerrar Sesión
           </button>
+          <a href="mailto:rumboaplicacion@gmail.com" className="text-[9px] text-white/30 text-center hover:text-white/60 transition-colors">
+            Soporte: rumboaplicacion@gmail.com
+          </a>
         </div>
       </aside>
 
