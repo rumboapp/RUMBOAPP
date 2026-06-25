@@ -52,8 +52,7 @@ export function getPassengerReminderLink(passenger: Passenger, departure: Depart
 🚢 *Excursión:* ${activity.name}
 📅 *Fecha:* ${dateStr}
 ⏰ *Hora:* ${departure.departure_time}hs
-📍 *Punto de encuentro:* ${activity.meeting_point}
-👥 *Lugar para:* ${passenger.pax_count} pax ${passenger.notes ? `\n📝 *Nota:* ${passenger.notes}` : ''}
+📍 *Punto de encuentro:* ${activity.meeting_point}${passenger.notes ? `\n📝 *Nota:* ${passenger.notes}` : ''}
 
 ¡Recomendamos llegar 15 minutos antes! Ante cualquier duda puedes responder a este mensaje.`;
   }

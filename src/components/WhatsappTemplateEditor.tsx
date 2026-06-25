@@ -12,7 +12,6 @@ const PLACEHOLDERS: { tag: string; label: string; sample: string }[] = [
   { tag: '{fecha}', label: 'Fecha', sample: '24/06' },
   { tag: '{hora}', label: 'Hora', sample: '09:00' },
   { tag: '{punto_encuentro}', label: 'Punto de encuentro', sample: 'Oficina Rumbo Puerto Varas' },
-  { tag: '{pasajeros}', label: 'Cant. de pax', sample: '2' },
 ];
 
 const DEFAULT_TEMPLATE = `Hola *{pasajero}*, te recordamos tu excursión con *Rumbo*:
@@ -21,7 +20,6 @@ const DEFAULT_TEMPLATE = `Hola *{pasajero}*, te recordamos tu excursión con *Ru
 📅 Fecha: {fecha}
 ⏰ Hora: {hora}hs
 📍 Punto de encuentro: {punto_encuentro}
-👥 Lugar para: {pasajeros} pax
 
 ¡Te esperamos!`;
 

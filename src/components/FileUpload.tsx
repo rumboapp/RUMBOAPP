@@ -25,7 +25,7 @@ export function FileUpload({ onUpload, currentUrl, placeholderText = "Arrastra u
       return;
     }
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      notifyWarning('La imagen supera los 2MB permitidos. Elige una imagen más liviana.');
+      notifyWarning('La imagen supera los 5MB permitidos. Elige una imagen más liviana.');
       return;
     }
 
