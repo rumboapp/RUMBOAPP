@@ -3,6 +3,7 @@
 // Esto evita que sigan cobrando a una agencia que decidió volver al plan gratuito desde la app.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { enforcePlanLimits } from '../_shared/planLimits.ts';
 
 const MP_ACCESS_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -48,6 +49,7 @@ Deno.serve(async (req: Request) => {
         .from('agencies')
         .update({ subscription_plan: 'free', subscription_status: 'free' })
         .eq('id', agencyId);
+      await enforcePlanLimits(supabaseAdmin, agencyId, 'free');
       return new Response(JSON.stringify({ success: true, message: 'Sin suscripción activa que cancelar' }), {
         status: 200,
         headers: CORS_HEADERS,
@@ -75,6 +77,7 @@ Deno.serve(async (req: Request) => {
       .from('agencies')
       .update({ subscription_plan: 'free', subscription_status: 'cancelled' })
       .eq('id', agencyId);
+    await enforcePlanLimits(supabaseAdmin, agencyId, 'free');
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: CORS_HEADERS });
 

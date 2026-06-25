@@ -3,6 +3,7 @@
 // (autorizada, cancelada, pago realizado, etc.) y actualiza la agencia correspondiente.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { enforcePlanLimits } from '../_shared/planLimits.ts';
 
 const MP_ACCESS_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')!;
 const MP_WEBHOOK_SECRET = Deno.env.get('MP_WEBHOOK_SECRET')!;
@@ -132,6 +133,11 @@ Deno.serve(async (req: Request) => {
       console.error('Error actualizando agencia:', updateError);
       return new Response(JSON.stringify({ error: 'Error al actualizar la agencia' }), { status: 500 });
     }
+
+    // Si el plan bajó (o quedó en free por cancelación/pausa), pausamos el
+    // excedente de actividades/guías por sobre el nuevo límite, para evitar
+    // que se aproveche un plan superior temporal y se conserve el cupo extra.
+    await enforcePlanLimits(supabaseAdmin, agencyId, subscriptionPlan);
 
     console.log(`Agencia ${agencyId} actualizada: plan=${subscriptionPlan} status=${subscriptionStatus}`);
     return new Response(JSON.stringify({ received: true, agencyId, subscriptionPlan, subscriptionStatus }), { status: 200 });
