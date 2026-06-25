@@ -182,6 +182,18 @@ export default function LegalView({ section }: LegalViewProps) {
                 cuenta, antes de participar en la actividad correspondiente.
               </p>
               <p>
+                La Ficha de Riesgo responde a una exigencia reglamentaria de SERNATUR para los prestadores de
+                turismo aventura, cuya finalidad es que el Pasajero declare estar en conocimiento de que la
+                actividad contratada conlleva riesgos inherentes, y que acepta participar en ella en dicho
+                conocimiento. La Ficha de Riesgo no constituye, por sí sola, una renuncia de derechos ni una
+                exoneración total de responsabilidad de la Agencia frente al Pasajero, y su valor probatorio
+                concreto dependerá de las circunstancias del caso y de lo que resuelva la autoridad o tribunal
+                competente. No obstante, contar con la Ficha de Riesgo correctamente completada y firmada
+                constituye un respaldo documental relevante para la Agencia ante eventuales reclamos, quejas o
+                fiscalizaciones, al acreditar que el Pasajero fue informado de los riesgos de la actividad de
+                forma previa a su participación.
+              </p>
+              <p>
                 La firma digital implementada en la Plataforma constituye una manifestación de voluntad electrónica
                 del Pasajero respecto del contenido específico de la Ficha de Riesgo al momento de su firma,
                 incluyendo, sin limitación, la declaración de datos de salud, alergias, condiciones médicas
