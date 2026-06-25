@@ -287,3 +287,61 @@ end;
 $$;
 
 grant execute on function complete_admin_signup(text, text, text, text, text, numeric, numeric, text) to anon, authenticated;
+
+-- ──────────────────────────────────────────────
+-- 11) Funciones RPC para la página pública de firma de
+-- declaración de riesgo (la abre el pasajero vía WhatsApp,
+-- sin sesión iniciada, por lo que las policies normales de
+-- passengers/departures/activities no aplican).
+-- ──────────────────────────────────────────────
+create or replace function get_passenger_for_signature(p_passenger_id text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_passenger passengers;
+  v_departure departures;
+  v_activity activities;
+begin
+  select * into v_passenger from passengers where id = p_passenger_id;
+  if v_passenger is null then
+    return null;
+  end if;
+
+  select * into v_departure from departures where id = v_passenger.departure_id;
+  select * into v_activity from activities where id = v_departure.activity_id;
+
+  return json_build_object(
+    'passenger', row_to_json(v_passenger),
+    'departure', row_to_json(v_departure),
+    'activity', row_to_json(v_activity)
+  );
+end;
+$$;
+
+grant execute on function get_passenger_for_signature(text) to anon, authenticated;
+
+create or replace function sign_risk_waiver(p_passenger_id text, p_signature text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update passengers
+  set signed_risk_waiver = true,
+      signature_data = p_signature,
+      signed_at = now()
+  where id = p_passenger_id;
+
+  if not found then
+    raise exception 'Pasajero no encontrado';
+  end if;
+
+  return json_build_object('success', true);
+end;
+$$;
+
+grant execute on function sign_risk_waiver(text, text) to anon, authenticated;
