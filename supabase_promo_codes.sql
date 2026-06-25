@@ -19,7 +19,7 @@ create table if not exists promo_codes (
 -- 3. Registro de qué agencia ya usó qué código (evita reuso por la misma agencia)
 create table if not exists promo_code_redemptions (
   id uuid primary key default gen_random_uuid(),
-  agency_id uuid not null references agencies(id) on delete cascade,
+  agency_id text not null references agencies(id) on delete cascade,
   code text not null references promo_codes(code),
   redeemed_at timestamptz not null default now(),
   unique (agency_id, code)
@@ -38,7 +38,7 @@ values ('PRUEBA15', 'premium', 15, true)
 on conflict (code) do nothing;
 
 -- 5. RPC que valida y aplica el código (llamada desde la app)
-create or replace function redeem_promo_code(p_agency_id uuid, p_code text)
+create or replace function redeem_promo_code(p_agency_id text, p_code text)
 returns jsonb
 language plpgsql
 security definer
@@ -73,7 +73,7 @@ begin
 end;
 $$;
 
-grant execute on function redeem_promo_code(uuid, text) to authenticated;
+grant execute on function redeem_promo_code(text, text) to authenticated;
 
 -- 6. Función que revierte trials vencidos a Free y pausa el excedente,
 --    igual que una baja de plan real (misma lógica que enforcePlanLimits
