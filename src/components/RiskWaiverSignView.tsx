@@ -75,9 +75,9 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
   }, [passengerId]);
 
   const handleSign = async () => {
-    if (!rutPassport.trim()) { notifyWarning('Por favor ingresa tu RUT o pasaporte.'); return; }
-    if (!nationality.trim()) { notifyWarning('Por favor ingresa tu nacionalidad.'); return; }
-    if (!signature.trim()) { notifyWarning('Por favor ingresa tu nombre completo como firma.'); return; }
+    if (!rutPassport.trim()) { notifyWarning('Por favor ingresa tu RUT o pasaporte. / Please enter your ID or passport.'); return; }
+    if (!nationality.trim()) { notifyWarning('Por favor ingresa tu nacionalidad. / Please enter your nationality.'); return; }
+    if (!signature.trim()) { notifyWarning('Por favor ingresa tu nombre completo como firma. / Please enter your full name as a signature.'); return; }
     setIsSubmitting(true);
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.rpc('sign_risk_waiver', {
@@ -175,15 +175,15 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
         <div className="mb-5">
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Datos del participante / Participant details</p>
           <div className="grid grid-cols-1 gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
-            <p className="text-xs text-gray-700"><span className="font-semibold">Nombre completo:</span> {passenger.full_name}</p>
+            <p className="text-xs text-gray-700"><span className="font-semibold">Nombre completo / Full name:</span> {passenger.full_name}</p>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">RUT o Pasaporte *</label>
+                <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">RUT o Pasaporte / ID or Passport *</label>
                 <input type="text" value={rutPassport} onChange={(e) => setRutPassport(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="12.345.678-9" />
               </div>
               <div>
-                <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Nacionalidad *</label>
+                <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Nacionalidad / Nationality *</label>
                 <input type="text" value={nationality} onChange={(e) => setNationality(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Chilena" />
               </div>
@@ -197,41 +197,41 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
           <div className="flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={previousExperience} onChange={(e) => setPreviousExperience(e.target.checked)} className="rounded text-pine" />
-              <span className="text-xs text-gray-700">Tengo experiencia previa en esta actividad</span>
+              <span className="text-xs text-gray-700">Tengo experiencia previa en esta actividad / I have previous experience in this activity</span>
             </label>
             {previousExperience && (
               <input type="text" value={previousExperienceDetail} onChange={(e) => setPreviousExperienceDetail(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Cuéntanos brevemente" />
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Cuéntanos brevemente / Tell us briefly" />
             )}
             <div>
-              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Alergias</label>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Alergias / Allergies</label>
               <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguna" />
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguna / None" />
             </div>
             <div>
-              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Medicamentos contraindicados</label>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Medicamentos contraindicados / Contraindicated medications</label>
               <input type="text" value={contraindicatedMeds} onChange={(e) => setContraindicatedMeds(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguno" />
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguno / None" />
             </div>
             <div>
-              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Operaciones recientes o lesiones</label>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Operaciones recientes o lesiones / Recent surgeries or injuries</label>
               <input type="text" value={recentInjuries} onChange={(e) => setRecentInjuries(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguna" />
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Ninguna / None" />
             </div>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={pregnancy} onChange={(e) => setPregnancy(e.target.checked)} className="rounded text-pine" />
-                <span className="text-xs text-gray-700">Embarazo</span>
+                <span className="text-xs text-gray-700">Embarazo / Pregnancy</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={heartConditions} onChange={(e) => setHeartConditions(e.target.checked)} className="rounded text-pine" />
-                <span className="text-xs text-gray-700">Problemas cardíacos</span>
+                <span className="text-xs text-gray-700">Problemas cardíacos / Heart conditions</span>
               </label>
             </div>
             <div>
-              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Seguro personal</label>
+              <label className="text-[9px] font-semibold text-gray-400 uppercase block mb-0.5">Seguro personal / Personal insurance</label>
               <input type="text" value={personalInsurance} onChange={(e) => setPersonalInsurance(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Opcional" />
+                className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Opcional / Optional" />
             </div>
           </div>
         </div>
@@ -248,17 +248,17 @@ export default function RiskWaiverSignView({ passengerId }: RiskWaiverSignViewPr
         </div>
 
         <div className="mb-4">
-          <label className="text-xs font-semibold text-gray-700 block mb-2">Firma (escribe tu nombre completo):</label>
+          <label className="text-xs font-semibold text-gray-700 block mb-2">Firma (escribe tu nombre completo) / Signature (type your full name):</label>
           <div className="relative">
             <PenTool className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-            <input type="text" value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Nombre completo como firma digital"
+            <input type="text" value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Nombre completo como firma digital / Full name as digital signature"
               className="w-full border-2 border-gray-200 rounded-xl px-3 py-3 pl-10 text-sm font-semibold outline-none focus:border-pine focus:ring-2 focus:ring-pine/20" />
           </div>
         </div>
 
         <button onClick={handleSign} disabled={isSubmitting}
           className="w-full py-3.5 bg-pine text-white rounded-xl text-sm font-bold shadow-md hover:bg-[#173b2c] disabled:opacity-50 transition-all">
-          {isSubmitting ? 'Procesando...' : 'Confirmar y Firmar'}
+          {isSubmitting ? 'Procesando... / Processing...' : 'Confirmar y Firmar / Confirm and Sign'}
         </button>
       </div>
     </div>
