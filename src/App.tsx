@@ -221,7 +221,7 @@ function AppContent() {
         const tab = hash.replace('#/', '');
         const validTabs = ['dashboard', 'activities', 'guides', 'reports', 'history'];
         if (validTabs.includes(tab)) {
-          if (!isAdmin && tab === 'reports') {
+          if (!isAdmin && (tab === 'reports' || tab === 'history')) {
             setActiveTab('dashboard');
             navigateToHash('#/dashboard');
           } else {
@@ -282,8 +282,8 @@ function AppContent() {
       notifyWarning('Por favor completa todos los campos.');
       return;
     }
-    if (password.length < 6) {
-      notifyWarning('La contraseña debe tener al menos 6 caracteres.');
+    if (password.length < 8) {
+      notifyWarning('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
     if (!acceptedTermsAdmin) {
@@ -311,8 +311,8 @@ function AppContent() {
       notifyWarning('Por favor completa todos los campos.');
       return;
     }
-    if (password.length < 6) {
-      notifyWarning('La contraseña debe tener al menos 6 caracteres.');
+    if (password.length < 8) {
+      notifyWarning('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
     if (!acceptedTermsGuide) {
@@ -350,8 +350,8 @@ function AppContent() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetPasswordState || resetPasswordState.length < 6) {
-      notifyWarning('La contraseña debe tener al menos 6 caracteres.');
+    if (!resetPasswordState || resetPasswordState.length < 8) {
+      notifyWarning('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
@@ -414,10 +414,10 @@ function AppContent() {
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                      <input type={showPassword ? 'text' : 'password'} required placeholder="Mínimo 6 caracteres" value={password} onChange={(e) => setPassword(e.target.value)}
+                      <input type={showPassword ? 'text' : 'password'} required placeholder="Mínimo 8 caracteres" value={password} onChange={(e) => setPassword(e.target.value)}
                         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 pl-10 text-xs bg-white outline-none focus:ring-2 focus:ring-pine/30" />
                     </div>
-                    <p className="text-[10px] text-gray-400">La contraseña debe tener al menos 6 caracteres.</p>
+                    <p className="text-[10px] text-gray-400">La contraseña debe tener al menos 8 caracteres.</p>
                   </div>
                   <button type="submit" className="w-full py-3 bg-pine hover:bg-pine/90 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all">
                     Iniciar Sesión
@@ -478,7 +478,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Contraseña (mín. 6):</label>
-                    <input type="password" required minLength={6} placeholder="******" value={password} onChange={(e) => setPassword(e.target.value)}
+                    <input type="password" required minLength={8} placeholder="******" value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
                   <label className="flex items-start gap-2 cursor-pointer">
@@ -543,7 +543,7 @@ function AppContent() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1">Contraseña (mín. 6):</label>
-                    <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
+                    <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-pine/30" />
                   </div>
                   <label className="flex items-start gap-2 cursor-pointer">
@@ -592,7 +592,7 @@ function AppContent() {
               <div className="flex flex-col gap-5 text-left">
                 <h3 className="font-display font-semibold text-2xl text-pine">Nueva Contraseña</h3>
                 <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
-                  <input type="password" required minLength={6} placeholder="Mínimo 6 caracteres" value={resetPasswordState} onChange={(e) => setResetPasswordState(e.target.value)}
+                  <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" value={resetPasswordState} onChange={(e) => setResetPasswordState(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none" />
                   <button type="submit" className="w-full py-3 bg-pine text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">
                     Actualizar Contraseña
@@ -706,10 +706,12 @@ function AppContent() {
                 <LineChart className="w-4 h-4" /> Métricas / Reportes
               </button>
             )}
-            <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); }}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'history' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
-              <History className="w-4 h-4" /> Historial Pasajeros
-            </button>
+            {isAdmin && (
+              <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); }}
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'history' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
+                <History className="w-4 h-4" /> Historial Pasajeros
+              </button>
+            )}
             {isAdmin && (
               <button onClick={() => setIsPricingModalOpen(true)}
                 className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer text-white/90 hover:bg-white/10">
@@ -815,10 +817,12 @@ function AppContent() {
                 <UserPlus className="w-4 h-4" /> Nuevo Guía
               </button>
             )}
-            <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); setIsQuickActionsOpen(false); }}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
-              <History className="w-4 h-4" /> Historial Pasajeros
-            </button>
+            {isAdmin && (
+              <button onClick={() => { setActiveTab('history'); navigateToHash('#/history'); setIsQuickActionsOpen(false); }}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-pine hover:bg-sky-80 cursor-pointer transition-colors">
+                <History className="w-4 h-4" /> Historial Pasajeros
+              </button>
+            )}
             <div className="border-t border-gray-100 my-0.5" />
             {isAdmin && (
               <button onClick={() => { setIsPricingModalOpen(true); setIsQuickActionsOpen(false); }}
