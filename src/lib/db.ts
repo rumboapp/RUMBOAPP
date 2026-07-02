@@ -288,6 +288,7 @@ export const db = {
       id: newId('act'),
       agency_id: agencyId,
       photo_url: photo,
+      photo_urls: data.photo_urls && data.photo_urls.length > 0 ? data.photo_urls : [photo],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

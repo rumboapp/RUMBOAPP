@@ -28,7 +28,8 @@ export default function ActivitiesView() {
   const [currency, setCurrency] = useState('CLP');
   const [capacity, setCapacity] = useState(15);
   const [meetingPoint, setMeetingPoint] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
   const [active, setActive] = useState(true);
   const [showInCatalog, setShowInCatalog] = useState(true);
   const [wspTemplate, setWspTemplate] = useState('');
@@ -64,7 +65,7 @@ export default function ActivitiesView() {
     }
     setEditingActivity(null);
     setName(''); setDescription(''); setDuration(120); setPrice(50000); setCurrency('CLP');
-    setCapacity(15); setMeetingPoint(''); setPhotoUrl(''); setActive(true); setShowInCatalog(true); setWspTemplate('');
+    setCapacity(15); setMeetingPoint(''); setPhotoUrls([]); setPhotoUrlInput(''); setActive(true); setShowInCatalog(true); setWspTemplate('');
     setIsPhotoUploading(false);
     setIsModalOpen(true);
   };
@@ -73,7 +74,9 @@ export default function ActivitiesView() {
     setEditingActivity(act);
     setName(act.name); setDescription(act.description); setDuration(act.duration_minutes);
     setPrice(act.price); setCurrency(act.currency); setCapacity(act.capacity_max);
-    setMeetingPoint(act.meeting_point); setPhotoUrl(act.photo_url); setActive(act.active);
+    setMeetingPoint(act.meeting_point); setActive(act.active);
+    setPhotoUrls(act.photo_urls && act.photo_urls.length > 0 ? act.photo_urls.slice(0, 3) : (act.photo_url ? [act.photo_url] : []));
+    setPhotoUrlInput('');
     setShowInCatalog(act.show_in_catalog !== false);
     setWspTemplate(act.whatsapp_template || '');
     setIsPhotoUploading(false);
@@ -90,7 +93,7 @@ export default function ActivitiesView() {
       notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
       return;
     }
-    const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrl, active, show_in_catalog: showInCatalog, whatsapp_template: isFreePlan ? '' : wspTemplate };
+    const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrls[0] || '', photo_urls: photoUrls, active, show_in_catalog: showInCatalog, whatsapp_template: isFreePlan ? '' : wspTemplate };
     if (editingActivity) {
       await db.updateActivity(editingActivity.id, payload);
     } else {
@@ -272,8 +275,30 @@ export default function ActivitiesView() {
                 </span>
               </label>
               <div>
-                <FileUpload onUpload={(url) => setPhotoUrl(url)} currentUrl={photoUrl} placeholderText="Foto de la actividad" folder="activities" onUploadingChange={setIsPhotoUploading} />
-                <input type="text" placeholder="O URL directa" value={photoUrl.startsWith('data:image/') ? '' : photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} className="w-full mt-2 border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                <label className="text-[10px] font-semibold text-gray-500 block mb-1">Fotos de la actividad ({photoUrls.length} de 3) — la primera es la portada</label>
+                {photoUrls.length > 0 && (
+                  <div className="flex gap-2 mb-2">
+                    {photoUrls.map((url, i) => (
+                      <div key={i} className="relative w-20 h-16 rounded-xl overflow-hidden border border-gray-200 group">
+                        <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                        {i === 0 && <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] font-bold text-center py-0.5">Portada</span>}
+                        <button type="button" onClick={() => setPhotoUrls(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[9px] cursor-pointer transition-colors">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {photoUrls.length < 3 && (
+                  <>
+                    <FileUpload onUpload={(url) => setPhotoUrls(prev => prev.length < 3 ? [...prev, url] : prev)} currentUrl="" placeholderText={photoUrls.length === 0 ? 'Foto de la actividad' : 'Agregar otra foto'} folder="activities" onUploadingChange={setIsPhotoUploading} />
+                    <div className="flex gap-2 mt-2">
+                      <input type="text" placeholder="O URL directa" value={photoUrlInput} onChange={(e) => setPhotoUrlInput(e.target.value)} className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-xs" />
+                      <button type="button" disabled={!photoUrlInput.trim()}
+                        onClick={() => { setPhotoUrls(prev => prev.length < 3 ? [...prev, photoUrlInput.trim()] : prev); setPhotoUrlInput(''); }}
+                        className="px-3 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-40">Agregar</button>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">Cancelar</button>

@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import { PublicDeparture } from '../types';
 import { Clock, MapPin, Users, CalendarDays, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { PhotoCarousel } from './PhotoCarousel';
 
 export default function PublicBookingView({ token }: { token: string }) {
   const [departure, setDeparture] = useState<PublicDeparture | null>(null);
@@ -93,13 +94,12 @@ export default function PublicBookingView({ token }: { token: string }) {
 
         {/* Card de la salida */}
         <div className="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden">
-          <div className="relative h-48 bg-gray-100">
-            <img src={departure.activity_photo || 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800'} alt={departure.activity_name} className="w-full h-full object-cover" />
+          <PhotoCarousel photos={departure.activity_photos && departure.activity_photos.length > 0 ? departure.activity_photos : [departure.activity_photo]} alt={departure.activity_name} heightClass="h-48">
             <div className="absolute bottom-3 right-3 bg-black/75 text-white font-mono font-bold text-sm px-3 py-1 rounded-lg">
               {departure.price.toLocaleString('es-CL', { style: 'currency', currency: departure.currency || 'CLP', maximumFractionDigits: 0 })}
               <span className="text-[9px] font-sans font-normal opacity-80"> /persona</span>
             </div>
-          </div>
+          </PhotoCarousel>
           <div className="p-5 flex flex-col gap-3">
             <h1 className="font-serif text-2xl text-pine">{departure.activity_name}</h1>
             <p className="text-xs text-gray-500">{departure.activity_description}</p>
