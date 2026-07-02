@@ -46,6 +46,8 @@ export interface Activity {
   capacity_max: number;
   meeting_point: string;
   photo_url: string;
+  // Galería (hasta 3 fotos, portada incluida) para el catálogo público
+  photo_urls?: string[];
   active: boolean;
   show_in_catalog?: boolean;
   whatsapp_template?: string;
@@ -115,6 +117,7 @@ export interface PublicCatalogActivity {
   name: string;
   description: string;
   photo_url: string;
+  photo_urls?: string[];
   price: number;
   currency: string;
   duration_minutes: number;
@@ -137,6 +140,7 @@ export interface PublicDeparture {
   activity_name: string;
   activity_description: string;
   activity_photo: string;
+  activity_photos?: string[];
   price: number;
   currency: string;
   duration_minutes: number;

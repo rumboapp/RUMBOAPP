@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import { PublicCatalog, PublicCatalogActivity } from '../types';
 import { Clock, MapPin, Users, CalendarDays, CheckCircle2, AlertTriangle, Loader2, ChevronRight } from 'lucide-react';
+import { PhotoCarousel } from './PhotoCarousel';
 
 function DateRequestForm({ token, activity, onDone }: { token: string; activity: PublicCatalogActivity; onDone: () => void }) {
   const [fullName, setFullName] = useState('');
@@ -153,13 +154,12 @@ export default function PublicCatalogView({ token }: { token: string }) {
           const sent = sentIds.has(act.id);
           return (
             <div key={act.id} className="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden">
-              <div className="relative h-44 bg-gray-100">
-                <img src={act.photo_url || 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800'} alt={act.name} className="w-full h-full object-cover" />
+              <PhotoCarousel photos={act.photo_urls && act.photo_urls.length > 0 ? act.photo_urls : [act.photo_url]} alt={act.name} heightClass="h-44">
                 <div className="absolute bottom-3 right-3 bg-black/75 text-white font-mono font-bold text-sm px-3 py-1 rounded-lg">
                   {act.price.toLocaleString('es-CL', { style: 'currency', currency: act.currency || 'CLP', maximumFractionDigits: 0 })}
                   <span className="text-[9px] font-sans font-normal opacity-80"> /persona</span>
                 </div>
-              </div>
+              </PhotoCarousel>
               <div className="p-5 flex flex-col gap-3">
                 <div>
                   <h2 className="font-serif text-xl text-pine">{act.name}</h2>
