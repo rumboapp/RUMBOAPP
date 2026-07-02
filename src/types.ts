@@ -47,6 +47,7 @@ export interface Activity {
   meeting_point: string;
   photo_url: string;
   active: boolean;
+  show_in_catalog?: boolean;
   whatsapp_template?: string;
   created_at: string;
   updated_at: string;
