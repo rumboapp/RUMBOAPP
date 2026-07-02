@@ -469,7 +469,17 @@ export default function LegalView({ section }: LegalViewProps) {
                 Riesgo correspondiente.
               </p>
               <p>
-                <strong>f) Datos de uso de la plataforma:</strong> información técnica relacionada con el uso de la
+                <strong>f) Datos de reservas y solicitudes públicas:</strong> nombre, número de teléfono, cantidad
+                de personas, fecha solicitada y comentarios opcionales, ingresados voluntariamente por personas que
+                aún no son pasajeros registrados, a través de los enlaces públicos de reserva y de catálogo que
+                cada Agencia comparte (por ejemplo, en redes sociales o WhatsApp). Estos datos se recolectan con el
+                único fin de que la Agencia correspondiente gestione la solicitud de reserva, y solo son visibles
+                para dicha Agencia. Las solicitudes no gestionadas expiran automáticamente (48 horas en el caso de
+                reservas a salidas programadas y 7 días en el caso de solicitudes de fecha), sin perjuicio de la
+                conservación del registro conforme a la sección de retención de esta Política.
+              </p>
+              <p>
+                <strong>g) Datos de uso de la plataforma:</strong> información técnica relacionada con el uso de la
                 Plataforma, tal como registros de acceso, direcciones IP, y métricas de uso necesarias para el
                 funcionamiento y mejora del Servicio.
               </p>
@@ -493,6 +503,11 @@ export default function LegalView({ section }: LegalViewProps) {
                 WhatsApp, en nombre y bajo instrucción de la Agencia respectiva;
               </p>
               <p>d) Generar reportes, métricas e historiales para uso interno de cada Agencia;</p>
+              <p>
+                d bis) Gestionar las solicitudes de reserva y de fecha realizadas a través de los enlaces públicos
+                de la Plataforma, incluyendo la comunicación de la Agencia con el solicitante vía WhatsApp para
+                confirmar, coordinar o rechazar dichas solicitudes y entregar las instrucciones de pago;
+              </p>
               <p>e) Procesar el cobro de las membresías de suscripción a través de la pasarela de pagos Mercado Pago;</p>
               <p>f) Brindar soporte técnico a los usuarios de la Plataforma;</p>
               <p>g) Cumplir con obligaciones legales aplicables al Operador.</p>
@@ -517,6 +532,13 @@ export default function LegalView({ section }: LegalViewProps) {
                 perjuicio de lo anterior, es la Agencia, como responsable del tratamiento de los datos de sus
                 propios Pasajeros, quien debe asegurar que dicho consentimiento sea recabado de forma adecuada
                 conforme a sus propios procesos comerciales y operativos.
+              </p>
+              <p>
+                En el caso de las solicitudes de reserva realizadas a través de los enlaces públicos, el
+                tratamiento de los datos básicos entregados (nombre, teléfono, cantidad de personas y fecha) se
+                sustenta en el consentimiento otorgado por el propio solicitante al enviar voluntariamente el
+                formulario, el cual informa expresamente que dichos datos se comparten con la Agencia
+                correspondiente para gestionar la reserva.
               </p>
             </div>
 

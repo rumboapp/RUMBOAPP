@@ -185,7 +185,9 @@ export default function PublicBookingView({ token }: { token: string }) {
           </form>
         )}
 
-        <p className="text-[9px] text-gray-400 text-center">Reservas gestionadas con <strong>Rumbo</strong> · rumboapp.cl</p>
+        <p className="text-[9px] text-gray-400 text-center">
+          Reservas gestionadas con <strong>Rumbo</strong> · rumboapp.cl · <a href="#/privacidad" target="_blank" rel="noopener noreferrer" className="underline hover:text-pine">Política de Privacidad</a>
+        </p>
       </div>
     </div>
   );
