@@ -77,6 +77,45 @@ ${signUrl}
 }
 
 /**
+ * Prepares the URL to confirm a public booking request via WhatsApp,
+ * including the agency's payment info (link or transfer details).
+ */
+export function getBookingConfirmationLink(
+  fullName: string,
+  phone: string,
+  activityName: string,
+  departureDate: string,
+  departureTime: string,
+  agencyName: string,
+  paymentInfo?: string
+): string {
+  const formattedPhone = cleanPhoneNumber(phone);
+
+  let dateStr = departureDate;
+  try {
+    const parts = departureDate.split('-');
+    if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}`;
+  } catch (_) {}
+
+  const paymentBlock = paymentInfo && paymentInfo.trim()
+    ? `\n💳 *Para confirmar tu cupo, realiza el pago aquí:*\n${paymentInfo.trim()}\n\nUna vez realizado el pago, respóndenos con el comprobante.`
+    : '\nEn breve te enviaremos las instrucciones de pago para confirmar tu cupo.';
+
+  const text = `Hola *${fullName}*, te escribimos de *${agencyName}* 🌄
+
+¡Buenas noticias! Aceptamos tu solicitud de reserva:
+
+🚢 *Excursión:* ${activityName}
+📅 *Fecha:* ${dateStr}
+⏰ *Hora:* ${departureTime}hs
+${paymentBlock}
+
+*Importante:* tu reserva queda confirmada solo una vez realizado el pago. Luego te pediremos completar tu ficha de seguridad. ¡Gracias!`;
+
+  return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`;
+}
+
+/**
  * Prepares the URL to notify a passenger about rescheduling or cancellation due to heavy rain/storms
  */
 export function getPassengerCancellationLink(passenger: Passenger, departure: Departure, activity: Activity): string {

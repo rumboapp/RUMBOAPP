@@ -14,8 +14,9 @@ import { Activity, Departure, Passenger, Guide } from '../types';
 import { 
   Calendar, Clock, User, Phone, Users, Check, X, Eye, FileSpreadsheet, Printer, CloudSun,
   MapPin, ClipboardList, Plus, ArrowRight, Send, AlertTriangle, ShieldCheck,
-  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight, Trash2, ChevronDown, ChevronUp
+  PenTool, Copy, Compass, Pencil, ChevronLeft, ChevronRight, Trash2, ChevronDown, ChevronUp, Share2
 } from 'lucide-react';
+import BookingRequestsPanel from './BookingRequestsPanel';
 
 interface DashboardViewProps {
   onNavigate: (hash: string) => void;
@@ -440,6 +441,20 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 pb-3">
           <span className="text-xs font-bold uppercase">Despacho ({bookedSum}/{activeAct.capacity_max} pax)</span>
           <div className="flex gap-1.5">
+            {isAdmin && dep.public_token && dep.status === 'programada' && (
+              <button onClick={(e) => {
+                  e.stopPropagation();
+                  const url = `${window.location.origin}/#/reservar/${dep.public_token}`;
+                  navigator.clipboard.writeText(url).then(
+                    () => notifySuccess('Link de reserva copiado. Compártelo por WhatsApp o redes sociales.'),
+                    () => notifyError('No se pudo copiar el link.')
+                  );
+                }}
+                title="Copiar link público de reserva para invitar pasajeros"
+                className="p-1.5 bg-gray-50 text-pine rounded-lg border text-[10px] font-semibold flex items-center gap-1 cursor-pointer hover:bg-pine/10 transition-colors">
+                <Share2 className="w-3.5 h-3.5" /> Invitar
+              </button>
+            )}
             <button onClick={(e) => { e.stopPropagation(); exportToCSV(passengers, activeAct.name, dep.departure_date, activeGuideName); }}
               className="p-1.5 bg-gray-50 text-emerald-800 rounded-lg border text-[10px] font-semibold flex items-center gap-1 cursor-pointer hover:bg-emerald-50 transition-colors">
               <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
@@ -547,6 +562,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-1 sm:px-4">
+      <BookingRequestsPanel />
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 blob bg-pine flex items-center justify-center shrink-0"><Compass className="w-5 h-5 text-white" /></div>

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Agency, AgencyMember, Activity, Departure, Passenger, Guide, Notification, AgencyRole, MockUser } from '../types';
+import { Agency, AgencyMember, Activity, Departure, Passenger, Guide, Notification, AgencyRole, MockUser, BookingRequest, PublicDeparture } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getCoordinatesForCity } from './cities';
 
@@ -715,6 +715,52 @@ export const db = {
     if (!isSupabaseConfigured || !supabase) return;
     await supabase.from('notifications').update({ read: true }).eq('agency_id', agencyId);
     dispatchDbUpdate();
+  },
+
+  // ─── RESERVAS PÚBLICAS (v1 invitaciones) ───
+
+  async getPublicDeparture(token: string): Promise<PublicDeparture | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+    const { data, error } = await supabase.rpc('get_public_departure', { p_token: token });
+    if (error || !data) return null;
+    return data as PublicDeparture;
+  },
+
+  async createBookingRequest(token: string, fullName: string, phone: string, paxCount: number, note?: string): Promise<{ success: boolean; message?: string }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, message: 'Servicio no disponible. Intenta más tarde.' };
+    }
+    const { data, error } = await supabase.rpc('create_booking_request', {
+      p_token: token,
+      p_full_name: fullName,
+      p_phone: phone,
+      p_pax_count: paxCount,
+      p_note: note || null
+    });
+    if (error) return { success: false, message: 'No se pudo enviar la solicitud. Intenta nuevamente.' };
+    return data as { success: boolean; message?: string };
+  },
+
+  async getBookingRequests(agencyId: string): Promise<BookingRequest[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+    const { data } = await supabase
+      .from('booking_requests')
+      .select('*')
+      .eq('agency_id', agencyId)
+      .order('created_at', { ascending: false });
+    return (data || []) as BookingRequest[];
+  },
+
+  async resolveBookingRequest(id: string, status: 'confirmed' | 'rejected'): Promise<boolean> {
+    if (blockIfDemo()) return false;
+    if (!isSupabaseConfigured || !supabase) return false;
+    const { error } = await supabase
+      .from('booking_requests')
+      .update({ status, resolved_at: new Date().toISOString() })
+      .eq('id', id);
+    if (reportWriteError('No se pudo actualizar la solicitud', error)) return false;
+    dispatchDbUpdate();
+    return true;
   },
 
   // ─── HISTORIAL DE PASAJERO ───
