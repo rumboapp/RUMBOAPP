@@ -35,6 +35,13 @@ function setLocalCache(state: DBState) {
   } catch { /* ignore */ }
 }
 
+// IDs no adivinables: los registros como pasajeros se consultan desde
+// páginas públicas (firma de ficha de riesgo) solo con su ID, por lo que
+// no pueden ser cortos ni generados con Math.random().
+function newId(prefix: string): string {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+
 function dispatchDbUpdate() {
   window.dispatchEvent(new Event('rumbo_db_updated'));
 }
@@ -99,7 +106,7 @@ export const db = {
     const cleanLogoUrl = logoUrl || 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=150';
 
     const newAgency: Agency = {
-      id: 'agc-' + Math.random().toString(36).substr(2, 9),
+      id: newId('agc'),
       owner_id: ownerId,
       name,
       join_code: generatedCode,
@@ -184,7 +191,7 @@ export const db = {
     }
 
     const newMember: AgencyMember = {
-      id: 'mem-' + Math.random().toString(36).substr(2, 9),
+      id: newId('mem'),
       agency_id: agency.id,
       user_id: args.userId,
       role: AgencyRole.GUIA,
@@ -192,7 +199,7 @@ export const db = {
     };
 
     const newGuide: Guide = {
-      id: 'gd-' + Math.random().toString(36).substr(2, 9),
+      id: newId('gd'),
       agency_id: agency.id,
       user_id: args.userId,
       full_name: args.fullName,
@@ -210,7 +217,7 @@ export const db = {
 
     // Notificación
     await supabase.from('notifications').insert({
-      id: 'not-' + Math.random().toString(36).substr(2, 9),
+      id: newId('not'),
       agency_id: agency.id,
       kind: 'system',
       title: 'Solicitud de Unión de Guía',
@@ -261,7 +268,7 @@ export const db = {
 
     const newActivity: Activity = {
       ...data,
-      id: 'act-' + Math.random().toString(36).substr(2, 9),
+      id: newId('act'),
       agency_id: agencyId,
       photo_url: photo,
       created_at: new Date().toISOString(),
@@ -316,7 +323,7 @@ export const db = {
     }
     const newGuide: Guide = {
       ...data,
-      id: 'gd-' + Math.random().toString(36).substr(2, 9),
+      id: newId('gd'),
       agency_id: agencyId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -425,7 +432,7 @@ export const db = {
   async createDeparture(agencyId: string, data: Omit<Departure, 'id' | 'agency_id' | 'created_at' | 'updated_at'>): Promise<Departure> {
     const newDeparture: Departure = {
       ...data,
-      id: 'dep-' + Math.random().toString(36).substr(2, 9),
+      id: newId('dep'),
       agency_id: agencyId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -451,7 +458,7 @@ export const db = {
       } catch (_) {}
 
       await supabase.from('notifications').insert({
-        id: 'not-' + Math.random().toString(36).substr(2, 9),
+        id: newId('not'),
         agency_id: agencyId,
         kind: 'departure_created',
         title: 'Nueva salida programada',
@@ -553,7 +560,7 @@ export const db = {
   async createPassenger(data: Omit<Passenger, 'id' | 'created_at'>): Promise<Passenger> {
     const newPassenger: Passenger = {
       ...data,
-      id: 'pax-' + Math.random().toString(36).substr(2, 9),
+      id: newId('pax'),
       created_at: new Date().toISOString()
     };
 
@@ -633,7 +640,7 @@ export const db = {
 
   async createNotification(agencyId: string, kind: 'departure_created' | 'system' | 'weather_alert', title: string, message: string, departureId: string | null = null): Promise<Notification> {
     const newNot: Notification = {
-      id: 'not-' + Math.random().toString(36).substr(2, 9),
+      id: newId('not'),
       agency_id: agencyId,
       kind,
       title,
