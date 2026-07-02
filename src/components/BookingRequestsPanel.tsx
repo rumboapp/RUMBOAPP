@@ -67,6 +67,7 @@ export default function BookingRequestsPanel() {
       phone: req.phone,
       pax_count: req.pax_count,
       checked_in: false,
+      payment_status: 'pendiente',
       notes: req.note ? `Reserva web: ${req.note}` : 'Reserva web'
     });
     const ok = await db.resolveBookingRequest(req.id, 'confirmed');
