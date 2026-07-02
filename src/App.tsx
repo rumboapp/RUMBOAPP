@@ -20,6 +20,7 @@ import { CityAutocomplete } from './components/CityAutocomplete';
 import { PricingModal } from './components/PricingModal';
 import { DownloadAppModal } from './components/DownloadAppModal';
 import RiskWaiverSignView from './components/RiskWaiverSignView';
+import PublicBookingView from './components/PublicBookingView';
 import LegalView from './components/LegalView';
 import { 
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2,
@@ -56,6 +57,11 @@ function AppContent() {
   if (isFirmaRoute) {
     const passengerId = currentHash.replace('#/firma/', '');
     return <RiskWaiverSignView passengerId={passengerId} />;
+  }
+
+  if (currentHash.startsWith('#/reservar/')) {
+    const bookingToken = currentHash.replace('#/reservar/', '');
+    return <PublicBookingView token={bookingToken} />;
   }
 
   if (currentHash === '#/terminos') {
@@ -104,6 +110,7 @@ function AppContent() {
   const [editAgencyCity, setEditAgencyCity] = useState('');
   const [editAgencyLogo, setEditAgencyLogo] = useState('');
   const [editAgencyWspTemplate, setEditAgencyWspTemplate] = useState('');
+  const [editAgencyPaymentInfo, setEditAgencyPaymentInfo] = useState('');
 
   // User Profile Edit state
   const [editUserName, setEditUserName] = useState('');
@@ -115,6 +122,7 @@ function AppContent() {
       setEditAgencyCity(agency.city || '');
       setEditAgencyLogo(agency.logo_url || '');
       setEditAgencyWspTemplate(agency.whatsapp_template || '');
+      setEditAgencyPaymentInfo(agency.payment_info || '');
     }
   }, [agency]);
 
@@ -152,7 +160,8 @@ function AppContent() {
       name: editAgencyName,
       city: editAgencyCity,
       logo_url: editAgencyLogo,
-      whatsapp_template: editAgencyWspTemplate
+      whatsapp_template: editAgencyWspTemplate,
+      payment_info: editAgencyPaymentInfo
     });
     refreshAgency();
     setIsAgencyModalOpen(false);
@@ -896,6 +905,13 @@ function AppContent() {
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Logo:</label>
                 <FileUpload onUpload={(url) => setEditAgencyLogo(url)} currentUrl={editAgencyLogo} placeholderText="Arrastra logo o haz clic" folder="logos" onUploadingChange={setIsAgencyLogoUploading} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Datos de pago (para reservas web):</label>
+                <textarea value={editAgencyPaymentInfo} onChange={(e) => setEditAgencyPaymentInfo(e.target.value)}
+                  placeholder={'Ej: Link de pago: https://...\nO transferencia: Banco, tipo de cuenta, N°, RUT, correo'}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-pine/30 h-20 resize-none" />
+                <p className="text-[9px] text-gray-400 mt-1">Se envía por WhatsApp al confirmar una solicitud de reserva hecha desde tus links públicos.</p>
               </div>
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Plantilla WhatsApp:</label>

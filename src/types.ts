@@ -20,6 +20,7 @@ export interface Agency {
   subscription_plan?: 'free' | 'premium' | 'pro';
   trial_expires_at?: string | null;
   whatsapp_template?: string;
+  payment_info?: string;
   is_demo?: boolean;
   created_at: string;
   updated_at: string;
@@ -74,8 +75,43 @@ export interface Departure {
   departure_time: string; // HH:MM
   status: 'programada' | 'en_curso' | 'finalizada' | 'cancelada';
   notes: string;
+  public_token?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BookingRequest {
+  id: string;
+  agency_id: string;
+  departure_id: string;
+  full_name: string;
+  phone: string;
+  pax_count: number;
+  note?: string | null;
+  status: 'pending' | 'confirmed' | 'rejected';
+  created_at: string;
+  expires_at: string;
+  resolved_at?: string | null;
+}
+
+// Datos que la RPC pública get_public_departure devuelve para la
+// página de reserva (sin login).
+export interface PublicDeparture {
+  departure_date: string;
+  departure_time: string;
+  status: string;
+  activity_name: string;
+  activity_description: string;
+  activity_photo: string;
+  price: number;
+  currency: string;
+  duration_minutes: number;
+  meeting_point: string;
+  capacity_max: number;
+  spots_left: number;
+  agency_name: string;
+  agency_logo: string;
+  agency_city: string;
 }
 
 export interface Passenger {
