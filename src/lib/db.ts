@@ -29,12 +29,6 @@ function getLocalCache(): DBState | null {
   } catch { return null; }
 }
 
-function setLocalCache(state: DBState) {
-  try {
-    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
-  } catch { /* ignore */ }
-}
-
 // IDs no adivinables: los registros como pasajeros se consultan desde
 // páginas públicas (firma de ficha de riesgo) solo con su ID, por lo que
 // no pueden ser cortos ni generados con Math.random().
@@ -44,6 +38,18 @@ function newId(prefix: string): string {
 
 function dispatchDbUpdate() {
   window.dispatchEvent(new Event('rumbo_db_updated'));
+}
+
+// Aviso global cuando una escritura crítica falla (red caída, RLS,
+// triggers de límites de plan): App.tsx lo escucha y muestra un toast,
+// en vez de dejar al usuario creyendo que se guardó.
+function reportWriteError(context: string, error: { message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  console.error(`Error de escritura (${context}):`, error);
+  window.dispatchEvent(new CustomEvent('rumbo_db_write_error', {
+    detail: `${context}: ${error.message || 'error desconocido'}`
+  }));
+  return true;
 }
 
 // ─── MODO DEMO ───
@@ -137,12 +143,13 @@ export const db = {
       updated_at: new Date().toISOString()
     };
 
-    const { data: result } = await supabase
+    const { data: result, error } = await supabase
       .from('agencies')
       .update(updateData)
       .eq('id', agencyId)
       .select()
       .single();
+    reportWriteError('No se pudo actualizar la agencia', error);
 
     dispatchDbUpdate();
     return result as Agency | null;
@@ -276,7 +283,8 @@ export const db = {
     };
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('activities').insert(newActivity);
+      const { error } = await supabase.from('activities').insert(newActivity);
+      reportWriteError('No se pudo crear la actividad', error);
     }
 
     dispatchDbUpdate();
@@ -286,12 +294,13 @@ export const db = {
   async updateActivity(id: string, data: Partial<Omit<Activity, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Activity | null> {
     if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
-    const { data: result } = await supabase
+    const { data: result, error } = await supabase
       .from('activities')
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
+    reportWriteError('No se pudo actualizar la actividad', error);
     dispatchDbUpdate();
     return result as Activity | null;
   },
@@ -299,9 +308,15 @@ export const db = {
   async deleteActivity(id: string): Promise<void> {
     if (blockIfDemo()) return;
     if (!isSupabaseConfigured || !supabase) return;
-    await supabase.from('activities').delete().eq('id', id);
-    // También eliminar salidas asociadas
+    // Eliminar en cascada: pasajeros de las salidas → salidas → actividad,
+    // para no dejar pasajeros huérfanos en la base.
+    const { data: deps } = await supabase.from('departures').select('id').eq('activity_id', id);
+    const depIds = (deps || []).map((d: { id: string }) => d.id);
+    if (depIds.length > 0) {
+      await supabase.from('passengers').delete().in('departure_id', depIds);
+    }
     await supabase.from('departures').delete().eq('activity_id', id);
+    await supabase.from('activities').delete().eq('id', id);
     dispatchDbUpdate();
   },
 
@@ -330,7 +345,8 @@ export const db = {
     };
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('guides').insert(newGuide);
+      const { error } = await supabase.from('guides').insert(newGuide);
+      reportWriteError('No se pudo crear el guía', error);
     }
 
     dispatchDbUpdate();
@@ -340,12 +356,13 @@ export const db = {
   async updateGuide(id: string, data: Partial<Omit<Guide, 'id' | 'agency_id' | 'created_at' | 'updated_at'>>): Promise<Guide | null> {
     if (blockIfDemo()) return null;
     if (!isSupabaseConfigured || !supabase) return null;
-    const { data: result } = await supabase
+    const { data: result, error } = await supabase
       .from('guides')
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
+    reportWriteError('No se pudo actualizar el guía', error);
     dispatchDbUpdate();
     return result as Guide | null;
   },
@@ -445,7 +462,11 @@ export const db = {
     }
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('departures').insert(newDeparture);
+      const { error } = await supabase.from('departures').insert(newDeparture);
+      if (reportWriteError('No se pudo agendar la salida', error)) {
+        dispatchDbUpdate();
+        return newDeparture;
+      }
 
       // Notificación
       const { data: act } = await supabase.from('activities').select('name').eq('id', data.activity_id).single();
@@ -489,12 +510,13 @@ export const db = {
       return original ? { ...original, ...merged } : null;
     }
     if (!isSupabaseConfigured || !supabase) return null;
-    const { data: result } = await supabase
+    const { data: result, error } = await supabase
       .from('departures')
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
+    reportWriteError('No se pudo actualizar la salida', error);
     dispatchDbUpdate();
     return result as Departure | null;
   },
@@ -571,7 +593,8 @@ export const db = {
     }
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('passengers').insert(newPassenger);
+      const { error } = await supabase.from('passengers').insert(newPassenger);
+      reportWriteError('No se pudo guardar el pasajero', error);
     }
 
     dispatchDbUpdate();
@@ -594,12 +617,13 @@ export const db = {
       return original ? { ...original, ...merged } : null;
     }
     if (!isSupabaseConfigured || !supabase) return null;
-    const { data: result } = await supabase
+    const { data: result, error } = await supabase
       .from('passengers')
       .update(data)
       .eq('id', id)
       .select()
       .single();
+    reportWriteError('No se pudo actualizar el pasajero', error);
     dispatchDbUpdate();
     return result as Passenger | null;
   },
@@ -698,8 +722,11 @@ export const db = {
   async getPassengerHistory(fullName: string, phone: string): Promise<{ counts: number; departures: { date: string; name: string }[] }> {
     if (!isSupabaseConfigured || !supabase) return { counts: 0, departures: [] };
 
-    const cleanName = fullName.toLowerCase().trim();
-    const cleanPhone = phone.toLowerCase().trim();
+    // Sanitizar: comas y paréntesis son sintaxis del filtro .or() de
+    // PostgREST y romperían/alterarían la consulta si vienen en el nombre.
+    const sanitize = (s: string) => s.toLowerCase().trim().replace(/[,()]/g, ' ').trim();
+    const cleanName = sanitize(fullName);
+    const cleanPhone = sanitize(phone);
 
     const { data: matches } = await supabase
       .from('passengers')
@@ -731,105 +758,8 @@ export function getDb(): DBState {
   };
 }
 
-export function saveDb(state: DBState): void {
-  setLocalCache(state);
-  dispatchDbUpdate();
-}
-
 export function resetDbToDemo(): void {
   // Ya no reseteamos a demo - los datos vienen de Supabase
   localStorage.removeItem(LOCAL_CACHE_KEY);
   dispatchDbUpdate();
 }
-
-export async function syncSupabaseToLocal(): Promise<boolean> {
-  if (!isSupabaseConfigured || !supabase) return false;
-  try {
-    const [users, agencies, members, activities, guides, departures, passengers, notifications] = await Promise.all([
-      supabase.from('users').select('*'),
-      supabase.from('agencies').select('*'),
-      supabase.from('agency_members').select('*'),
-      supabase.from('activities').select('*'),
-      supabase.from('guides').select('*'),
-      supabase.from('departures').select('*'),
-      supabase.from('passengers').select('*'),
-      supabase.from('notifications').select('*')
-    ]);
-
-    const state: DBState = {
-      users: (users.data || []) as MockUser[],
-      agencies: (agencies.data || []) as Agency[],
-      agency_members: (members.data || []) as AgencyMember[],
-      activities: (activities.data || []) as Activity[],
-      guides: (guides.data || []) as Guide[],
-      departures: (departures.data || []) as Departure[],
-      passengers: (passengers.data || []) as Passenger[],
-      notifications: (notifications.data || []) as Notification[]
-    };
-
-    setLocalCache(state);
-    return true;
-  } catch (error) {
-    console.error('Sync failed:', error);
-    return false;
-  }
-}
-
-export const supabaseSync = {
-  async upsertUser(user: MockUser) {
-    if (!supabase) return;
-    await supabase.from('users').upsert(user);
-  },
-  async upsertAgency(agency: Agency) {
-    if (!supabase) return;
-    await supabase.from('agencies').upsert(agency);
-  },
-  async upsertMember(member: AgencyMember) {
-    if (!supabase) return;
-    await supabase.from('agency_members').upsert(member);
-  },
-  async deleteMember(id: string) {
-    if (!supabase) return;
-    await supabase.from('agency_members').delete().eq('id', id);
-  },
-  async upsertActivity(activity: Activity) {
-    if (!supabase) return;
-    await supabase.from('activities').upsert(activity);
-  },
-  async deleteActivity(id: string) {
-    if (!supabase) return;
-    await supabase.from('activities').delete().eq('id', id);
-  },
-  async upsertGuide(guide: Guide) {
-    if (!supabase) return;
-    await supabase.from('guides').upsert(guide);
-  },
-  async deleteGuide(id: string) {
-    if (!supabase) return;
-    await supabase.from('guides').delete().eq('id', id);
-  },
-  async upsertDeparture(departure: Departure) {
-    if (!supabase) return;
-    await supabase.from('departures').upsert(departure);
-  },
-  async deleteDeparture(id: string) {
-    if (!supabase) return;
-    await supabase.from('departures').delete().eq('id', id);
-  },
-  async upsertPassenger(passenger: Passenger) {
-    if (!supabase) return;
-    await supabase.from('passengers').upsert(passenger);
-  },
-  async deletePassenger(id: string) {
-    if (!supabase) return;
-    await supabase.from('passengers').delete().eq('id', id);
-  },
-  async upsertNotification(notification: Notification) {
-    if (!supabase) return;
-    await supabase.from('notifications').upsert(notification);
-  },
-  async bulkMarkNotificationsRead(agencyId: string) {
-    if (!supabase) return;
-    await supabase.from('notifications').update({ read: true }).eq('agency_id', agencyId);
-  }
-};

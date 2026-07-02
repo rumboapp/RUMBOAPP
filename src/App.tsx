@@ -129,13 +129,16 @@ function AppContent() {
     const handleOpenPricing = () => setIsPricingModalOpen(true);
     const handleOpenDownload = () => setIsDownloadModalOpen(true);
     const handleDemoBlocked = () => notifyWarning('Esto es una demo: los cambios no se guardan.');
+    const handleWriteError = (e: Event) => notifyError((e as CustomEvent<string>).detail || 'No se pudo guardar el cambio. Intenta nuevamente.');
     window.addEventListener('rumbo_open_pricing', handleOpenPricing);
     window.addEventListener('rumbo_open_download', handleOpenDownload);
     window.addEventListener('rumbo_demo_blocked', handleDemoBlocked);
+    window.addEventListener('rumbo_db_write_error', handleWriteError);
     return () => {
       window.removeEventListener('rumbo_open_pricing', handleOpenPricing);
       window.removeEventListener('rumbo_open_download', handleOpenDownload);
       window.removeEventListener('rumbo_demo_blocked', handleDemoBlocked);
+      window.removeEventListener('rumbo_db_write_error', handleWriteError);
     };
   }, []);
 

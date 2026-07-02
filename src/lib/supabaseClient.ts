@@ -30,16 +30,6 @@ export const isSupabaseConfigured = !!(
   supabaseUrl.startsWith('http')
 );
 
-// Safe diagnostic inside the browser console to help troubleshoot
-console.log('🔌 Supabase Config Diagnostic:', {
-  hasUrl: !!supabaseUrl,
-  urlStartsWithHttp: supabaseUrl.startsWith('http'),
-  urlLength: supabaseUrl.length,
-  hasKey: !!supabaseAnonKey,
-  keyLength: supabaseAnonKey.length,
-  isConfigured: isSupabaseConfigured
-});
-
 let supabaseInstance = null;
 if (isSupabaseConfigured) {
   try {
