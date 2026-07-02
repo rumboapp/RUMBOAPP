@@ -3,26 +3,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './lib/auth-context';
 import { useNotification } from './lib/notification-context';
 import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
 import { db } from './lib/db';
-import DashboardView from './components/DashboardView';
-import ActivitiesView from './components/ActivitiesView';
-import GuidesView from './components/GuidesView';
-import ReportsView from './components/ReportsView';
-import PassengerHistoryView from './components/PassengerHistoryView';
+const DashboardView = lazy(() => import('./components/DashboardView'));
+const ActivitiesView = lazy(() => import('./components/ActivitiesView'));
+const GuidesView = lazy(() => import('./components/GuidesView'));
+// Vistas pesadas o de uso ocasional: carga diferida para aligerar el bundle inicial
+const ReportsView = lazy(() => import('./components/ReportsView'));
+const PassengerHistoryView = lazy(() => import('./components/PassengerHistoryView'));
 import { WhatsappTemplateEditor } from './components/WhatsappTemplateEditor';
 import NotificationsCenter from './components/NotificationsCenter';
 import { FileUpload } from './components/FileUpload';
 import { CityAutocomplete } from './components/CityAutocomplete';
 import { PricingModal } from './components/PricingModal';
 import { DownloadAppModal } from './components/DownloadAppModal';
-import RiskWaiverSignView from './components/RiskWaiverSignView';
-import PublicBookingView from './components/PublicBookingView';
-import PublicCatalogView from './components/PublicCatalogView';
-import LegalView from './components/LegalView';
+const RiskWaiverSignView = lazy(() => import('./components/RiskWaiverSignView'));
+const PublicBookingView = lazy(() => import('./components/PublicBookingView'));
+const PublicCatalogView = lazy(() => import('./components/PublicCatalogView'));
+const LegalView = lazy(() => import('./components/LegalView'));
+
+const LazyFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-8 h-8 border-3 border-pine/20 border-t-pine rounded-full animate-spin" />
+  </div>
+);
 import { 
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2,
   LineChart, LogOut, Lock, Mail, User, Phone, MapPin, Search, ChevronRight,
@@ -57,24 +64,24 @@ function AppContent() {
   const isFirmaRoute = currentHash.startsWith('#/firma/');
   if (isFirmaRoute) {
     const passengerId = currentHash.replace('#/firma/', '');
-    return <RiskWaiverSignView passengerId={passengerId} />;
+    return <Suspense fallback={<LazyFallback />}><RiskWaiverSignView passengerId={passengerId} /></Suspense>;
   }
 
   if (currentHash.startsWith('#/reservar/')) {
     const bookingToken = currentHash.replace('#/reservar/', '');
-    return <PublicBookingView token={bookingToken} />;
+    return <Suspense fallback={<LazyFallback />}><PublicBookingView token={bookingToken} /></Suspense>;
   }
 
   if (currentHash.startsWith('#/agencia/')) {
     const catalogToken = currentHash.replace('#/agencia/', '');
-    return <PublicCatalogView token={catalogToken} />;
+    return <Suspense fallback={<LazyFallback />}><PublicCatalogView token={catalogToken} /></Suspense>;
   }
 
   if (currentHash === '#/terminos') {
-    return <LegalView section="terminos" />;
+    return <Suspense fallback={<LazyFallback />}><LegalView section="terminos" /></Suspense>;
   }
   if (currentHash === '#/privacidad') {
-    return <LegalView section="privacidad" />;
+    return <Suspense fallback={<LazyFallback />}><LegalView section="privacidad" /></Suspense>;
   }
 
   // Check if guide is approved
@@ -813,11 +820,11 @@ function AppContent() {
         </header>
 
         <main className="flex-1 p-3 sm:p-6 pb-24 md:pb-8">
-          {activeTab === 'dashboard' && <DashboardView onNavigate={(h) => navigateToHash(h)} />}
-          {activeTab === 'activities' && <ActivitiesView />}
-          {activeTab === 'guides' && <GuidesView />}
-          {activeTab === 'reports' && <ReportsView />}
-          {activeTab === 'history' && <PassengerHistoryView />}
+          {activeTab === 'dashboard' && <Suspense fallback={<LazyFallback />}><DashboardView onNavigate={(h) => navigateToHash(h)} /></Suspense>}
+          {activeTab === 'activities' && <Suspense fallback={<LazyFallback />}><ActivitiesView /></Suspense>}
+          {activeTab === 'guides' && <Suspense fallback={<LazyFallback />}><GuidesView /></Suspense>}
+          {activeTab === 'reports' && <Suspense fallback={<LazyFallback />}><ReportsView /></Suspense>}
+          {activeTab === 'history' && <Suspense fallback={<LazyFallback />}><PassengerHistoryView /></Suspense>}
         </main>
       </div>
 
