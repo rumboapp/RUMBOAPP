@@ -30,6 +30,7 @@ export default function ActivitiesView() {
   const [meetingPoint, setMeetingPoint] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [active, setActive] = useState(true);
+  const [showInCatalog, setShowInCatalog] = useState(true);
   const [wspTemplate, setWspTemplate] = useState('');
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
   const isFreePlan = (agency?.subscription_plan || 'free') === 'free';
@@ -63,7 +64,7 @@ export default function ActivitiesView() {
     }
     setEditingActivity(null);
     setName(''); setDescription(''); setDuration(120); setPrice(50000); setCurrency('CLP');
-    setCapacity(15); setMeetingPoint(''); setPhotoUrl(''); setActive(true); setWspTemplate('');
+    setCapacity(15); setMeetingPoint(''); setPhotoUrl(''); setActive(true); setShowInCatalog(true); setWspTemplate('');
     setIsPhotoUploading(false);
     setIsModalOpen(true);
   };
@@ -73,6 +74,7 @@ export default function ActivitiesView() {
     setName(act.name); setDescription(act.description); setDuration(act.duration_minutes);
     setPrice(act.price); setCurrency(act.currency); setCapacity(act.capacity_max);
     setMeetingPoint(act.meeting_point); setPhotoUrl(act.photo_url); setActive(act.active);
+    setShowInCatalog(act.show_in_catalog !== false);
     setWspTemplate(act.whatsapp_template || '');
     setIsPhotoUploading(false);
     setIsModalOpen(true);
@@ -88,7 +90,7 @@ export default function ActivitiesView() {
       notifyWarning('Espera a que la foto termine de subirse antes de guardar.');
       return;
     }
-    const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrl, active, whatsapp_template: isFreePlan ? '' : wspTemplate };
+    const payload = { name, description, duration_minutes: Number(duration), price: Number(price), currency, capacity_max: Number(capacity), meeting_point: meetingPoint, photo_url: photoUrl, active, show_in_catalog: showInCatalog, whatsapp_template: isFreePlan ? '' : wspTemplate };
     if (editingActivity) {
       await db.updateActivity(editingActivity.id, payload);
     } else {
@@ -180,6 +182,11 @@ export default function ActivitiesView() {
                 className={`absolute top-3 left-3 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full shadow-sm transition-transform ${isAdmin ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed'} ${act.active ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
                 {act.active ? '● Activa' : '○ Pausada'}
               </button>
+              {act.show_in_catalog === false && (
+                <span className="absolute top-3 right-3 text-[9px] font-bold uppercase px-2 py-1 rounded-full bg-gray-800/80 text-white shadow-sm">
+                  Oculta del catálogo
+                </span>
+              )}
               <div className="absolute bottom-3 right-3 bg-black/75 text-white font-mono font-bold text-xs px-2.5 py-1 rounded-lg">
                 {act.price.toLocaleString('es-CL', { style: 'currency', currency: act.currency, maximumFractionDigits: 0 })}
               </div>
@@ -256,6 +263,14 @@ export default function ActivitiesView() {
                   </div>
                 )}
               </div>
+              <label className="flex items-start gap-2.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 cursor-pointer">
+                <input type="checkbox" checked={showInCatalog} onChange={(e) => setShowInCatalog(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-[#4A5A33] cursor-pointer" />
+                <span>
+                  <span className="text-xs font-semibold text-gray-700 block">Visible en el catálogo público</span>
+                  <span className="text-[9px] text-gray-400">Si lo desactivas, la actividad sigue operativa para ti pero no aparece en tu link público (útil para tours privados).</span>
+                </span>
+              </label>
               <div>
                 <FileUpload onUpload={(url) => setPhotoUrl(url)} currentUrl={photoUrl} placeholderText="Foto de la actividad" folder="activities" onUploadingChange={setIsPhotoUploading} />
                 <input type="text" placeholder="O URL directa" value={photoUrl.startsWith('data:image/') ? '' : photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} className="w-full mt-2 border border-gray-200 rounded-xl px-3 py-2 text-xs" />
