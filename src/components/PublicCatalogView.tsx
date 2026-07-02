@@ -89,7 +89,17 @@ export default function PublicCatalogView({ token }: { token: string }) {
 
   useEffect(() => {
     (async () => {
-      setCatalog(await db.getPublicCatalog(token));
+      const data = await db.getPublicCatalog(token);
+      if (data) {
+        // Primero las actividades reservables al instante (con salidas
+        // programadas y cupo), luego el resto; alfabético dentro de cada grupo.
+        data.activities = [...data.activities].sort((a, b) => {
+          const aHas = a.upcoming_departures.length > 0 ? 0 : 1;
+          const bHas = b.upcoming_departures.length > 0 ? 0 : 1;
+          return aHas - bHas || a.name.localeCompare(b.name, 'es');
+        });
+      }
+      setCatalog(data);
       setLoading(false);
     })();
   }, [token]);
