@@ -361,6 +361,12 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     await loadData();
   };
 
+  const handleTogglePayment = async (p: Passenger) => {
+    const next = p.payment_status === 'pagado' ? 'pendiente' : 'pagado';
+    await db.updatePassenger(p.id, { payment_status: next });
+    await loadData();
+  };
+
   const handleDeletePassenger = async (paxId: string) => {
     const confirmed = await confirmAction({
       message: '¿Quieres retirar a este pasajero de la salida?',
@@ -510,6 +516,14 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
                           <span className="text-[8.5px] bg-emerald-100 text-emerald-800 border px-1.5 py-0.5 rounded font-bold">✍️ Firmada</span>
                         ) : (
                           <span className="text-[8.5px] bg-amber-50 text-amber-800 border px-1.5 py-0.5 rounded font-bold">⚠️ Sin firmar</span>
+                        )}
+                        {p.payment_status && (
+                          <button onClick={(e) => { e.stopPropagation(); if (isAdmin) handleTogglePayment(p); }}
+                            disabled={!isAdmin}
+                            title={isAdmin ? 'Clic para cambiar el estado de pago' : undefined}
+                            className={`text-[8.5px] border px-1.5 py-0.5 rounded font-bold transition-colors ${isAdmin ? 'cursor-pointer hover:scale-105' : ''} ${p.payment_status === 'pagado' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-50 text-rose-700'}`}>
+                            {p.payment_status === 'pagado' ? '💰 Pagado' : '💰 Pago pendiente'}
+                          </button>
                         )}
                       </div>
                     </div>
