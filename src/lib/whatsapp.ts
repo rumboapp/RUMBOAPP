@@ -11,15 +11,20 @@ import { Passenger, Departure, Activity } from '../types';
 export function cleanPhoneNumber(phone: string): string {
   // Remove spaces, hyphens, parenthesis and keep only digits and plus sign
   const clean = phone.replace(/[^0-9+]/g, '');
-  if (clean.startsWith('0')) {
-    // If starting with local Argentinian 09 prefix or similar, clean it up
-    return '549' + clean.slice(1);
-  }
-  if (!clean.startsWith('+') && clean.length === 10) {
-    // Treat as Argentinian local mobile code
-    return '549' + clean;
-  }
-  return clean.replace('+', '');
+  const digits = clean.replace('+', '');
+
+  // Con "+" explícito se respeta el código de país tal cual
+  if (clean.startsWith('+')) return digits;
+  // Ya viene con código de país chileno
+  if (digits.startsWith('56') && digits.length === 11) return digits;
+  // Celular chileno sin código de país: 9XXXXXXXX (9 dígitos)
+  if (digits.length === 9 && digits.startsWith('9')) return '56' + digits;
+  // Celular chileno sin el 9: XXXXXXXX (8 dígitos)
+  if (digits.length === 8) return '569' + digits;
+  // Formatos argentinos legacy (0XX / 10 dígitos)
+  if (digits.startsWith('0')) return '549' + digits.slice(1);
+  if (digits.length === 10) return '549' + digits;
+  return digits;
 }
 
 /**
