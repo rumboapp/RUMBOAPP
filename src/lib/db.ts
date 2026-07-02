@@ -143,13 +143,23 @@ export const db = {
       updated_at: new Date().toISOString()
     };
 
-    const { data: result, error } = await supabase
+    // Update sin RETURNING (evita el error PGRST116 "cannot coerce" cuando
+    // RLS oculta la fila devuelta) y luego lectura fresca por separado.
+    const { error, count } = await supabase
       .from('agencies')
-      .update(updateData)
+      .update(updateData, { count: 'exact' })
+      .eq('id', agencyId);
+    if (reportWriteError('No se pudo actualizar la agencia', error)) return null;
+    if (count === 0) {
+      reportWriteError('No se pudo actualizar la agencia', { message: 'Solo el dueño de la agencia puede editar estos datos.' });
+      return null;
+    }
+
+    const { data: result } = await supabase
+      .from('agencies')
+      .select('*')
       .eq('id', agencyId)
-      .select()
       .single();
-    reportWriteError('No se pudo actualizar la agencia', error);
 
     dispatchDbUpdate();
     return result as Agency | null;
