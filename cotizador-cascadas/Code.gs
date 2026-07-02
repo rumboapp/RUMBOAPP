@@ -658,6 +658,31 @@ function formatearMoneda(v) { return "$" + v.toLocaleString('es-CL'); }
 // =================================================================
 // EDICIÓN DE PLANTILLA
 // =================================================================
+// Extrae los tramos de formato (negrita/cursiva/subrayado) de un
+// párrafo o ítem de lista, para que el PDF generado en el navegador
+// respete las negritas parciales de la plantilla.
+function extraerRunsDeTexto(textoElemento) {
+  var runs = [];
+  try {
+    var texto = textoElemento.getText();
+    if (!texto) return runs;
+    var indices = textoElemento.getTextAttributeIndices();
+    if (!indices || indices.length === 0) indices = [0];
+    for (var i = 0; i < indices.length; i++) {
+      var ini = indices[i];
+      var fin = (i + 1 < indices.length) ? indices[i + 1] : texto.length;
+      if (fin <= ini) continue;
+      runs.push({
+        t: texto.substring(ini, fin),
+        b: textoElemento.isBold(ini) === true,
+        i: textoElemento.isItalic(ini) === true,
+        u: textoElemento.isUnderline(ini) === true
+      });
+    }
+  } catch(e) {}
+  return runs;
+}
+
 function obtenerElementosPlantilla() {
   try {
     var doc = DocumentApp.openById(ID_PLANTILLA);
@@ -675,12 +700,12 @@ function obtenerElementosPlantilla() {
         if (heading === DocumentApp.ParagraphHeading.HEADING1) tipoNombre = 'heading1';
         else if (heading === DocumentApp.ParagraphHeading.HEADING2) tipoNombre = 'heading2';
         else if (heading === DocumentApp.ParagraphHeading.HEADING3) tipoNombre = 'heading3';
-        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: tipoNombre, editable: true, isBold: parrafo.getAttributes()[DocumentApp.Attribute.BOLD] || false });
+        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: tipoNombre, editable: true, isBold: parrafo.getAttributes()[DocumentApp.Attribute.BOLD] || false, runs: extraerRunsDeTexto(parrafo.editAsText()) });
         contador++;
       } else if (tipo === DocumentApp.ElementType.LIST_ITEM) {
         var listItem = hijo.asListItem();
         var texto = listItem.getText();
-        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: 'lista', editable: true, isBold: listItem.getAttributes()[DocumentApp.Attribute.BOLD] || false, nestingLevel: listItem.getNestingLevel() });
+        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: 'lista', editable: true, isBold: listItem.getAttributes()[DocumentApp.Attribute.BOLD] || false, nestingLevel: listItem.getNestingLevel(), runs: extraerRunsDeTexto(listItem.editAsText()) });
         contador++;
       } else if (tipo === DocumentApp.ElementType.TABLE) {
         var tabla = hijo.asTable();
