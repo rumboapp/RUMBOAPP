@@ -785,12 +785,16 @@ export const db = {
     return (data || []) as BookingRequest[];
   },
 
-  async resolveBookingRequest(id: string, status: 'confirmed' | 'rejected'): Promise<boolean> {
+  async resolveBookingRequest(id: string, status: 'accepted' | 'confirmed' | 'rejected'): Promise<boolean> {
     if (blockIfDemo()) return false;
     if (!isSupabaseConfigured || !supabase) return false;
+    // 'accepted' es un estado intermedio (contactado): aún no se resuelve
+    const payload = status === 'accepted'
+      ? { status }
+      : { status, resolved_at: new Date().toISOString() };
     const { error } = await supabase
       .from('booking_requests')
-      .update({ status, resolved_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', id);
     if (reportWriteError('No se pudo actualizar la solicitud', error)) return false;
     dispatchDbUpdate();

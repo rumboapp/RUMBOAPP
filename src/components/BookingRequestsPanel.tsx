@@ -9,7 +9,7 @@ import { useAuth } from '../lib/auth-context';
 import { useNotification } from '../lib/notification-context';
 import { BookingRequest, Departure, Activity } from '../types';
 import { getBookingConfirmationLink, cleanPhoneNumber } from '../lib/whatsapp';
-import { Inbox, Check, X, Users, Phone, CalendarSearch } from 'lucide-react';
+import { Inbox, Check, X, Users, Phone, CalendarSearch, Send, CalendarPlus } from 'lucide-react';
 
 export default function BookingRequestsPanel() {
   const { agency, isAdmin } = useAuth();
@@ -42,7 +42,12 @@ export default function BookingRequestsPanel() {
   if (!isAdmin) return null;
 
   const now = new Date().toISOString();
-  const pending = requests.filter(r => r.status === 'pending' && r.expires_at > now);
+  // Pendientes no vencidas + solicitudes de fecha ya contactadas (aceptadas),
+  // que permanecen en la bandeja hasta agendarse o rechazarse.
+  const pending = requests.filter(r =>
+    (r.status === 'pending' && r.expires_at > now) ||
+    (r.status === 'accepted' && !r.departure_id)
+  );
   if (pending.length === 0) return null;
 
   const isDateRequest = (req: BookingRequest) => !req.departure_id;
@@ -55,15 +60,16 @@ export default function BookingRequestsPanel() {
     return { label: `${act?.name || 'Actividad'} — fecha solicitada: ${dateStr}`, act };
   };
 
-  // Al aceptar una solicitud de fecha se abre WhatsApp para coordinar;
-  // la salida y el pasajero los crea el admin manualmente después.
+  // "Aceptar" una solicitud de fecha = contactar al solicitante por WhatsApp.
+  // La solicitud queda en estado 'accepted' y sigue en la bandeja hasta que
+  // el admin la agende (crea la salida + inscribe al pasajero) o la rechace.
   const handleAcceptDateRequest = async (req: BookingRequest) => {
     const { act } = describeDateRequest(req);
     setResolving(req.id);
-    const ok = await db.resolveBookingRequest(req.id, 'confirmed');
+    const ok = await db.resolveBookingRequest(req.id, 'accepted');
     setResolving(null);
     if (!ok) return;
-    notifySuccess('Solicitud aceptada. Coordina fecha y hora por WhatsApp y luego agenda la salida en el calendario.');
+    notifySuccess('Solicitud aceptada y WhatsApp abierto. Cuando coordinen, usa "Agendar" para crear la salida e inscribirlo.');
     let dateStr = req.requested_date || '';
     const parts = dateStr.split('-');
     if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}`;
@@ -120,7 +126,9 @@ Recibimos tu solicitud para *${act?.name || 'nuestra actividad'}* el día *${dat
   const handleReject = async (req: BookingRequest) => {
     const confirmed = await confirmAction({
       title: 'Rechazar solicitud',
-      message: `¿Rechazar la solicitud de ${req.full_name} (${req.pax_count} cupo/s)? El cupo quedará liberado.`,
+      message: isDateRequest(req)
+        ? `¿Rechazar la solicitud de fecha de ${req.full_name} (${req.pax_count} persona/s)?`
+        : `¿Rechazar la solicitud de ${req.full_name} (${req.pax_count} cupo/s)? El cupo quedará liberado.`,
       confirmLabel: 'Rechazar',
       destructive: true,
     });
@@ -158,11 +166,31 @@ Recibimos tu solicitud para *${act?.name || 'nuestra actividad'}* el día *${dat
                 </div>
                 {req.note && <p className="text-[10px] text-gray-400 italic mt-1">"{req.note}"</p>}
               </div>
-              <div className="flex gap-2 shrink-0">
-                <button onClick={() => handleConfirm(req)} disabled={resolving === req.id}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-pine text-white rounded-xl text-[10px] font-bold cursor-pointer hover:bg-pine-hover transition-colors disabled:opacity-50">
-                  <Check className="w-3.5 h-3.5" /> Confirmar
-                </button>
+              <div className="flex flex-wrap gap-2 shrink-0 items-center">
+                {isDateRequest(req) ? (
+                  <>
+                    {req.status === 'accepted' ? (
+                      <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 rounded-full">✓ Contactado</span>
+                    ) : (
+                      <button onClick={() => handleConfirm(req)} disabled={resolving === req.id}
+                        title="Marca la solicitud como aceptada y abre WhatsApp para coordinar"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-pine text-white rounded-xl text-[10px] font-bold cursor-pointer hover:bg-pine-hover transition-colors disabled:opacity-50">
+                        <Send className="w-3.5 h-3.5" /> Aceptar
+                      </button>
+                    )}
+                    <button onClick={() => window.dispatchEvent(new CustomEvent('rumbo_schedule_request', { detail: req }))}
+                      disabled={resolving === req.id}
+                      title="Abre el formulario de salida pre-llenado; al guardar se inscribe al solicitante automáticamente"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-ocean text-white rounded-xl text-[10px] font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50">
+                      <CalendarPlus className="w-3.5 h-3.5" /> Agendar
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => handleConfirm(req)} disabled={resolving === req.id}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-pine text-white rounded-xl text-[10px] font-bold cursor-pointer hover:bg-pine-hover transition-colors disabled:opacity-50">
+                    <Check className="w-3.5 h-3.5" /> Confirmar
+                  </button>
+                )}
                 <button onClick={() => handleReject(req)} disabled={resolving === req.id}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 text-gray-500 border rounded-xl text-[10px] font-bold cursor-pointer hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50">
                   <X className="w-3.5 h-3.5" /> Rechazar
