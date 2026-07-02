@@ -10,7 +10,8 @@ import { getPassengerReminderLink, getPassengerCancellationLink, getRiskWaiverSi
 import { exportToCSV, printPDF } from '../lib/export';
 import { useAuth } from '../lib/auth-context';
 import { useNotification } from '../lib/notification-context';
-import { Activity, Departure, Passenger, Guide } from '../types';
+import { Activity, Departure, Passenger, Guide, BookingRequest } from '../types';
+import { getBookingConfirmationLink } from '../lib/whatsapp';
 import { 
   Calendar, Clock, User, Phone, Users, Check, X, Eye, FileSpreadsheet, Printer, CloudSun,
   MapPin, ClipboardList, Plus, ArrowRight, Send, AlertTriangle, ShieldCheck,
@@ -50,6 +51,9 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [newDepartureDate, setNewDepartureDate] = useState('');
   const [newTime, setNewTime] = useState('09:00');
   const [newNotes, setNewNotes] = useState('');
+  // Solicitud de fecha (catálogo público) que se está agendando: al guardar
+  // la salida se inscribe automáticamente al solicitante como pasajero.
+  const [scheduleRequest, setScheduleRequest] = useState<BookingRequest | null>(null);
 
   // New Passenger Form
   const [editingPassengerId, setEditingPassengerId] = useState<string | null>(null);
@@ -155,7 +159,24 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const resetDepartureForm = () => {
     setNewActivityId(''); setNewGuideIds([]); setNewDepartureDate(''); setNewTime('09:00'); setNewNotes('');
     setEditingDepartureId(null);
+    setScheduleRequest(null);
   };
+
+  // Botón "Agendar" de la bandeja de solicitudes: abre el formulario de
+  // salida pre-llenado con la actividad y fecha solicitadas.
+  useEffect(() => {
+    const handleScheduleRequest = (e: Event) => {
+      const req = (e as CustomEvent<BookingRequest>).detail;
+      if (!req?.activity_id) return;
+      resetDepartureForm();
+      setNewActivityId(req.activity_id);
+      setNewDepartureDate(req.requested_date || '');
+      setScheduleRequest(req);
+      setIsAddDepartureOpen(true);
+    };
+    window.addEventListener('rumbo_schedule_request', handleScheduleRequest);
+    return () => window.removeEventListener('rumbo_schedule_request', handleScheduleRequest);
+  }, []);
 
   const goToAdjacentPeriod = (direction: 1 | -1) => {
     const d = new Date(selectedDate);
@@ -250,7 +271,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         notes: newNotes
       });
     } else {
-      await db.createDeparture(agencyId, {
+      const newDep = await db.createDeparture(agencyId, {
         activity_id: newActivityId,
         guide_id: newGuideIds.length > 0 ? newGuideIds[0] : null,
         guide_ids: newGuideIds,
@@ -259,6 +280,27 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         status: 'programada',
         notes: newNotes
       });
+
+      // Si esta salida nace de una solicitud de fecha del catálogo público,
+      // inscribir al solicitante como pasajero y notificarle por WhatsApp.
+      if (scheduleRequest) {
+        const act = activities.find(a => a.id === newActivityId);
+        await db.createPassenger({
+          departure_id: newDep.id,
+          full_name: scheduleRequest.full_name,
+          phone: scheduleRequest.phone,
+          pax_count: scheduleRequest.pax_count,
+          checked_in: false,
+          payment_status: 'pendiente',
+          notes: scheduleRequest.note ? `Reserva web: ${scheduleRequest.note}` : 'Reserva web'
+        });
+        await db.resolveBookingRequest(scheduleRequest.id, 'confirmed');
+        notifySuccess(`Salida agendada y ${scheduleRequest.full_name} inscrito con pago pendiente.`);
+        window.open(getBookingConfirmationLink(
+          scheduleRequest.full_name, scheduleRequest.phone, act?.name || 'Actividad',
+          scheduledDate, newTime, agency?.name || 'Rumbo', agency?.payment_info
+        ), '_blank');
+      }
     }
     setIsAddDepartureOpen(false);
     setSelectedDate(scheduledDate);

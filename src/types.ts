@@ -93,7 +93,9 @@ export interface BookingRequest {
   phone: string;
   pax_count: number;
   note?: string | null;
-  status: 'pending' | 'confirmed' | 'rejected';
+  // 'accepted' = la agencia ya contactó al solicitante (solo solicitudes de
+  // fecha); sigue visible en la bandeja hasta agendarse o rechazarse.
+  status: 'pending' | 'accepted' | 'confirmed' | 'rejected';
   created_at: string;
   expires_at: string;
   resolved_at?: string | null;
