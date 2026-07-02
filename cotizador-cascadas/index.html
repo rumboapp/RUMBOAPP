@@ -118,35 +118,39 @@
       .modal-bg { position: static; padding: 0; backdrop-filter: none; background: transparent; }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       DOCUMENTO DE COTIZACIÓN PARA PDF (formato del Word manual)
-       Se renderiza fuera de pantalla y se convierte a PDF de una
-       sola hoja larga con html2canvas + jsPDF.
+  </style>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ESTILOS DEL DOCUMENTO DE COTIZACIÓN (formato del Word manual).
+       Este bloque NO afecta a la interfaz: se inyecta dentro de un
+       iframe aislado (sin Tailwind) donde se renderiza el documento
+       y html2canvas + jsPDF lo convierten en un PDF de una sola hoja.
        Ancho fijo 794px = A4 a 96dpi. NO cambiar sin ajustar el PDF.
-       ═══════════════════════════════════════════════════════════ */
-    #docArea {
-      position: absolute; left: -10000px; top: 0; z-index: -1;
-      width: 794px; background: #fff;
+       ═══════════════════════════════════════════════════════════ -->
+  <style id="estilos-documento-pdf" media="not all">
+    body {
+      margin: 0; width: 794px; background: #fff;
       font-family: Aptos, Calibri, 'Segoe UI', Arial, sans-serif;
       font-size: 14px; color: #000; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
-    #docArea .bannerDoc { display: block; width: 100%; }
-    #docArea .cuerpoDoc { padding: 26px 68px 30px; }
-    #docArea .docParrafo { margin: 0 0 10px; }
-    #docArea .docH1 { font-size: 19px; font-weight: 700; margin: 14px 0 8px; }
-    #docArea .docH2 { font-size: 16px; font-weight: 700; margin: 12px 0 6px; }
-    #docArea .docH3 { font-size: 14.5px; font-weight: 700; margin: 10px 0 6px; }
-    #docArea .docLista { margin: 0 0 5px; }
-    #docArea .footerDoc { border-top: 3px solid #3E3E40; margin-top: 26px; padding: 10px 0 4px; text-align: center; font-size: 11.5px; color: #444; }
+    .bannerDoc { display: block; width: 100%; border: 0; }
+    .cuerpoDoc { padding: 26px 68px 30px; }
+    .docParrafo { margin: 0 0 10px; }
+    .docH1 { font-size: 19px; font-weight: 700; margin: 14px 0 8px; }
+    .docH2 { font-size: 16px; font-weight: 700; margin: 12px 0 6px; }
+    .docH3 { font-size: 14.5px; font-weight: 700; margin: 10px 0 6px; }
+    .docLista { margin: 0 0 5px; }
+    .footerDoc { border-top: 3px solid #3E3E40; margin-top: 26px; padding: 10px 0 4px; text-align: center; font-size: 11.5px; color: #444; }
     /* LA TABLA: una sola, transparente, bordes finos, igual al Word */
-    #docArea table.tablaCot { border-collapse: collapse; width: 100%; margin: 6px 0 16px; font-size: 12.5px; background: transparent; }
-    #docArea table.tablaCot th, #docArea table.tablaCot td { border: 1px solid #000; padding: 5px 6px; background: transparent; vertical-align: middle; text-align: center; }
-    #docArea table.tablaCot th { font-weight: 700; }
-    #docArea table.tablaCot td.izq, #docArea table.tablaCot th.izq { text-align: left; }
+    table.tablaCot { border-collapse: collapse; width: 100%; margin: 6px 0 16px; font-size: 12.5px; background: transparent; }
+    table.tablaCot th, table.tablaCot td { border: 1px solid #000; padding: 5px 6px; background: transparent; vertical-align: middle; text-align: center; }
+    table.tablaCot th { font-weight: 700; }
+    table.tablaCot td.izq, table.tablaCot th.izq { text-align: left; }
     /* Celdas invisibles junto a Subtotal / IVA / Total (sin borde, como en el Word) */
-    #docArea table.tablaCot td.vacia { border: none; background: transparent; }
-    #docArea table.tablaCot tr.totalFila td { font-weight: 700; }
-    #docArea table.tablaCot .subDetalle { font-size: 10.5px; color: #333; font-weight: 400; }
+    table.tablaCot td.vacia { border: none; background: transparent; }
+    table.tablaCot tr.totalFila td { font-weight: 700; }
+    table.tablaCot .subDetalle { font-size: 10.5px; color: #333; font-weight: 400; }
   </style>
 <base target="_blank">
 </head>
@@ -455,9 +459,6 @@
       </form>
     </div>
   </div>
-
-  <!-- Documento oculto que se convierte en el PDF (formato Word manual) -->
-  <div id="docArea"></div>
 
   <!-- Toast -->
   <div id="toast-plantilla"></div>
@@ -1650,22 +1651,67 @@ function refrescarDatosServidor() {
       return html;
     }
 
+    // Renderiza el documento en un iframe aislado (sin Tailwind ni estilos de la
+    // interfaz — así html2canvas no se topa con colores oklch ni estilos ajenos)
+    // y lo fotografía completo. Devuelve el canvas por callback.
+    function capturarDocumentoEnIframe(htmlDocumento, onListo, onError) {
+      let iframe = document.createElement('iframe');
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.style.cssText = 'position:absolute;left:-10000px;top:0;width:794px;height:100px;border:0;';
+      document.body.appendChild(iframe);
+      let terminarCon = function(fn, arg) {
+        try { document.body.removeChild(iframe); } catch(e) {}
+        fn(arg);
+      };
+      try {
+        let cssDocumento = document.getElementById('estilos-documento-pdf').textContent;
+        let idoc = iframe.contentDocument;
+        idoc.open();
+        idoc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + cssDocumento + '</style></head><body>' + htmlDocumento + '</body></html>');
+        idoc.close();
+        let intentos = 0;
+        let esperarYCapturar = function() {
+          intentos++;
+          let imgs = idoc.querySelectorAll('img');
+          let listas = Array.prototype.every.call(imgs, function(im) { return im.complete; });
+          if (!listas && intentos < 40) { setTimeout(esperarYCapturar, 100); return; }
+          let alto = Math.max(idoc.body.scrollHeight, idoc.documentElement.scrollHeight);
+          iframe.style.height = alto + 'px';
+          setTimeout(function() {
+            alto = Math.max(idoc.body.scrollHeight, idoc.documentElement.scrollHeight);
+            html2canvas(idoc.body, {
+              scale: 2, backgroundColor: '#ffffff', logging: false,
+              width: 794, height: alto, windowWidth: 794, windowHeight: alto,
+              scrollX: 0, scrollY: 0
+            }).then(function(canvas) {
+              terminarCon(onListo, canvas);
+            }).catch(function(err) {
+              terminarCon(onError, err);
+            });
+          }, 80);
+        };
+        setTimeout(esperarYCapturar, 120);
+      } catch(e) {
+        terminarCon(onError, e);
+      }
+    }
+
     function generarPdfClienteDesdePayload(payload) {
       let continuar = function(elementos) {
+        let htmlDocumento;
         try {
-          document.getElementById('docArea').innerHTML = construirDocumentoCotizacion(payload, elementos);
+          htmlDocumento = construirDocumentoCotizacion(payload, elementos);
         } catch(e) {
           alert("Error armando el documento: " + e);
           resetActions();
           return;
         }
-        // pequeña pausa para que el navegador pinte el documento oculto
-        setTimeout(function() {
-          html2canvas(document.getElementById('docArea'), { scale: 2, backgroundColor: '#ffffff', logging: false }).then(function(canvas) {
+        capturarDocumentoEnIframe(htmlDocumento, function(canvas) {
             // Una sola página con el alto exacto del contenido (hoja larga)
             let anchoPt = 595.28; // ancho A4 en puntos
             let altoPt = canvas.height * anchoPt / canvas.width;
-            let pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'pt', format: [anchoPt, altoPt] });
+            // jsPDF intercambia ancho/alto según la orientación: se elige la que respete las medidas
+            let pdf = new window.jspdf.jsPDF({ orientation: (altoPt >= anchoPt ? 'p' : 'l'), unit: 'pt', format: [anchoPt, altoPt] });
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, anchoPt, altoPt);
 
             let nombreArchivo = "Cotizacion Cascadas Hotel " + payload.nombre_cliente + " " + payload.checkin.replace(/\//g, "-") + ".pdf";
@@ -1694,11 +1740,10 @@ function refrescarDatosServidor() {
                   </div>`;
               })
               .guardarPdfClienteYRegistrar(payload, base64, nombreArchivo);
-          }).catch(function(err) {
-            alert("Error generando el PDF: " + err);
-            resetActions();
-          });
-        }, 150);
+        }, function(err) {
+          alert("Error generando el PDF: " + err);
+          resetActions();
+        });
       };
 
       // Usar la plantilla ya cargada en memoria, o pedirla al servidor
