@@ -1550,14 +1550,15 @@ function refrescarDatosServidor() {
             '<td>' + fm(h.total) + '</td>' +
           '</tr>';
         });
+        // Amenidades y adicionales: sin fechas ni noches (solo aplican a habitaciones)
         (payload.amenidades_predefinidas || []).forEach(function(a) {
           let detalle = a.descripcion ? '<div class="subDetalle">' + escHtml(a.descripcion) + '</div>' : '';
           filas += '<tr>' +
             '<td class="izq">' + escHtml(a.nombre) + detalle + '</td>' +
             '<td>' + a.cantidad + '</td>' +
-            '<td>' + escHtml(payload.checkin) + '</td>' +
-            '<td>' + escHtml(payload.checkout) + '</td>' +
-            '<td></td>' +
+            '<td>-</td>' +
+            '<td>-</td>' +
+            '<td>-</td>' +
             '<td>' + fm(a.valorUnitario) + '</td>' +
             '<td>' + fm(a.total) + '</td>' +
           '</tr>';
@@ -1565,11 +1566,11 @@ function refrescarDatosServidor() {
         (payload.adicionales_costo || []).forEach(function(a) {
           filas += '<tr>' +
             '<td class="izq">' + escHtml(a.detalle) + '</td>' +
-            '<td>1</td>' +
-            '<td>' + escHtml(payload.checkin) + '</td>' +
-            '<td>' + escHtml(payload.checkout) + '</td>' +
-            '<td></td>' +
-            '<td>' + fm(a.total) + '</td>' +
+            '<td>-</td>' +
+            '<td>-</td>' +
+            '<td>-</td>' +
+            '<td>-</td>' +
+            '<td>-</td>' +
             '<td>' + fm(a.total) + '</td>' +
           '</tr>';
         });
