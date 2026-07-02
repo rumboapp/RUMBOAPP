@@ -1,40 +1,42 @@
-# Cotizador Cascadas Hotel — v2
+# Cotizador Cascadas Hotel — arreglo del cuadro del PDF
 
-Webapp de Google Apps Script vinculada a la planilla "Base de Datos - Cotizador Cascadas".
+Estos son los archivos del proyecto de Apps Script "COTIZADOR", basados en la
+versión original completa del usuario, con **un solo cambio funcional**: el
+botón **GENERAR PDF** ahora produce el documento con el formato del Word manual.
 
-## Qué cambió respecto a la versión anterior
+## Qué cambió (y qué no)
 
-- **El PDF ya no se genera con la plantilla de Google Docs.** Ahora se arma en el
-  navegador con el formato exacto del documento manual de Word y se descarga al
-  instante. La constante `ID_PLANTILLA` ya no existe (el documento de Docs puede
-  quedar guardado, pero no se usa).
-- **Una sola tabla, transparente**, con bordes finos negros, igual a la del Word.
-  Subtotal, IVA 19% y Total van dentro de la misma tabla, sin cuadros vacíos
-  contorneados al costado.
-- **PDF de una sola hoja larga** (no se corta en páginas A4).
-- **"Habitación Matrimonial o Doble" → "Habitación Matrimonial"** (el nombre sale
-  de la hoja `Tarifas`, que ya dice "Habitación Matrimonial (2 personas)").
-- La vista previa en pantalla es exactamente lo que sale en el PDF.
-- Se mantiene: registro en la hoja `Historial` y copia del PDF en la carpeta de
-  Drive "Cotizaciones Temporales" (se crea sola si no existe).
+Cambió:
+- **GENERAR PDF**: el PDF se arma en el navegador (jsPDF + html2canvas, las
+  mismas librerías que ya usaba el módulo de Reportes) con:
+  - **Una sola tabla transparente** con bordes finos negros, igual a la del
+    Word manual. Subtotal, IVA 19% y Total van dentro de la misma tabla y las
+    celdas vacías a su izquierda no tienen borde (adiós cuadros contorneados).
+  - **Una sola hoja larga**, sin cortes de página.
+  - Los **textos siguen saliendo de la plantilla de Google Docs** (vía
+    `obtenerElementosPlantilla`), así que la pestaña "Editar Plantilla" sigue
+    afectando al PDF.
+  - El PDF se descarga al instante y además se respalda en la carpeta
+    "Cotizaciones Temporales" de Drive y se registra en `Historial`
+    (nueva función `guardarPdfClienteYRegistrar` en Code.gs).
+- La lista base de tarifas dice "Habitación Matrimonial" (sin "o Doble").
+  Nota: esa lista solo se usa si la hoja `Tarifas` está vacía; los nombres
+  reales siempre salen de la hoja.
 
-## Cómo instalarlo (5 minutos)
+NO cambió (todo el resto es idéntico al original):
+- Pestañas Estándar / Programas / Configurar Tarifas / Editar Plantilla
+- Amenidades predefinidas y adicionales manuales
+- Guardar/eliminar programas, coberturas, ocasiones especiales
+- Panel de Reportes completo con exportación a PDF
+- Registro en Historial
+- **GENERAR WORD**: mantiene el flujo original con la plantilla de Google Docs
+  (ese documento conserva el estilo anterior de tabla).
 
-1. Abre el proyecto **COTIZADOR** en Apps Script (script.google.com).
-2. Abre `Code.gs`, selecciona todo y pégale encima el contenido de
-   `cotizador-cascadas/Code.gs` de este repositorio. Guarda (⌘S).
-3. Abre `index.html`, selecciona todo y pégale encima el contenido de
-   `cotizador-cascadas/index.html`. Guarda.
-4. Botón **Deploy → Manage deployments → ícono de lápiz → Version: New version →
-   Deploy**. (Si haces "New deployment" en vez de editar, cambia la URL de la app;
-   editando la implementación existente, la URL se mantiene.)
-5. Abre la URL de la webapp y prueba: nombre, habitación, fechas, botón
-   **"Descargar PDF y guardar"**.
+## Cómo instalar
 
-## Estructura de la planilla (sin cambios)
-
-- `Tarifas`: Habitacion | PrecioNeto
-- `Amenidades`: Amenidad | PrecioNeto
-- `Programas`: NombrePrograma | PrecioTotalNeto | TicksJSON
-- `TicksJSON`: nombre de programa | JSON (respaldo si la columna de Programas está vacía)
-- `Historial`: Fecha | Cliente | Tipo | Detalle | CheckIn | CheckOut | Noches | Neto | Total
+1. Abre el proyecto **COTIZADOR** en script.google.com.
+2. En `Code.gs`: seleccionar todo → pegar encima el `Code.gs` de esta carpeta → guardar.
+3. En `index.html`: seleccionar todo → pegar encima el `index.html` de esta carpeta → guardar.
+4. **Deploy → Manage deployments → lápiz → Version: New version → Deploy**
+   (editar la implementación existente mantiene la misma URL).
+5. Probar: nombre + fechas + habitación → **GENERAR PDF**.
