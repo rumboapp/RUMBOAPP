@@ -23,6 +23,8 @@ import { DownloadAppModal } from './components/DownloadAppModal';
 const RiskWaiverSignView = lazy(() => import('./components/RiskWaiverSignView'));
 const PublicBookingView = lazy(() => import('./components/PublicBookingView'));
 const PublicCatalogView = lazy(() => import('./components/PublicCatalogView'));
+const OnboardingTour = lazy(() => import('./components/OnboardingTour'));
+import type { TourStep } from './components/OnboardingTour';
 const LegalView = lazy(() => import('./components/LegalView'));
 
 const LazyFallback = () => (
@@ -117,6 +119,44 @@ function AppContent() {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+  const [isTourDismissed, setIsTourDismissed] = useState(false);
+
+  // Tour de bienvenida: texto distinto para agencias recién creadas vs existentes
+  const isNewAgency = agency ? (Date.now() - new Date(agency.created_at).getTime()) < 1000 * 60 * 60 * 48 : false;
+  const tourSteps: TourStep[] = [
+    {
+      target: null,
+      title: isNewAgency ? '¡Bienvenido a Rumbo! 🌄' : '¡Rumbo tiene novedades!',
+      text: isNewAgency
+        ? 'Te mostramos en 30 segundos cómo funciona tu nuevo panel. Puedes saltar este tour cuando quieras.'
+        : 'La app creció: reservas online, catálogo público y más. Te mostramos lo nuevo en 30 segundos, o salta si prefieres explorar solo.'
+    },
+    {
+      target: '[data-tour="nav-dashboard"]',
+      title: 'Operaciones Diarias',
+      text: 'Tu día a día: agenda salidas en el calendario, inscribe pasajeros y haz check-in. Aquí también llegan las solicitudes de reserva que hacen tus clientes desde tus links públicos.'
+    },
+    {
+      target: '[data-tour="nav-activities"]',
+      title: 'Catálogo de Actividades',
+      text: 'Crea tus excursiones con fotos, precios y cupos. Desde aquí puedes compartir tu catálogo público — un link para tu Instagram donde la gente reserva sola.'
+    },
+    {
+      target: '[data-tour="nav-guides"]',
+      title: 'Equipo de Guías',
+      text: 'Administra tu plantel: los guías se registran con tu código de agencia y tú los apruebas y asignas a cada salida.'
+    },
+    {
+      target: '[data-tour="nav-reports"]',
+      title: 'Métricas y Reportes',
+      text: 'Ingresos proyectados, actividades más vendidas, desempeño por guía y alertas de salud de tus pasajeros.'
+    },
+    {
+      target: '[data-tour="agency-settings"]',
+      title: 'Tu Agencia',
+      text: 'Haz clic aquí para editar tu logo, tu plantilla de WhatsApp y tus datos de pago (los que se envían al confirmar una reserva web).'
+    }
+  ];
 
   // Agency Edit state
   const [editAgencyName, setEditAgencyName] = useState('');
@@ -716,20 +756,20 @@ function AppContent() {
           </div>
 
           <nav className="flex flex-col gap-1.5">
-            <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
+            <button data-tour="nav-dashboard" onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'dashboard' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
               <LayoutDashboard className="w-4 h-4" /> Operaciones Diarias
             </button>
-            <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
+            <button data-tour="nav-activities" onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'activities' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
               <ActivitiesIcon className="w-4 h-4" /> Catálogo Actividades
             </button>
-            <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
+            <button data-tour="nav-guides" onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'guides' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
               <Users className="w-4 h-4" /> Equipo de Guías
             </button>
             {isAdmin && (
-              <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
+              <button data-tour="nav-reports" onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
                 className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold cursor-pointer transition-all ${activeTab === 'reports' ? 'bg-sky text-pine font-bold' : 'text-white/90 hover:bg-white/10'}`}>
                 <LineChart className="w-4 h-4" /> Métricas / Reportes
               </button>
@@ -792,7 +832,7 @@ function AppContent() {
             </div>
           </div>
 
-          <div onClick={() => isAdmin && setIsAgencyModalOpen(true)}
+          <div data-tour="agency-settings" onClick={() => isAdmin && setIsAgencyModalOpen(true)}
             className={`hidden md:flex items-center gap-3.5 p-1.5 rounded-2xl transition-colors ${isAdmin ? 'hover:bg-sky-80 cursor-pointer' : ''}`}>
             <img src={agency.logo_url} alt={agency.name} className="w-10 h-10 rounded-2xl object-cover border border-gray-405/20" />
             <div className="text-left">
@@ -827,6 +867,20 @@ function AppContent() {
           {activeTab === 'history' && <Suspense fallback={<LazyFallback />}><PassengerHistoryView /></Suspense>}
         </main>
       </div>
+
+      {/* TOUR DE BIENVENIDA (una sola vez por agencia, solo admins) */}
+      {isAdmin && !isDemoMode && !agency.onboarding_completed && !isTourDismissed && (
+        <Suspense fallback={null}>
+          <OnboardingTour
+            steps={tourSteps}
+            onFinish={async () => {
+              setIsTourDismissed(true);
+              await db.updateAgency(agency.id, { onboarding_completed: true });
+              refreshAgency();
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* MOBILE BOTTOM NAV */}
       {isQuickActionsOpen && (
@@ -873,11 +927,11 @@ function AppContent() {
         </div>
       )}
       <nav className="fixed bottom-0 inset-x-0 bg-sky border-t border-gray-405/20 z-40 flex items-center justify-around p-2 md:hidden">
-        <button onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
+        <button data-tour="nav-dashboard" onClick={() => { setActiveTab('dashboard'); navigateToHash('#/dashboard'); }}
           className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'dashboard' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
           <LayoutDashboard className="w-5 h-5" /> Operaciones
         </button>
-        <button onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
+        <button data-tour="nav-activities" onClick={() => { setActiveTab('activities'); navigateToHash('#/activities'); }}
           className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'activities' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
           <ActivitiesIcon className="w-5 h-5" /> Catálogo
         </button>
@@ -885,12 +939,12 @@ function AppContent() {
           className="flex items-center justify-center w-12 h-12 blob bg-pine text-white shadow-pop cursor-pointer hover:bg-pine-hover transition-colors -mt-4">
           <Plus className={`w-5 h-5 transition-transform ${isQuickActionsOpen ? 'rotate-45' : ''}`} />
         </button>
-        <button onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
+        <button data-tour="nav-guides" onClick={() => { setActiveTab('guides'); navigateToHash('#/guides'); }}
           className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'guides' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
           <Users className="w-5 h-5" /> Guías
         </button>
         {isAdmin ? (
-          <button onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
+          <button data-tour="nav-reports" onClick={() => { setActiveTab('reports'); navigateToHash('#/reports'); }}
             className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-2xl text-[9px] font-bold ${activeTab === 'reports' ? 'text-pine bg-sky-80' : 'text-gray-405'}`}>
             <LineChart className="w-5 h-5" /> Métricas
           </button>

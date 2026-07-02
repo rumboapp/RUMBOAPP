@@ -22,6 +22,7 @@ export interface Agency {
   whatsapp_template?: string;
   payment_info?: string;
   catalog_token?: string;
+  onboarding_completed?: boolean;
   is_demo?: boolean;
   created_at: string;
   updated_at: string;
