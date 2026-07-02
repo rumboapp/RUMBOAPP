@@ -54,10 +54,10 @@ export function getPassengerReminderLink(passenger: Passenger, departure: Depart
   } else {
     text = `Hola *${passenger.full_name}*, te recordamos de tu excursión con *Rumbo*:
   
-🚢 *Excursión:* ${activity.name}
-📅 *Fecha:* ${dateStr}
-⏰ *Hora:* ${departure.departure_time}hs
-📍 *Punto de encuentro:* ${activity.meeting_point}${passenger.notes ? `\n📝 *Nota:* ${passenger.notes}` : ''}
+• *Excursión:* ${activity.name}
+• *Fecha:* ${dateStr}
+• *Hora:* ${departure.departure_time}hs
+• *Punto de encuentro:* ${activity.meeting_point}${passenger.notes ? `\n• *Nota:* ${passenger.notes}` : ''}
 
 ¡Recomendamos llegar 15 minutos antes! Ante cualquier duda puedes responder a este mensaje.`;
   }
@@ -73,7 +73,7 @@ export function getRiskWaiverSignLink(passenger: Passenger, signUrl: string): st
 
   const text = `Hola *${passenger.full_name}*, te escribimos de *Rumbo* para pedirte que completes la firma de la ficha de riesgo antes de tu excursión.
 
-📝 Por favor ingresa al siguiente enlace para firmarla:
+Por favor ingresa al siguiente enlace para firmarla:
 ${signUrl}
 
 ¡Muchas gracias!`;
@@ -103,16 +103,16 @@ export function getBookingConfirmationLink(
   } catch (_) {}
 
   const paymentBlock = paymentInfo && paymentInfo.trim()
-    ? `\n💳 *Para confirmar tu cupo, realiza el pago aquí:*\n${paymentInfo.trim()}\n\nUna vez realizado el pago, respóndenos con el comprobante.`
+    ? `\n*Para confirmar tu cupo, realiza el pago aquí:*\n${paymentInfo.trim()}\n\nUna vez realizado el pago, respóndenos con el comprobante.`
     : '\nEn breve te enviaremos las instrucciones de pago para confirmar tu cupo.';
 
-  const text = `Hola *${fullName}*, te escribimos de *${agencyName}* 🌄
+  const text = `Hola *${fullName}*, te escribimos de *${agencyName}*.
 
 ¡Buenas noticias! Aceptamos tu solicitud de reserva:
 
-🚢 *Excursión:* ${activityName}
-📅 *Fecha:* ${dateStr}
-⏰ *Hora:* ${departureTime}hs
+• *Excursión:* ${activityName}
+• *Fecha:* ${dateStr}
+• *Hora:* ${departureTime}hs
 ${paymentBlock}
 
 *Importante:* tu reserva queda confirmada solo una vez realizado el pago. Luego te pediremos completar tu ficha de seguridad. ¡Gracias!`;
@@ -134,7 +134,7 @@ export function getPassengerCancellationLink(passenger: Passenger, departure: De
     }
   } catch (_) {}
 
-  const text = `⚠️ *Alerta de Suspensión - Rumbo* ⚠️
+  const text = `*ALERTA DE SUSPENSIÓN — Rumbo*
 
 Hola *${passenger.full_name}*, nos comunicamos de la agencia para informarte que debido a *alertas climáticas desfavorables*, lamentamos avisar que hemos *SUSPENDIDO* la salida de *${activity.name}* programada para el día *${dateStr}* a las *${departure.departure_time}hs*.
 

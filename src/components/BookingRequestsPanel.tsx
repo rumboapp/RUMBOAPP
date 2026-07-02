@@ -73,7 +73,7 @@ export default function BookingRequestsPanel() {
     let dateStr = req.requested_date || '';
     const parts = dateStr.split('-');
     if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}`;
-    const text = `Hola *${req.full_name}*, te escribimos de *${agency?.name || 'Rumbo'}* 🌄
+    const text = `Hola *${req.full_name}*, te escribimos de *${agency?.name || 'Rumbo'}*.
 
 Recibimos tu solicitud para *${act?.name || 'nuestra actividad'}* el día *${dateStr}* (${req.pax_count} persona/s) y ¡nos encantaría coordinarla contigo!
 
