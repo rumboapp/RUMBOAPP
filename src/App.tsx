@@ -21,6 +21,7 @@ import { PricingModal } from './components/PricingModal';
 import { DownloadAppModal } from './components/DownloadAppModal';
 import RiskWaiverSignView from './components/RiskWaiverSignView';
 import PublicBookingView from './components/PublicBookingView';
+import PublicCatalogView from './components/PublicCatalogView';
 import LegalView from './components/LegalView';
 import { 
   Compass, LayoutDashboard, Compass as ActivitiesIcon, Users, UserSquare2,
@@ -62,6 +63,11 @@ function AppContent() {
   if (currentHash.startsWith('#/reservar/')) {
     const bookingToken = currentHash.replace('#/reservar/', '');
     return <PublicBookingView token={bookingToken} />;
+  }
+
+  if (currentHash.startsWith('#/agencia/')) {
+    const catalogToken = currentHash.replace('#/agencia/', '');
+    return <PublicCatalogView token={catalogToken} />;
   }
 
   if (currentHash === '#/terminos') {

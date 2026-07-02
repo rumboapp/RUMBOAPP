@@ -8,8 +8,8 @@ import { db } from '../lib/db';
 import { useAuth } from '../lib/auth-context';
 import { useNotification } from '../lib/notification-context';
 import { BookingRequest, Departure, Activity } from '../types';
-import { getBookingConfirmationLink } from '../lib/whatsapp';
-import { Inbox, Check, X, Users, Phone } from 'lucide-react';
+import { getBookingConfirmationLink, cleanPhoneNumber } from '../lib/whatsapp';
+import { Inbox, Check, X, Users, Phone, CalendarSearch } from 'lucide-react';
 
 export default function BookingRequestsPanel() {
   const { agency, isAdmin } = useAuth();
@@ -45,6 +45,36 @@ export default function BookingRequestsPanel() {
   const pending = requests.filter(r => r.status === 'pending' && r.expires_at > now);
   if (pending.length === 0) return null;
 
+  const isDateRequest = (req: BookingRequest) => !req.departure_id;
+
+  const describeDateRequest = (req: BookingRequest) => {
+    const act = activities.find(a => a.id === req.activity_id);
+    let dateStr = req.requested_date || '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}`;
+    return { label: `${act?.name || 'Actividad'} — fecha solicitada: ${dateStr}`, act };
+  };
+
+  // Al aceptar una solicitud de fecha se abre WhatsApp para coordinar;
+  // la salida y el pasajero los crea el admin manualmente después.
+  const handleAcceptDateRequest = async (req: BookingRequest) => {
+    const { act } = describeDateRequest(req);
+    setResolving(req.id);
+    const ok = await db.resolveBookingRequest(req.id, 'confirmed');
+    setResolving(null);
+    if (!ok) return;
+    notifySuccess('Solicitud aceptada. Coordina fecha y hora por WhatsApp y luego agenda la salida en el calendario.');
+    let dateStr = req.requested_date || '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}`;
+    const text = `Hola *${req.full_name}*, te escribimos de *${agency?.name || 'Rumbo'}* 🌄
+
+Recibimos tu solicitud para *${act?.name || 'nuestra actividad'}* el día *${dateStr}* (${req.pax_count} persona/s) y ¡nos encantaría coordinarla contigo!
+
+¿Te acomoda esa fecha? Cuéntanos tu horario preferido y te confirmamos la salida con las instrucciones de pago.`;
+    window.open(`https://wa.me/${cleanPhoneNumber(req.phone)}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   const describeDeparture = (departureId: string) => {
     const dep = departures.find(d => d.id === departureId);
     if (!dep) return { label: 'Salida eliminada', dep: null, act: null };
@@ -56,7 +86,11 @@ export default function BookingRequestsPanel() {
   };
 
   const handleConfirm = async (req: BookingRequest) => {
-    const { dep, act } = describeDeparture(req.departure_id);
+    if (isDateRequest(req)) {
+      await handleAcceptDateRequest(req);
+      return;
+    }
+    const { dep, act } = describeDeparture(req.departure_id!);
     if (!dep || !act) return;
     setResolving(req.id);
 
@@ -105,11 +139,18 @@ export default function BookingRequestsPanel() {
       <p className="text-[10px] text-gray-400 mt-0.5">Reservas hechas desde tus links públicos. Al confirmar se crea el pasajero y se abre WhatsApp con las instrucciones de pago.</p>
       <div className="flex flex-col divide-y divide-gray-50 mt-3">
         {pending.map(req => {
-          const { label } = describeDeparture(req.departure_id);
+          const { label } = isDateRequest(req) ? describeDateRequest(req) : describeDeparture(req.departure_id!);
           return (
             <div key={req.id} className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-gray-800">{req.full_name}</p>
+                <p className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                  {req.full_name}
+                  {isDateRequest(req) && (
+                    <span className="flex items-center gap-0.5 text-[8.5px] bg-indigo-50 text-indigo-700 border px-1.5 py-0.5 rounded font-bold">
+                      <CalendarSearch className="w-3 h-3" /> Solicitud de fecha
+                    </span>
+                  )}
+                </p>
                 <p className="text-[10px] text-gray-500 truncate">{label}</p>
                 <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-500">
                   <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {req.pax_count} pax</span>

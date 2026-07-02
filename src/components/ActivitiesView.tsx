@@ -8,13 +8,13 @@ import { db } from '../lib/db';
 import { useAuth } from '../lib/auth-context';
 import { useNotification } from '../lib/notification-context';
 import { Activity } from '../types';
-import { Plus, Edit, Trash2, Clock, Users, Sparkles, Lock } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, Users, Sparkles, Lock, Share2 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { WhatsappTemplateEditor } from './WhatsappTemplateEditor';
 
 export default function ActivitiesView() {
   const { agency, isAdmin } = useAuth();
-  const { notifyWarning, confirmAction } = useNotification();
+  const { notifyWarning, notifySuccess, confirmAction } = useNotification();
   const agencyId = agency?.id || '';
 
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -145,9 +145,24 @@ export default function ActivitiesView() {
           </div>
         </div>
         {isAdmin && (
-          <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2.5 bg-pine text-white rounded-xl text-xs font-semibold shadow-md cursor-pointer hover:bg-pine-hover hover:shadow-lg transition-all">
-            <Plus className="w-4 h-4" /> Crear Actividad
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {agency?.catalog_token && (
+              <button onClick={() => {
+                  const url = `${window.location.origin}/#/agencia/${agency.catalog_token}`;
+                  navigator.clipboard.writeText(url).then(
+                    () => notifySuccess('Link del catálogo copiado. Ideal para tu bio de Instagram o redes sociales.'),
+                    () => notifyWarning('No se pudo copiar el link.')
+                  );
+                }}
+                title="Copiar link público de tu catálogo para compartir en redes"
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-pine/30 text-pine rounded-xl text-xs font-semibold cursor-pointer hover:bg-pine/5 transition-all">
+                <Share2 className="w-4 h-4" /> Compartir Catálogo
+              </button>
+            )}
+            <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2.5 bg-pine text-white rounded-xl text-xs font-semibold shadow-md cursor-pointer hover:bg-pine-hover hover:shadow-lg transition-all">
+              <Plus className="w-4 h-4" /> Crear Actividad
+            </button>
+          </div>
         )}
       </div>
 

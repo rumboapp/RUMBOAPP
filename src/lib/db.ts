@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Agency, AgencyMember, Activity, Departure, Passenger, Guide, Notification, AgencyRole, MockUser, BookingRequest, PublicDeparture } from '../types';
+import { Agency, AgencyMember, Activity, Departure, Passenger, Guide, Notification, AgencyRole, MockUser, BookingRequest, PublicDeparture, PublicCatalog } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getCoordinatesForCity } from './cities';
 
@@ -745,6 +745,30 @@ export const db = {
       p_full_name: fullName,
       p_phone: phone,
       p_pax_count: paxCount,
+      p_note: note || null
+    });
+    if (error) return { success: false, message: 'No se pudo enviar la solicitud. Intenta nuevamente.' };
+    return data as { success: boolean; message?: string };
+  },
+
+  async getPublicCatalog(token: string): Promise<PublicCatalog | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+    const { data, error } = await supabase.rpc('get_public_catalog', { p_token: token });
+    if (error || !data) return null;
+    return data as PublicCatalog;
+  },
+
+  async createDateRequest(token: string, activityId: string, fullName: string, phone: string, paxCount: number, requestedDate: string, note?: string): Promise<{ success: boolean; message?: string }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, message: 'Servicio no disponible. Intenta más tarde.' };
+    }
+    const { data, error } = await supabase.rpc('create_date_request', {
+      p_token: token,
+      p_activity_id: activityId,
+      p_full_name: fullName,
+      p_phone: phone,
+      p_pax_count: paxCount,
+      p_requested_date: requestedDate,
       p_note: note || null
     });
     if (error) return { success: false, message: 'No se pudo enviar la solicitud. Intenta nuevamente.' };
