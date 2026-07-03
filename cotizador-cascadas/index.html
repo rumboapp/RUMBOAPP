@@ -1772,8 +1772,8 @@ function refrescarDatosServidor() {
         });
       };
 
-      // Usar la plantilla ya cargada en memoria, o pedirla al servidor
-      if (elementosPlantilla && elementosPlantilla.length) { continuar(elementosPlantilla); return; }
+      // Leer SIEMPRE la plantilla fresca desde Google Docs al generar el PDF,
+      // así cualquier edición reciente (texto o negritas) queda reflejada.
       google.script.run
         .withSuccessHandler(function(res) {
           if (res && res.exito && res.elementos && res.elementos.length) {
