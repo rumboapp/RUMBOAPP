@@ -140,7 +140,7 @@
       background-size: 794px 1122px;
     }
     .bannerDoc { display: block; width: 100%; border: 0; }
-    .cuerpoDoc { padding: 26px 68px 30px; }
+    .cuerpoDoc { padding: 12px 68px 30px; }
     .docParrafo { margin: 0 0 10px; }
     .docH1 { font-size: 19px; font-weight: 700; margin: 14px 0 8px; }
     .docH2 { font-size: 16px; font-weight: 700; margin: 12px 0 6px; }
@@ -1522,6 +1522,15 @@ function refrescarDatosServidor() {
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    // Une con espacios irrompibles el contenido entre paréntesis, para que
+    // "(2 personas)" baje completo a la línea siguiente y no quede cortado.
+    function nombreServicioHtml(nombre) {
+      let unido = String(nombre == null ? '' : nombre).replace(/\([^)]*\)/g, function(m) {
+        return m.replace(/ /g, '\u00A0');
+      });
+      return escHtml(unido);
+    }
+
     function consolidarHabitacionesCliente(habitaciones) {
       let consolidadas = [];
       (habitaciones || []).forEach(function(h) {
@@ -1541,7 +1550,7 @@ function refrescarDatosServidor() {
       if (payload.tipo_cotizacion === 'estandar') {
         consolidarHabitacionesCliente(payload.habitaciones).forEach(function(h) {
           filas += '<tr>' +
-            '<td class="izq">' + escHtml(h.tipoBase) + '</td>' +
+            '<td class="izq">' + nombreServicioHtml(h.tipoBase) + '</td>' +
             '<td>' + h.cantidad + '</td>' +
             '<td>' + escHtml(payload.checkin) + '</td>' +
             '<td>' + escHtml(payload.checkout) + '</td>' +
@@ -1554,7 +1563,7 @@ function refrescarDatosServidor() {
         (payload.amenidades_predefinidas || []).forEach(function(a) {
           let detalle = a.descripcion ? '<div class="subDetalle">' + escHtml(a.descripcion) + '</div>' : '';
           filas += '<tr>' +
-            '<td class="izq">' + escHtml(a.nombre) + detalle + '</td>' +
+            '<td class="izq">' + nombreServicioHtml(a.nombre) + detalle + '</td>' +
             '<td>' + a.cantidad + '</td>' +
             '<td>-</td>' +
             '<td>-</td>' +
@@ -1583,7 +1592,7 @@ function refrescarDatosServidor() {
         let unitario = cant > 0 ? Math.round(neto / cant) : neto;
         let nombreProg = payload.nombre_programa || 'Programa';
         filas += '<tr>' +
-          '<td class="izq">Programa ' + escHtml(nombreProg) + '</td>' +
+          '<td class="izq">Programa ' + nombreServicioHtml(nombreProg) + '</td>' +
           '<td>' + cant + '</td>' +
           '<td>' + escHtml(payload.checkin) + '</td>' +
           '<td>' + escHtml(payload.checkout) + '</td>' +
@@ -1625,19 +1634,22 @@ function refrescarDatosServidor() {
 
     // Convierte un elemento de la plantilla a HTML respetando los tramos de
     // formato reales del documento (negritas parciales, cursivas, subrayados).
+    // Si el párrafo completo está declarado en negrita, se fuerza sobre todos
+    // los tramos (Docs a veces informa la negrita solo a nivel de párrafo).
     function runsAHtml(el) {
+      let boldParrafo = el.isBold === true;
       if (el.runs && el.runs.length) {
         return el.runs.map(function(r) {
           let s = escHtml(r.t);
           if (r.u) s = '<u>' + s + '</u>';
           if (r.i) s = '<i>' + s + '</i>';
-          if (r.b) s = '<b>' + s + '</b>';
+          if (r.b || boldParrafo) s = '<b>' + s + '</b>';
           return s;
         }).join('');
       }
       // respaldo para plantillas cargadas con la versión anterior del servidor
       let s = escHtml(el.texto || '');
-      return el.isBold ? '<b>' + s + '</b>' : s;
+      return boldParrafo ? '<b>' + s + '</b>' : s;
     }
 
     function construirDocumentoCotizacion(payload, elementos) {
@@ -1654,14 +1666,20 @@ function refrescarDatosServidor() {
               ? 'Programa: ' + f(payload.nombre_programa) : ''
           );
       };
+      let inicioVisto = false; // para saltar líneas en blanco antes del primer contenido
       elementos.forEach(function(el) {
         if (el.tipo === 'tabla') return; // las tablas del doc se generan aparte
         let raw = el.texto || '';
-        if (raw.indexOf('{{tabla_valores}}') >= 0) { html += tablaCotizacionHTML(payload); return; }
+        if (raw.indexOf('{{tabla_valores}}') >= 0) { inicioVisto = true; html += tablaCotizacionHTML(payload); return; }
         if (raw.indexOf('{{tabla_adicionales}}') >= 0) { html += coberturasHTML(payload); return; }
         let esFecha = raw.indexOf('{{fecha_emision}}') >= 0;
-        // si el párrafo queda vacío tras reemplazar marcadores, es solo un espacio
-        if (!reemplazar(raw, false).trim()) { html += '<div style="height:10px"></div>'; return; }
+        // si el párrafo queda vacío tras reemplazar marcadores, es solo un espacio;
+        // los espacios ANTES del primer contenido se omiten (acorta el inicio)
+        if (!reemplazar(raw, false).trim()) {
+          if (inicioVisto) html += '<div style="height:10px"></div>';
+          return;
+        }
+        inicioVisto = true;
         let t = reemplazar(runsAHtml(el), true);
         let estilos = esFecha ? 'text-align:right;' : '';
         if (el.tipo === 'lista') {

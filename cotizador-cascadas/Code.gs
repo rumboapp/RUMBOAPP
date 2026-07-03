@@ -683,6 +683,19 @@ function extraerRunsDeTexto(textoElemento) {
   return runs;
 }
 
+// Detecta negrita de un elemento mirando TODAS las señales que da Google Docs:
+// el atributo del párrafo, la negrita del texto completo, y la del primer
+// carácter (Docs a veces informa por una vía y a veces por otra).
+function detectarBoldElemento(elemento, textoEd) {
+  try {
+    if (elemento.getAttributes()[DocumentApp.Attribute.BOLD] === true) return true;
+  } catch(e) {}
+  try {
+    if (textoEd && textoEd.getText() && textoEd.isBold() === true) return true;
+  } catch(e) {}
+  return false;
+}
+
 function obtenerElementosPlantilla() {
   try {
     var doc = DocumentApp.openById(ID_PLANTILLA);
@@ -700,12 +713,14 @@ function obtenerElementosPlantilla() {
         if (heading === DocumentApp.ParagraphHeading.HEADING1) tipoNombre = 'heading1';
         else if (heading === DocumentApp.ParagraphHeading.HEADING2) tipoNombre = 'heading2';
         else if (heading === DocumentApp.ParagraphHeading.HEADING3) tipoNombre = 'heading3';
-        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: tipoNombre, editable: true, isBold: parrafo.getAttributes()[DocumentApp.Attribute.BOLD] || false, runs: extraerRunsDeTexto(parrafo.editAsText()) });
+        var textoEdP = parrafo.editAsText();
+        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: tipoNombre, editable: true, isBold: detectarBoldElemento(parrafo, textoEdP), runs: extraerRunsDeTexto(textoEdP) });
         contador++;
       } else if (tipo === DocumentApp.ElementType.LIST_ITEM) {
         var listItem = hijo.asListItem();
         var texto = listItem.getText();
-        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: 'lista', editable: true, isBold: listItem.getAttributes()[DocumentApp.Attribute.BOLD] || false, nestingLevel: listItem.getNestingLevel(), runs: extraerRunsDeTexto(listItem.editAsText()) });
+        var textoEdL = listItem.editAsText();
+        elementos.push({ id: contador, ruta: 'body.' + i, indiceBody: i, texto: texto, tipo: 'lista', editable: true, isBold: detectarBoldElemento(listItem, textoEdL), nestingLevel: listItem.getNestingLevel(), runs: extraerRunsDeTexto(textoEdL) });
         contador++;
       } else if (tipo === DocumentApp.ElementType.TABLE) {
         var tabla = hijo.asTable();
