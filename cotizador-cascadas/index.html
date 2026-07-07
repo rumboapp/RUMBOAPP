@@ -751,9 +751,11 @@ function refrescarDatosServidor() {
       let img = document.getElementById('logo-hotel');
       img.onload = function() {
         img.classList.remove('hidden');
-        document.getElementById('icono-hotel').classList.add('hidden');
+        img.style.display = 'block';
+        // ocultar con estilo directo: la clase 'hidden' pierde contra el CSS de Font Awesome
+        document.getElementById('icono-hotel').style.display = 'none';
       };
-      img.onerror = function() { img.classList.add('hidden'); };
+      img.onerror = function() { img.style.display = 'none'; };
       img.src = config.logoUrl;
     }
     renderConfig();
