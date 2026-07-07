@@ -219,10 +219,11 @@ function eliminarProgramaDeBaseDatos(nombre) {
 // =================================================================
 // REGISTRO EN HISTORIAL
 // =================================================================
-function registrarEnHistorial(ss, datos) {
+function registrarEnHistorial(ss, datos, linkPdf) {
   try {
     var sheet = ss.getSheetByName("Historial");
-    var CABECERA = ["Fecha", "Cliente", "Tipo", "Detalle", "CheckIn", "CheckOut", "Noches", "Neto", "Total"];
+    var CABECERA = ["Fecha", "Cliente", "Tipo", "Detalle", "CheckIn", "CheckOut", "Noches", "Neto", "Total", "LinkPDF"];
+    var link = linkPdf || "";
 
     if (!sheet) {
       sheet = ss.insertSheet("Historial");
@@ -235,6 +236,10 @@ function registrarEnHistorial(ss, datos) {
     if (colNames.indexOf("checkin") < 0) {
       sheet.insertColumnsAfter(4, 2);
       sheet.getRange(1, 1, 1, CABECERA.length).setValues([CABECERA]);
+      colNames = CABECERA.map(function(c){ return c.toLowerCase(); });
+    }
+    if (colNames.indexOf("linkpdf") < 0) {
+      sheet.getRange(1, CABECERA.length).setValue("LinkPDF");
     }
 
     var tz = Session.getScriptTimeZone();
@@ -252,7 +257,7 @@ function registrarEnHistorial(ss, datos) {
       }
       var fila = [ahora, datos.nombre_cliente || "", "Programa",
                   detalleProg,
-                  checkin, checkout, noches, neto, total];
+                  checkin, checkout, noches, neto, total, link];
       sheet.appendRow(fila);
       var uf = sheet.getLastRow();
       sheet.getRange(uf, 8).setNumberFormat("0");
@@ -273,7 +278,7 @@ function registrarEnHistorial(ss, datos) {
           var netoFila  = h.total;
           var totalFila = Math.round(netoFila * 1.19);
           var fila = [ahora, datos.nombre_cliente || "", "Estándar",
-                      etiqueta, checkin, checkout, noches, netoFila, totalFila];
+                      etiqueta, checkin, checkout, noches, netoFila, totalFila, link];
           sheet.appendRow(fila);
           var uf = sheet.getLastRow();
           sheet.getRange(uf, 8).setNumberFormat("0");
@@ -286,7 +291,7 @@ function registrarEnHistorial(ss, datos) {
             var netoAd  = Number(a.total || 0);
             var totalAd = Math.round(netoAd * 1.19);
             var fila = [ahora, datos.nombre_cliente || "", "Estándar",
-                        "Adicional: " + a.detalle, checkin, checkout, 0, netoAd, totalAd];
+                        "Adicional: " + a.detalle, checkin, checkout, 0, netoAd, totalAd, link];
             sheet.appendRow(fila);
             var uf = sheet.getLastRow();
             sheet.getRange(uf, 8).setNumberFormat("0");
@@ -300,7 +305,7 @@ function registrarEnHistorial(ss, datos) {
             var netoAd = Number(a.total || 0);
             var totalAd = Math.round(netoAd * 1.19);
             var fila = [ahora, datos.nombre_cliente || "", "Estándar",
-                        "Amenidad: " + a.nombre + (a.cantidad > 1 ? " x" + a.cantidad : ""), checkin, checkout, 0, netoAd, totalAd];
+                        "Amenidad: " + a.nombre + (a.cantidad > 1 ? " x" + a.cantidad : ""), checkin, checkout, 0, netoAd, totalAd, link];
             sheet.appendRow(fila);
             var uf = sheet.getLastRow();
             sheet.getRange(uf, 8).setNumberFormat("0");
@@ -312,7 +317,7 @@ function registrarEnHistorial(ss, datos) {
         var neto  = Number(datos.subtotal || 0);
         var total = Number(datos.total    || 0);
         var fila = [ahora, datos.nombre_cliente || "", "Estándar",
-                    "Estándar", checkin, checkout, noches, neto, total];
+                    "Estándar", checkin, checkout, noches, neto, total, link];
         sheet.appendRow(fila);
         var uf = sheet.getLastRow();
         sheet.getRange(uf, 8).setNumberFormat("0");
@@ -328,30 +333,147 @@ function registrarEnHistorial(ss, datos) {
 
 // =================================================================
 // GUARDADO DEL PDF GENERADO EN EL NAVEGADOR (formato Word manual)
-// El PDF se arma en index.html con el cuadro único transparente y
-// llega aquí en base64 solo para respaldarlo en Drive y registrar
-// la cotización en el Historial.
+// El PDF llega en base64, se archiva en una subcarpeta mensual
+// (2026-07, 2026-08, ...) SIN borrar respaldos anteriores, y la
+// cotización se registra en el Historial con el link a su PDF.
+// Si pdfBase64 viene vacío (p. ej. al generar solo Word), únicamente
+// se registra en el Historial.
 // =================================================================
 function guardarPdfClienteYRegistrar(datos, pdfBase64, nombreArchivo) {
   var ss = SpreadsheetApp.openById(ID_PLANILLA_SHEETS);
+  var url = "";
 
-  var carpetaDestino;
-  var carpetas = DriveApp.getFoldersByName(NOMBRE_CARPETA_COTIZACIONES);
-  if (carpetas.hasNext()) { carpetaDestino = carpetas.next(); }
-  else { carpetaDestino = DriveApp.createFolder(NOMBRE_CARPETA_COTIZACIONES); }
+  if (pdfBase64) {
+    var carpetaRaiz;
+    var carpetas = DriveApp.getFoldersByName(NOMBRE_CARPETA_COTIZACIONES);
+    if (carpetas.hasNext()) { carpetaRaiz = carpetas.next(); }
+    else { carpetaRaiz = DriveApp.createFolder(NOMBRE_CARPETA_COTIZACIONES); }
 
-  vaciarCarpetaPorCompleto(carpetaDestino);
+    var tz = Session.getScriptTimeZone();
+    var ahora = new Date();
+    var nombreMes = Utilities.formatDate(ahora, tz, "yyyy-MM");
+    var carpetaMes;
+    var subcarpetas = carpetaRaiz.getFoldersByName(nombreMes);
+    if (subcarpetas.hasNext()) { carpetaMes = subcarpetas.next(); }
+    else { carpetaMes = carpetaRaiz.createFolder(nombreMes); }
 
-  var blob = Utilities.newBlob(
-    Utilities.base64Decode(pdfBase64),
-    "application/pdf",
-    nombreArchivo || ("Cotizacion Cascadas Hotel.pdf")
-  );
-  var pdfFile = carpetaDestino.createFile(blob);
+    // nombre con fecha y hora para distinguir versiones del mismo cliente
+    var prefijo = Utilities.formatDate(ahora, tz, "yyyy-MM-dd HH.mm");
+    var nombreEnDrive = prefijo + " - " + (nombreArchivo || "Cotizacion Cascadas Hotel.pdf");
 
-  registrarEnHistorial(ss, datos);
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(pdfBase64),
+      "application/pdf",
+      nombreEnDrive
+    );
+    var pdfFile = carpetaMes.createFile(blob);
+    url = "https://drive.google.com/file/d/" + pdfFile.getId() + "/view";
+  }
 
-  return { pdfUrl: pdfFile.getDownloadUrl().replace("?e=download&gd=true", "") };
+  registrarEnHistorial(ss, datos, url);
+
+  return { pdfUrl: url, aviso: obtenerAvisoEspacioDrive() };
+}
+
+// Aviso discreto si el Drive se está quedando sin espacio (no bloquea nada)
+function obtenerAvisoEspacioDrive() {
+  try {
+    var about = null;
+    try { about = Drive.About.get(); } catch(e1) {
+      try { about = Drive.About.get({ fields: "storageQuota" }); } catch(e2) {}
+    }
+    if (!about) return "";
+    var total = 0, usado = 0;
+    if (about.quotaBytesTotal) {
+      total = Number(about.quotaBytesTotal);
+      usado = Number(about.quotaBytesUsed || 0) + Number(about.quotaBytesUsedInTrash || 0);
+    } else if (about.storageQuota) {
+      total = Number(about.storageQuota.limit || 0);
+      usado = Number(about.storageQuota.usage || 0);
+    }
+    if (!total) return ""; // cuota ilimitada o no informada
+    var libreMB = Math.round((total - usado) / (1024 * 1024));
+    if (libreMB < 500) {
+      return "Quedan " + (libreMB < 1024 ? libreMB + " MB" : Math.round(libreMB / 102.4) / 10 + " GB") +
+             " libres en el Drive. Considere liberar espacio para que los respaldos no fallen.";
+    }
+    return "";
+  } catch(e) {
+    return "";
+  }
+}
+
+// =================================================================
+// BUSCADOR DE COTIZACIONES POR CLIENTE
+// Busca en el Historial (el índice) y agrupa las filas que nacieron
+// de una misma cotización (misma marca de tiempo + cliente).
+// =================================================================
+function normalizarBusqueda(s) {
+  return String(s == null ? "" : s).toLowerCase()
+    .replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i")
+    .replace(/ó/g, "o").replace(/ú/g, "u").replace(/ñ/g, "n").trim();
+}
+
+function buscarCotizaciones(consulta) {
+  try {
+    var q = normalizarBusqueda(consulta);
+    if (!q || q.length < 2) return { exito: true, grupos: [] };
+
+    var ss = SpreadsheetApp.openById(ID_PLANILLA_SHEETS);
+    var sheet = ss.getSheetByName("Historial");
+    if (!sheet) return { exito: true, grupos: [] };
+
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { exito: true, grupos: [] };
+
+    var tz = Session.getScriptTimeZone();
+    var cab = data[0].map(function(c) { return c.toString().toLowerCase().trim(); });
+    var iF = cab.indexOf("fecha");    if (iF < 0) iF = 0;
+    var iC = cab.indexOf("cliente");  if (iC < 0) iC = 1;
+    var iT = cab.indexOf("tipo");     if (iT < 0) iT = 2;
+    var iD = cab.indexOf("detalle");  if (iD < 0) iD = 3;
+    var iCi = cab.indexOf("checkin");
+    var iCo = cab.indexOf("checkout");
+    var iTot = cab.indexOf("total");  if (iTot < 0) iTot = 8;
+    var iL = cab.indexOf("linkpdf");
+
+    var grupos = {};
+    for (var i = 1; i < data.length; i++) {
+      var fila = data[i];
+      var cliente = fila[iC] ? fila[iC].toString().trim() : "";
+      if (!cliente || normalizarBusqueda(cliente).indexOf(q) < 0) continue;
+
+      var rawFecha = fila[iF];
+      var fecha = rawFecha instanceof Date ? rawFecha : new Date(String(rawFecha));
+      if (isNaN(fecha.getTime())) continue;
+
+      var clave = fecha.getTime() + "|" + cliente;
+      if (!grupos[clave]) {
+        grupos[clave] = {
+          ts: fecha.getTime(),
+          fecha: Utilities.formatDate(fecha, tz, "dd/MM/yyyy HH:mm"),
+          cliente: cliente,
+          tipo: fila[iT] ? fila[iT].toString() : "",
+          checkin: iCi >= 0 && fila[iCi] ? (fila[iCi] instanceof Date ? Utilities.formatDate(fila[iCi], tz, "dd/MM/yyyy") : String(fila[iCi])) : "",
+          checkout: iCo >= 0 && fila[iCo] ? (fila[iCo] instanceof Date ? Utilities.formatDate(fila[iCo], tz, "dd/MM/yyyy") : String(fila[iCo])) : "",
+          detalles: [],
+          total: 0,
+          link: ""
+        };
+      }
+      grupos[clave].detalles.push(fila[iD] ? fila[iD].toString() : "");
+      grupos[clave].total += Number(fila[iTot]) || 0;
+      if (iL >= 0 && fila[iL]) grupos[clave].link = fila[iL].toString();
+    }
+
+    var lista = Object.keys(grupos).map(function(k) { return grupos[k]; });
+    lista.sort(function(a, b) { return b.ts - a.ts; });
+    if (lista.length > 50) lista = lista.slice(0, 50);
+
+    return { exito: true, grupos: lista };
+  } catch(e) {
+    return { exito: false, error: e.toString(), grupos: [] };
+  }
 }
 
 // =================================================================

@@ -12,6 +12,8 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- docx: fabrica archivos Word (.docx) reales en el navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js"></script>
 
   <style>
     /* ── EDITOR PLANTILLA ── */
@@ -54,6 +56,26 @@
       transition: transform 0.15s, box-shadow 0.15s;
     }
     #btn-reportes-flotante:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(15,23,42,0.45); }
+    #btn-buscar-flotante {
+      position: fixed; bottom: 92px; right: 28px; z-index: 500;
+      background: linear-gradient(135deg, #14532d, #166534);
+      color: white; border: none; border-radius: 16px; padding: 14px 22px;
+      font-size: 12px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(20,83,45,0.35);
+      display: flex; align-items: center; gap: 10px;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #btn-buscar-flotante:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(20,83,45,0.45); }
+    /* resultados del buscador */
+    .bsq-item { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+    .bsq-fecha { font-family: monospace; font-size: 11px; color: #64748b; white-space: nowrap; }
+    .bsq-cliente { font-weight: 800; color: #0f172a; font-size: 14px; }
+    .bsq-detalle { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+    .bsq-total { font-weight: 900; color: #059669; white-space: nowrap; margin-left: auto; }
+    .bsq-verpdf { background: #0f172a; color: white; border-radius: 8px; padding: 7px 14px; font-size: 11px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+    .bsq-verpdf:hover { background: #1e3a5f; }
+    .bsq-sinpdf { font-size: 10px; color: #94a3b8; font-weight: 700; white-space: nowrap; }
     .btn-flotante-icon { width: 28px; height: 28px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 
     /* ── MODAL REPORTES ── */
@@ -131,7 +153,8 @@
         <h1 class="text-3xl font-light tracking-widest uppercase">Cascadas Hotel</h1>
         <p class="text-slate-400 text-xs mt-1">SISTEMA DE COTIZACIONES</p>
       </div>
-      <i class="fa-solid fa-hotel text-4xl text-slate-700"></i>
+      <img id="logo-hotel" alt="Cascadas Hotel" class="hidden" style="height:60px;max-width:240px;object-fit:contain;">
+      <i id="icono-hotel" class="fa-solid fa-hotel text-4xl text-slate-700"></i>
     </div>
 
     <div class="p-8">
@@ -416,6 +439,9 @@
             <button type="button" onclick="limpiarYNuevaCotizacion()" class="bg-slate-500 text-white font-black px-5 py-4 rounded-2xl hover:bg-slate-600 transition-all flex items-center justify-center space-x-2 shadow-sm cursor-pointer text-sm">
               <i class="fa-solid fa-rotate-left"></i> <span>NUEVA COTIZACIÓN</span>
             </button>
+            <button type="button" id="btn-preview" onclick="abrirVistaPrevia()" class="flex-1 sm:flex-none bg-slate-100 text-slate-900 font-black px-5 py-4 rounded-2xl hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 border border-slate-200 cursor-pointer text-sm">
+              <i class="fa-solid fa-eye text-slate-500"></i> <span>VISTA PREVIA</span>
+            </button>
             <button type="button" id="btn-pdf" onclick="processQuote('pdf')" class="flex-1 sm:flex-none bg-slate-900 text-white font-black px-6 py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer text-sm">
               <i class="fa-solid fa-file-pdf"></i> <span>GENERAR PDF</span>
             </button>
@@ -430,6 +456,70 @@
 
   <!-- Toast -->
   <div id="toast-plantilla"></div>
+
+  <!-- Botón flotante Buscador -->
+  <button id="btn-buscar-flotante" onclick="abrirBuscador()">
+    <span class="btn-flotante-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+    <span>Buscar</span>
+  </button>
+
+  <!-- ═══════ MODAL BUSCADOR DE COTIZACIONES ═══════ -->
+  <div id="modal-buscador" class="modal-bg" style="display:none;">
+    <div class="modal-box" style="max-width:720px;">
+      <div class="rpt-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+          <div>
+            <div class="rpt-title">Buscar Cotizaciones</div>
+            <div class="rpt-subtitle">Por nombre de cliente — el link abre el PDF tal como se envió</div>
+          </div>
+          <button onclick="cerrarBuscador()" class="btn-cerrar-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="rpt-date-row">
+          <input type="text" id="bsq-input" placeholder="Escribe el nombre del cliente (mín. 2 letras)..."
+                 onkeydown="if(event.key==='Enter')ejecutarBusqueda()"
+                 style="flex:1;background:white;border:none;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;color:#0f172a;outline:none;">
+          <button onclick="ejecutarBusqueda()" class="btn-aplicar"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+        </div>
+      </div>
+      <div class="rpt-body" style="max-height:60vh;overflow-y:auto;">
+        <div id="bsq-estado" class="rpt-empty">
+          <i class="fa-solid fa-user-magnifying-glass" style="font-size:34px;display:block;margin-bottom:12px;color:#cbd5e1;"></i>
+          <p style="font-weight:700;font-size:14px;color:#64748b;">Escribe un nombre y presiona Buscar</p>
+          <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Las cotizaciones anteriores a este archivo aparecen sin PDF</p>
+        </div>
+        <div id="bsq-resultados"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ MODAL VISTA PREVIA ═══════ -->
+  <div id="modal-preview" class="modal-bg" style="display:none;">
+    <div class="modal-box" style="max-width:700px;">
+      <div class="rpt-header" style="padding:18px 24px 16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div class="rpt-title" style="font-size:18px;">Vista previa</div>
+            <div class="rpt-subtitle" id="preview-subtitulo">Así verá el cliente la cotización — nada se guarda hasta que descargues</div>
+          </div>
+          <button onclick="cerrarVistaPrevia()" class="btn-cerrar-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div style="background:#525659;padding:10px;">
+        <div id="preview-cargando" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:60px 20px;color:#e2e8f0;font-weight:700;font-size:13px;">
+          <i class="fa-solid fa-circle-notch spin" style="font-size:20px;"></i> Generando vista previa...
+        </div>
+        <div id="preview-scroll" style="display:none;overflow-y:auto;height:62vh;border-radius:6px;">
+          <canvas id="preview-canvas" style="width:100%;display:block;background:white;"></canvas>
+        </div>
+      </div>
+      <div style="padding:14px 20px;display:flex;gap:10px;justify-content:flex-end;background:#f8fafc;">
+        <button onclick="cerrarVistaPrevia()" style="background:#e2e8f0;color:#334155;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;">Cerrar sin guardar</button>
+        <button id="btn-preview-descargar" onclick="descargarDesdeVistaPrevia()" style="background:#059669;color:white;border:none;border-radius:10px;padding:11px 22px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px;">
+          <i class="fa-solid fa-file-arrow-down"></i> DESCARGAR Y GUARDAR
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Botón flotante Reportes -->
   <button id="btn-reportes-flotante" onclick="abrirReportes()">
@@ -656,6 +746,16 @@
 function refrescarDatosServidor() {
   google.script.run.withSuccessHandler(res => {
     config = res;
+    // ── Logo del hotel: viene de la hoja LOGO de la planilla ──
+    if (config.logoUrl) {
+      let img = document.getElementById('logo-hotel');
+      img.onload = function() {
+        img.classList.remove('hidden');
+        document.getElementById('icono-hotel').classList.add('hidden');
+      };
+      img.onerror = function() { img.classList.add('hidden'); };
+      img.src = config.logoUrl;
+    }
     renderConfig();
     renderAmenidadesPredefinidas();
     actualizarSelectProgramas();
@@ -1475,7 +1575,7 @@ function refrescarDatosServidor() {
 
     function imprimirReporte() { window.print(); }
 
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarReportes(); cerrarModalPDF(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarReportes(); cerrarModalPDF(); cerrarBuscador(); cerrarVistaPrevia(); } });
 
     // ═══════════════════════════════════════════════════════════
     //  PDF DE COTIZACIÓN CON FORMATO DEL WORD MANUAL
@@ -1789,7 +1889,10 @@ function refrescarDatosServidor() {
 
     // Crea el PDF final: marca de agua al fondo y encima las órdenes de dibujo
     function dibujarPdfCotizacion(payload, elementos) {
-      var comp = componerDocumentoPdf(payload, elementos);
+      return pdfDesdeComposicion(componerDocumentoPdf(payload, elementos));
+    }
+
+    function pdfDesdeComposicion(comp) {
       var alto = comp.alto;
       var pdf = new window.jspdf.jsPDF({ orientation: (alto >= PDF_ANCHO ? 'p' : 'l'), unit: 'pt', format: [PDF_ANCHO, alto], compress: true });
       for (var wy = 0; wy < alto; wy += PDF_ALTO_PAGINA) {
@@ -1818,8 +1921,80 @@ function refrescarDatosServidor() {
       return pdf;
     }
 
+    // Pide la plantilla fresca a Google Docs y sigue con onOk(elementos)
+    function conPlantillaFresca(onOk) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.exito && res.elementos && res.elementos.length) {
+            elementosPlantilla = res.elementos;
+            onOk(res.elementos);
+          } else {
+            alert("No se pudo leer la plantilla del documento: " + ((res && res.error) || "sin elementos"));
+            resetActions();
+            cerrarVistaPrevia();
+          }
+        })
+        .withFailureHandler(function(err) {
+          alert("No se pudo leer la plantilla del documento: " + err);
+          resetActions();
+          cerrarVistaPrevia();
+        })
+        .obtenerElementosPlantilla();
+    }
+
+    let payloadParaWhatsApp = null; // última cotización generada, para el botón de copiar mensaje
+
+    function escTx(x) {
+      return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Caja verde de éxito con link a Drive (si hay) y botón de WhatsApp
+    function mostrarCajaExito(pdfUrl, esWord) {
+      let box = document.getElementById('download-box');
+      box.classList.remove('hidden');
+      let linkDrive = pdfUrl
+        ? '<a href="' + pdfUrl + '" target="_blank" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl transition shadow-sm text-xs cursor-pointer"><i class="fa-solid fa-file-pdf"></i> VER RESPALDO EN DRIVE</a>'
+        : '';
+      box.innerHTML =
+        '<div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">' +
+          '<span class="text-emerald-800 font-bold block mb-3"><i class="fa-solid fa-circle-check"></i> Cotización Lista — ' + (esWord ? 'Word' : 'PDF') + ' descargado</span>' +
+          '<div class="flex flex-wrap gap-2 justify-center">' +
+            linkDrive +
+            '<button type="button" onclick="copiarMensajeWhatsApp(this)" class="inline-flex items-center gap-2 text-white font-black px-5 py-2.5 rounded-xl transition shadow-sm text-xs cursor-pointer" style="background:#25D366;">' +
+              '<i class="fa-brands fa-whatsapp text-base"></i> COPIAR MENSAJE WHATSAPP' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    // Descarga el PDF, lo respalda en Drive (carpeta del mes) y registra en Historial
+    function finalizarPdf(pdf, payload) {
+      let nombreArchivo = "Cotizacion Cascadas Hotel " + payload.nombre_cliente + " " + payload.checkin.replace(/\//g, "-") + ".pdf";
+      pdf.save(nombreArchivo); // descarga inmediata
+      payloadParaWhatsApp = payload;
+      let base64 = pdf.output('datauristring').split(',')[1];
+      google.script.run
+        .withSuccessHandler(function(res) {
+          resetActions();
+          mostrarCajaExito(res && res.pdfUrl, false);
+          if (res && res.aviso) mostrarToast('error', '⚠ ' + res.aviso);
+        })
+        .withFailureHandler(function(err) {
+          resetActions();
+          let box = document.getElementById('download-box'); box.classList.remove('hidden');
+          box.innerHTML =
+            '<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">' +
+              '<span class="text-amber-800 font-bold block mb-2 text-sm">El PDF se descargó, pero falló el respaldo en Drive/Historial: ' + escTx(err) + '</span>' +
+              '<button type="button" onclick="copiarMensajeWhatsApp(this)" class="inline-flex items-center gap-2 text-white font-black px-5 py-2.5 rounded-xl transition shadow-sm text-xs cursor-pointer" style="background:#25D366;">' +
+                '<i class="fa-brands fa-whatsapp text-base"></i> COPIAR MENSAJE WHATSAPP' +
+              '</button>' +
+            '</div>';
+        })
+        .guardarPdfClienteYRegistrar(payload, base64, nombreArchivo);
+    }
+
     function generarPdfClienteDesdePayload(payload) {
-      let continuar = function(elementos) {
+      conPlantillaFresca(function(elementos) {
         let pdf;
         try {
           pdf = dibujarPdfCotizacion(payload, elementos);
@@ -1828,65 +2003,543 @@ function refrescarDatosServidor() {
           resetActions();
           return;
         }
-        let nombreArchivo = "Cotizacion Cascadas Hotel " + payload.nombre_cliente + " " + payload.checkin.replace(/\//g, "-") + ".pdf";
-        pdf.save(nombreArchivo); // descarga inmediata
+        finalizarPdf(pdf, payload);
+      });
+    }
 
-        let base64 = pdf.output('datauristring').split(',')[1];
+    // ═══════════════════════════════════════════════════════════
+    //  VISTA PREVIA (no guarda ni registra nada hasta descargar)
+    // ═══════════════════════════════════════════════════════════
+    let vistaPreviaCtx = null;
 
-        google.script.run
-          .withSuccessHandler(function(res) {
-            resetActions();
-            let box = document.getElementById('download-box'); box.classList.remove('hidden');
-            box.innerHTML = `
-              <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
-                <span class="text-emerald-800 font-bold block mb-2"><i class="fa-solid fa-circle-check"></i> Cotización Lista — PDF descargado</span>
-                <a href="${res.pdfUrl}" target="_blank" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-2.5 rounded-xl transition shadow-sm text-sm cursor-pointer">
-                  <i class="fa-solid fa-file-pdf"></i> <span>VER RESPALDO EN DRIVE</span>
-                </a>
-              </div>`;
-          })
-          .withFailureHandler(function(err) {
-            resetActions();
-            let box = document.getElementById('download-box'); box.classList.remove('hidden');
-            box.innerHTML = `
-              <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-                <span class="text-amber-800 font-bold block text-sm">El PDF se descargó, pero falló el respaldo en Drive/Historial: ${err}</span>
-              </div>`;
-          })
-          .guardarPdfClienteYRegistrar(payload, base64, nombreArchivo);
+    function abrirVistaPrevia() {
+      let payload = construirPayloadCotizacion();
+      if (!payload) return;
+      vistaPreviaCtx = null;
+      document.getElementById('modal-preview').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      document.getElementById('preview-cargando').style.display = 'flex';
+      document.getElementById('preview-scroll').style.display = 'none';
+      document.getElementById('preview-subtitulo').textContent =
+        payload.saludo + ' ' + payload.nombre_cliente + ' — nada se guarda hasta que descargues';
+      conPlantillaFresca(function(elementos) {
+        if (document.getElementById('modal-preview').style.display === 'none') return; // la cerraron mientras cargaba
+        let comp;
+        try {
+          comp = componerDocumentoPdf(payload, elementos);
+        } catch(e) {
+          alert("Error generando la vista previa: " + e);
+          cerrarVistaPrevia();
+          return;
+        }
+        vistaPreviaCtx = { comp: comp, payload: payload };
+        dibujarOpsEnCanvas(comp, document.getElementById('preview-canvas'), function(ok) {
+          if (!ok) { alert("No se pudo mostrar la vista previa."); cerrarVistaPrevia(); return; }
+          document.getElementById('preview-scroll').style.display = 'block';
+          document.getElementById('preview-cargando').style.display = 'none';
+        });
+      });
+    }
+
+    // Pinta la composición del documento en un lienzo (misma imagen que el PDF)
+    function dibujarOpsEnCanvas(comp, canvas, cb) {
+      try {
+        let escala = 2;
+        canvas.width = Math.round(PDF_ANCHO * escala);
+        canvas.height = Math.round(comp.alto * escala);
+        let ctx = canvas.getContext('2d');
+        ctx.scale(escala, escala);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, PDF_ANCHO, comp.alto);
+
+        let imgWm = new Image();
+        let imgBanner = new Image();
+        let cargadas = 0;
+        let seguir = function() {
+          cargadas++;
+          if (cargadas < 2) return;
+          try {
+            for (let wy = 0; wy < comp.alto; wy += PDF_ALTO_PAGINA) {
+              ctx.drawImage(imgWm, 0, wy, PDF_ANCHO, PDF_ALTO_PAGINA);
+            }
+            comp.ops.forEach(function(op) {
+              if (op.k === 't') {
+                let peso = (op.style === 'bold' || op.style === 'bolditalic') ? 'bold ' : '';
+                let curs = (op.style === 'italic' || op.style === 'bolditalic') ? 'italic ' : '';
+                ctx.font = curs + peso + op.size + 'px Helvetica, Arial, sans-serif';
+                let c = op.color || [0, 0, 0];
+                ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+                ctx.fillText(op.str, op.x, op.y);
+              } else if (op.k === 'l') {
+                let cl = op.color || [0, 0, 0];
+                ctx.strokeStyle = 'rgb(' + cl[0] + ',' + cl[1] + ',' + cl[2] + ')';
+                ctx.lineWidth = op.w;
+                ctx.beginPath();
+                ctx.moveTo(op.x1, op.y1);
+                ctx.lineTo(op.x2, op.y2);
+                ctx.stroke();
+              } else if (op.k === 'r') {
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = op.lw;
+                ctx.strokeRect(op.x, op.y, op.w, op.h);
+              } else if (op.k === 'i') {
+                ctx.drawImage(imgBanner, op.x, op.y, op.w, op.h);
+              }
+            });
+            cb(true);
+          } catch(e) { cb(false); }
+        };
+        imgWm.onload = seguir; imgWm.onerror = seguir;
+        imgBanner.onload = seguir; imgBanner.onerror = seguir;
+        imgWm.src = WATERMARK_TILE;
+        imgBanner.src = BANNER_LETTERHEAD;
+      } catch(e) { cb(false); }
+    }
+
+    function cerrarVistaPrevia() {
+      let m = document.getElementById('modal-preview');
+      if (m) m.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function descargarDesdeVistaPrevia() {
+      if (!vistaPreviaCtx) return;
+      let ctx = vistaPreviaCtx;
+      cerrarVistaPrevia();
+      document.getElementById('loader').classList.remove('hidden');
+      document.getElementById('container-buttons-submit').classList.add('hidden');
+      document.getElementById('download-box').classList.add('hidden');
+      let pdf;
+      try {
+        pdf = pdfDesdeComposicion(ctx.comp);
+      } catch(e) {
+        alert("Error generando el PDF: " + e);
+        resetActions();
+        return;
+      }
+      finalizarPdf(pdf, ctx.payload);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  COPIAR MENSAJE PARA WHATSAPP
+    // ═══════════════════════════════════════════════════════════
+    function mensajeWhatsAppDe(payload) {
+      let items = [];
+      let totalTxt = '';
+      if (payload.tipo_cotizacion === 'estandar') {
+        consolidarHabitacionesCliente(payload.habitaciones).forEach(function(h) {
+          items.push(h.tipoBase + (h.cantidad > 1 ? ' x' + h.cantidad : ''));
+        });
+        (payload.amenidades_predefinidas || []).forEach(function(a) {
+          items.push(a.nombre + (a.cantidad > 1 ? ' x' + a.cantidad : ''));
+        });
+        (payload.adicionales_costo || []).forEach(function(a) { items.push(a.detalle); });
+        totalTxt = fm(payload.total);
+      } else {
+        let cant = payload.cantidad_programa || 1;
+        items.push('Programa ' + payload.nombre_programa + (cant > 1 ? ' x' + cant : ''));
+        totalTxt = fm(Math.round((payload.total_programa || 0) * 1.19));
+      }
+      let noches = payload.noches + (payload.noches == 1 ? ' noche' : ' noches');
+      return payload.saludo + ' ' + payload.nombre_cliente + ': le enviamos la cotización solicitada para el ' +
+        payload.checkin + ' al ' + payload.checkout + ' (' + noches + '): ' + items.join(', ') +
+        '. Total: ' + totalTxt + ' (IVA incluido). La cotización es válida por 5 días. Cualquier duda quedamos atentos. Equipo de Recepción, Cascadas Hotel';
+    }
+
+    function copiarPorSeleccion(txt) {
+      try {
+        let ta = document.createElement('textarea');
+        ta.value = txt;
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0;';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        let ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch(e) { return false; }
+    }
+
+    function copiarMensajeWhatsApp(btn) {
+      if (!payloadParaWhatsApp) return;
+      let txt = mensajeWhatsAppDe(payloadParaWhatsApp);
+      let listo = function(ok) {
+        if (!btn) return;
+        let original = btn.innerHTML;
+        btn.innerHTML = ok
+          ? '<i class="fa-solid fa-check text-base"></i> ¡COPIADO! PÉGALO EN EL CHAT'
+          : 'NO SE PUDO COPIAR AUTOMÁTICO';
+        setTimeout(function() { btn.innerHTML = original; }, 2600);
       };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function() { listo(true); }, function() { listo(copiarPorSeleccion(txt)); });
+      } else {
+        listo(copiarPorSeleccion(txt));
+      }
+    }
 
-      // Leer SIEMPRE la plantilla fresca desde Google Docs al generar el PDF,
-      // así cualquier edición reciente (texto o negritas) queda reflejada.
+    // ═══════════════════════════════════════════════════════════
+    //  BUSCADOR DE COTIZACIONES
+    // ═══════════════════════════════════════════════════════════
+    function abrirBuscador() {
+      document.getElementById('modal-buscador').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      setTimeout(function() { document.getElementById('bsq-input').focus(); }, 120);
+    }
+    function cerrarBuscador() {
+      document.getElementById('modal-buscador').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    function ejecutarBusqueda() {
+      let q = document.getElementById('bsq-input').value.trim();
+      let estado = document.getElementById('bsq-estado');
+      let cont = document.getElementById('bsq-resultados');
+      if (q.length < 2) {
+        estado.style.display = 'block';
+        estado.innerHTML = '<p style="font-weight:700;color:#64748b;">Escribe al menos 2 letras del nombre</p>';
+        cont.innerHTML = '';
+        return;
+      }
+      estado.style.display = 'block';
+      estado.innerHTML = '<i class="fa-solid fa-circle-notch spin" style="font-size:22px;color:#0f172a;"></i><p style="margin-top:10px;font-weight:700;color:#64748b;">Buscando en el Historial...</p>';
+      cont.innerHTML = '';
       google.script.run
         .withSuccessHandler(function(res) {
-          if (res && res.exito && res.elementos && res.elementos.length) {
-            elementosPlantilla = res.elementos;
-            continuar(res.elementos);
-          } else {
-            alert("No se pudo leer la plantilla del documento: " + ((res && res.error) || "sin elementos"));
-            resetActions();
+          if (!res || !res.exito) {
+            estado.innerHTML = '<p style="color:#b91c1c;font-weight:700;">Error: ' + escTx((res && res.error) || 'desconocido') + '</p>';
+            return;
           }
+          if (!res.grupos || !res.grupos.length) {
+            estado.innerHTML = '<p style="font-weight:700;color:#64748b;">Sin resultados para “' + escTx(q) + '”</p>';
+            return;
+          }
+          estado.style.display = 'none';
+          cont.innerHTML = res.grupos.map(function(g) {
+            let badge = (g.tipo || '').toLowerCase().indexOf('prog') === 0
+              ? '<span class="badge-p">Programa</span>' : '<span class="badge-e">Estándar</span>';
+            let accion = g.link
+              ? '<a class="bsq-verpdf" href="' + escTx(g.link) + '" target="_blank"><i class="fa-solid fa-file-pdf"></i> VER PDF</a>'
+              : '<span class="bsq-sinpdf">SIN PDF<br>(anterior al archivo)</span>';
+            let estadia = g.checkin ? (' &nbsp;·&nbsp; Estadía ' + escTx(g.checkin) + (g.checkout ? ' → ' + escTx(g.checkout) : '')) : '';
+            return '<div class="bsq-item">' +
+              '<div style="min-width:0;flex:1;">' +
+                '<div class="bsq-cliente">' + escTx(g.cliente) + ' ' + badge + '</div>' +
+                '<div class="bsq-fecha">Cotizado el ' + escTx(g.fecha) + estadia + '</div>' +
+                '<div class="bsq-detalle">' + escTx((g.detalles || []).join(' · ')) + '</div>' +
+              '</div>' +
+              '<div class="bsq-total">' + fm(g.total) + '</div>' +
+              accion +
+            '</div>';
+          }).join('');
         })
         .withFailureHandler(function(err) {
-          alert("No se pudo leer la plantilla del documento: " + err);
-          resetActions();
+          estado.innerHTML = '<p style="color:#b91c1c;font-weight:700;">Error de conexión: ' + escTx(err) + '</p>';
         })
-        .obtenerElementosPlantilla();
+        .buscarCotizaciones(q);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  GENERAR WORD (.docx real, mismo formato que el PDF)
+    // ═══════════════════════════════════════════════════════════
+    function b64aBytes(dataUri) {
+      let b64 = dataUri.split(',')[1];
+      let bin = atob(b64);
+      let arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return arr;
+    }
+
+    function generarWordClienteDesdePayload(payload) {
+      if (typeof docx === 'undefined') {
+        alert("No cargó la librería de Word. Revisa la conexión y recarga la página.");
+        resetActions();
+        return;
+      }
+      conPlantillaFresca(function(elementos) {
+        try {
+          construirWordDocx(payload, elementos).then(function(blob) {
+            let nombre = "Cotizacion Cascadas Hotel " + payload.nombre_cliente + " " + payload.checkin.replace(/\//g, "-") + ".docx";
+            let a = document.createElement('a');
+            let url = URL.createObjectURL(blob);
+            a.href = url; a.download = nombre;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+            payloadParaWhatsApp = payload;
+            // registrar en Historial (sin respaldo PDF)
+            google.script.run
+              .withSuccessHandler(function(res) {
+                resetActions();
+                mostrarCajaExito('', true);
+                if (res && res.aviso) mostrarToast('error', '⚠ ' + res.aviso);
+              })
+              .withFailureHandler(function() { resetActions(); mostrarCajaExito('', true); })
+              .guardarPdfClienteYRegistrar(payload, null, null);
+          }).catch(function(e) {
+            alert("Error generando el Word: " + e);
+            resetActions();
+          });
+        } catch(e) {
+          alert("Error generando el Word: " + e);
+          resetActions();
+        }
+      });
+    }
+
+    function construirWordDocx(payload, elementos) {
+      const D = docx;
+      const FUENTE = 'Arial';
+
+      function reempW(str) {
+        return String(str == null ? '' : str)
+          .split('{{fecha_emision}}').join(payload.fecha_emision_larga || '')
+          .split('{{saludo}}').join(payload.saludo || '')
+          .split('{{nombre_cliente}}').join(payload.nombre_cliente || '')
+          .split('{{nombre_programa}}').join(
+            payload.tipo_cotizacion === 'programa' && payload.nombre_programa
+              ? 'Programa: ' + payload.nombre_programa : ''
+          );
+      }
+      function segsW(el) {
+        let base = (el.runs && el.runs.length)
+          ? el.runs
+          : [{ t: el.texto || '', b: el.isBold === true, i: false, u: false }];
+        let forzarB = el.isBold === true;
+        let segs = [];
+        base.forEach(function(r) {
+          let t = reempW(r.t);
+          if (t) segs.push({ t: t, b: (r.b === true) || forzarB, i: r.i === true, u: r.u === true });
+        });
+        return segs;
+      }
+      function runsW(segs, opc) {
+        opc = opc || {};
+        return segs.map(function(sg) {
+          return new D.TextRun({
+            text: sg.t,
+            bold: sg.b || opc.bold === true,
+            italics: sg.i,
+            underline: sg.u ? {} : undefined,
+            size: opc.size || 21,
+            font: FUENTE
+          });
+        });
+      }
+
+      // mismos datos de tabla que usa el PDF
+      function datosTablaW() {
+        let filas = [];
+        filas.push({ celdas: [
+          { texto: 'Servicio habitación', b: true, align: 'izq' },
+          { texto: 'Cantidad', b: true }, { texto: 'check-in', b: true }, { texto: 'check-out', b: true },
+          { texto: 'noches', b: true }, { texto: 'valor por noche', b: true }, { texto: 'total por habitaciones', b: true }
+        ]});
+        let sub = 0, iva = 0, total = 0;
+        if (payload.tipo_cotizacion === 'estandar') {
+          consolidarHabitacionesCliente(payload.habitaciones).forEach(function(h) {
+            filas.push({ celdas: [
+              { texto: h.tipoBase, align: 'izq' }, { texto: String(h.cantidad) },
+              { texto: payload.checkin }, { texto: payload.checkout }, { texto: String(payload.noches) },
+              { texto: fm(h.precio) }, { texto: fm(h.total) }
+            ]});
+          });
+          (payload.amenidades_predefinidas || []).forEach(function(a) {
+            filas.push({ celdas: [
+              { texto: a.nombre, sub: a.descripcion || '', align: 'izq' }, { texto: String(a.cantidad) },
+              { texto: '-' }, { texto: '-' }, { texto: '-' },
+              { texto: fm(a.valorUnitario) }, { texto: fm(a.total) }
+            ]});
+          });
+          (payload.adicionales_costo || []).forEach(function(a) {
+            filas.push({ celdas: [
+              { texto: a.detalle, align: 'izq' }, { texto: '-' }, { texto: '-' }, { texto: '-' },
+              { texto: '-' }, { texto: '-' }, { texto: fm(a.total) }
+            ]});
+          });
+          sub = payload.subtotal || 0;
+          iva = payload.iva != null ? payload.iva : Math.round(sub * 0.19);
+          total = payload.total != null ? payload.total : sub + iva;
+        } else {
+          let cant = payload.cantidad_programa || 1;
+          let neto = payload.total_programa || 0;
+          let unit = cant > 0 ? Math.round(neto / cant) : neto;
+          filas.push({ celdas: [
+            { texto: 'Programa ' + (payload.nombre_programa || ''), align: 'izq' }, { texto: String(cant) },
+            { texto: payload.checkin }, { texto: payload.checkout }, { texto: String(payload.noches) },
+            { texto: fm(unit) }, { texto: fm(neto) }
+          ]});
+          sub = neto; iva = Math.round(sub * 0.19); total = sub + iva;
+        }
+        let vac = [{ vacia: true }, { vacia: true }, { vacia: true }, { vacia: true }, { vacia: true }];
+        filas.push({ celdas: vac.concat([{ texto: 'Subtotal' }, { texto: fm(sub) }]) });
+        filas.push({ celdas: vac.concat([{ texto: 'IVA 19%' }, { texto: fm(iva) }]) });
+        filas.push({ celdas: vac.concat([{ texto: 'Total', b: true }, { texto: fm(total), b: true }]) });
+        return { colPcts: [24, 11, 14, 14, 9, 11.5, 16.5], filas: filas };
+      }
+      function coberturasW() {
+        if (payload.tipo_cotizacion !== 'programa' || !payload.ticks || !payload.ticks.length) return null;
+        let filas = [{ celdas: [{ texto: 'Servicios Coberturas Especiales Incluidas', b: true, align: 'izq' }] }];
+        payload.ticks.forEach(function(tk) {
+          filas.push({ celdas: [{ texto: '✓ ' + tk, align: 'izq' }] });
+        });
+        return { colPcts: [100], filas: filas };
+      }
+
+      const SIN_BORDE = { style: D.BorderStyle.NIL };
+      const BORDE = { style: D.BorderStyle.SINGLE, size: 4, color: '000000' };
+      function celdaW(c, pct) {
+        let parrs = [];
+        if (!c.vacia) {
+          // "(2 personas)" unido con espacios irrompibles para que no se corte
+          let texto = String(c.texto == null ? '' : c.texto).replace(/\(([^)]*)\)/g, function(m) {
+            return m.replace(/ /g, '\u00A0');
+          });
+          parrs.push(new D.Paragraph({
+            alignment: c.align === 'izq' ? D.AlignmentType.LEFT : D.AlignmentType.CENTER,
+            children: [new D.TextRun({ text: texto, bold: c.b === true, size: 19, font: FUENTE })]
+          }));
+          if (c.sub) {
+            parrs.push(new D.Paragraph({
+              children: [new D.TextRun({ text: c.sub, size: 15, color: '333333', font: FUENTE })]
+            }));
+          }
+        } else {
+          parrs.push(new D.Paragraph({ children: [] }));
+        }
+        let bordes = c.vacia
+          ? { top: SIN_BORDE, bottom: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE }
+          : { top: BORDE, bottom: BORDE, left: BORDE, right: BORDE };
+        return new D.TableCell({
+          children: parrs,
+          borders: bordes,
+          verticalAlign: D.VerticalAlign.CENTER,
+          width: { size: pct, type: D.WidthType.PERCENTAGE },
+          margins: { top: 60, bottom: 60, left: 80, right: 80 }
+        });
+      }
+      function tablaW(datos) {
+        return new D.Table({
+          width: { size: 100, type: D.WidthType.PERCENTAGE },
+          borders: { top: SIN_BORDE, bottom: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, insideHorizontal: SIN_BORDE, insideVertical: SIN_BORDE },
+          rows: datos.filas.map(function(f) {
+            return new D.TableRow({ children: f.celdas.map(function(c, ci) { return celdaW(c, datos.colPcts[ci]); }) });
+          })
+        });
+      }
+
+      // ---- cuerpo del documento ----
+      const children = [];
+      let inicioVisto = false;
+      elementos.forEach(function(el) {
+        if (el.tipo === 'tabla') return;
+        let raw = el.texto || '';
+        if (raw.indexOf('{{tabla_valores}}') >= 0) {
+          inicioVisto = true;
+          children.push(tablaW(datosTablaW()));
+          children.push(new D.Paragraph({ spacing: { after: 100 }, children: [] }));
+          return;
+        }
+        if (raw.indexOf('{{tabla_adicionales}}') >= 0) {
+          let cb = coberturasW();
+          if (cb) {
+            children.push(tablaW(cb));
+            children.push(new D.Paragraph({ spacing: { after: 100 }, children: [] }));
+          }
+          return;
+        }
+        if (!reempW(raw).trim()) {
+          if (inicioVisto) children.push(new D.Paragraph({ spacing: { after: 60 }, children: [] }));
+          return;
+        }
+        let segs = segsW(el);
+        if (!segs.length) return;
+        inicioVisto = true;
+        let esFecha = raw.indexOf('{{fecha_emision}}') >= 0;
+        if (el.tipo === 'lista') {
+          children.push(new D.Paragraph({
+            children: [new D.TextRun({ text: '• ', size: 21, font: FUENTE })].concat(runsW(segs)),
+            indent: { left: 360 + (el.nestingLevel || 0) * 270 },
+            spacing: { after: 80 }
+          }));
+        } else if (el.tipo === 'heading1' || el.tipo === 'heading2' || el.tipo === 'heading3') {
+          let size = el.tipo === 'heading1' ? 28 : el.tipo === 'heading2' ? 24 : 22;
+          children.push(new D.Paragraph({
+            children: runsW(segs, { bold: true, size: size }),
+            spacing: { before: 160, after: 100 }
+          }));
+        } else {
+          children.push(new D.Paragraph({
+            children: runsW(segs),
+            alignment: esFecha ? D.AlignmentType.RIGHT : undefined,
+            spacing: { after: 150 }
+          }));
+        }
+      });
+
+      // pie: línea + contacto centrado
+      children.push(new D.Paragraph({
+        spacing: { before: 260, after: 80 },
+        border: { top: { style: D.BorderStyle.SINGLE, size: 18, color: '3E3E40' } },
+        children: []
+      }));
+      children.push(new D.Paragraph({
+        alignment: D.AlignmentType.CENTER,
+        children: [new D.TextRun({ text: 'Cascadas Hotel - www.cascadashotel.cl - +56 55 2 538636 - +56 9 4074 9693', size: 17, color: '444444', font: FUENTE })]
+      }));
+
+      // ---- membrete (primera página) y marca de agua (todas) ----
+      const bannerBytes = b64aBytes(BANNER_LETTERHEAD);
+      const wmBytes = b64aBytes(WATERMARK_TILE);
+      function marcaAgua() {
+        return new D.ImageRun({
+          type: 'png',
+          data: wmBytes,
+          transformation: { width: 794, height: 1122 },
+          floating: {
+            horizontalPosition: { relative: D.HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+            verticalPosition: { relative: D.VerticalPositionRelativeFrom.PAGE, offset: 0 },
+            behindDocument: true,
+            wrap: { type: D.TextWrappingType.NONE }
+          }
+        });
+      }
+      const encabezadoPrimera = new D.Header({
+        children: [new D.Paragraph({
+          spacing: { after: 120 },
+          children: [
+            marcaAgua(),
+            new D.ImageRun({ type: 'png', data: bannerBytes, transformation: { width: 655, height: 147 } })
+          ]
+        })]
+      });
+      const encabezadoResto = new D.Header({
+        children: [new D.Paragraph({ children: [marcaAgua()] })]
+      });
+
+      const documento = new D.Document({
+        styles: { default: { document: { run: { font: FUENTE, size: 21 } } } },
+        sections: [{
+          properties: {
+            page: {
+              size: { width: 11906, height: 16838 },
+              margin: { top: 900, bottom: 900, left: 1020, right: 1020 }
+            },
+            titlePage: true
+          },
+          headers: { first: encabezadoPrimera, default: encabezadoResto },
+          children: children
+        }]
+      });
+      return D.Packer.toBlob(documento);
     }
 
     // ═══════════════════════════════════════════════════════════
     //  GENERACIÓN COTIZACIÓN
     // ═══════════════════════════════════════════════════════════
-    function processQuote(formatTarget) {
+    // Construye el payload de la cotización desde el formulario (con validaciones)
+    function construirPayloadCotizacion() {
       let nom   = document.getElementById('nombre_cliente').value;
       let noches = parseInt(document.getElementById('night-count').innerText);
-      if (!nom) { alert("Por favor, digite el nombre del huésped."); return; }
-      if (!datesSelected.checkin || noches <= 0) { alert("Debe seleccionar un rango de estadía válido."); return; }
-
-      document.getElementById('loader').classList.remove('hidden');
-      document.getElementById('container-buttons-submit').classList.add('hidden');
-      document.getElementById('download-box').classList.add('hidden');
+      if (!nom) { alert("Por favor, digite el nombre del huésped."); return null; }
+      if (!datesSelected.checkin || noches <= 0) { alert("Debe seleccionar un rango de estadía válido."); return null; }
 
       let emisionValue = document.getElementById('fecha_emision').value;
       let dateObj = new Date(emisionValue + "T12:00:00");
@@ -1905,7 +2558,7 @@ function refrescarDatosServidor() {
       if (currentTab === 'estandar') {
         let sub = 0;
         let roomRows = document.querySelectorAll('#room-container > div');
-        if (!roomRows.length) { alert("Debe añadir al menos una habitación."); resetActions(); return; }
+        if (!roomRows.length) { alert("Debe añadir al menos una habitación."); return null; }
         payload.habitaciones = Array.from(roomRows).map(row => {
           let p = parseInt(row.querySelector('.inp-custom-precio').value) || 0;
           let c = parseInt(row.querySelector('.inp-cant').value) || 1;
@@ -1952,31 +2605,22 @@ function refrescarDatosServidor() {
         requerimientosExtrasDinamicos.forEach(req => ticks.push(req.texto));
         payload.ticks = ticks;
       }
+      return payload;
+    }
 
-      // ── PDF: se genera en el navegador con el formato del Word manual ──
-      if (formatTarget === 'pdf') {
+    function processQuote(formatTarget) {
+      let payload = construirPayloadCotizacion();
+      if (!payload) return;
+
+      document.getElementById('loader').classList.remove('hidden');
+      document.getElementById('container-buttons-submit').classList.add('hidden');
+      document.getElementById('download-box').classList.add('hidden');
+
+      if (formatTarget === 'word') {
+        generarWordClienteDesdePayload(payload);
+      } else {
         generarPdfClienteDesdePayload(payload);
-        return;
       }
-
-      // ── WORD: mantiene el flujo original con la plantilla de Google Docs ──
-      google.script.run
-        .withSuccessHandler(res => {
-          resetActions();
-          let box = document.getElementById('download-box'); box.classList.remove('hidden');
-          let url   = formatTarget === 'pdf' ? res.pdfUrl : res.wordUrl;
-          let icon  = formatTarget === 'pdf' ? 'fa-file-pdf' : 'fa-file-word text-blue-200';
-          let color = formatTarget === 'pdf' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700';
-          box.innerHTML = `
-            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
-              <span class="text-emerald-800 font-bold block mb-2"><i class="fa-solid fa-circle-check"></i> Cotización Lista</span>
-              <a href="${url}" target="_blank" class="inline-flex items-center space-x-2 ${color} text-white font-black px-6 py-2.5 rounded-xl transition shadow-sm text-sm cursor-pointer">
-                <i class="fa-solid ${icon}"></i> <span>DESCARGAR COTIZACIÓN</span>
-              </a>
-            </div>`;
-        })
-        .withFailureHandler(err => { alert("Error: " + err); resetActions(); })
-        .generarDocumento(payload);
     }
 
     function resetActions() {
