@@ -181,13 +181,40 @@ function include(filename) {
 // UTILIDADES INTERNAS DE ACCESO A HOJAS
 // ===========================================================================
 
+/** Cache del Spreadsheet durante la ejecucion (abrirlo es costoso). */
+var _ssCache = null;
+
 /** Devuelve el Spreadsheet activo segun el ID guardado por Setup.gs. */
 function _ss() {
+  if (_ssCache) return _ssCache;
   var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
   if (!id) {
     throw new Error('No se encontro SPREADSHEET_ID. Ejecuta crearBaseDeDatos() primero.');
   }
-  return SpreadsheetApp.openById(id);
+  _ssCache = SpreadsheetApp.openById(id);
+  return _ssCache;
+}
+
+/**
+ * Convierte un valor de hora (texto o Date de Sheets) a texto "HH:MM".
+ * IMPORTANTE: google.script.run NO puede transferir objetos Date al navegador;
+ * ademas Sheets convierte "13:00" en hora automaticamente. Todo lo que salga
+ * al cliente debe pasar por aqui.
+ */
+function _horaATexto(valor) {
+  if (valor === null || valor === undefined || valor === '') return '';
+  if (valor instanceof Date) {
+    return Utilities.formatDate(valor, _ss().getSpreadsheetTimeZone(), 'HH:mm');
+  }
+  return String(valor);
+}
+
+/** Convierte un Date a texto "yyyy-MM-dd HH:mm:ss" transferible al cliente. */
+function _fechaHoraTexto(valor) {
+  if (valor instanceof Date) {
+    return Utilities.formatDate(valor, _ss().getSpreadsheetTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  }
+  return (valor === null || valor === undefined) ? '' : String(valor);
 }
 
 /** Devuelve una hoja por nombre. */
@@ -245,7 +272,8 @@ function obtenerConfiguracionCompleta() {
   var filas = _leerHojaComoObjetos(HOJAS.CONFIGURACION);
   var config = {};
   filas.forEach(function (f) {
-    config[f.Clave] = f.Valor;
+    // Los Date no son transferibles al navegador: se convierten a "HH:MM".
+    config[f.Clave] = (f.Valor instanceof Date) ? _horaATexto(f.Valor) : f.Valor;
   });
   return config;
 }
@@ -280,8 +308,8 @@ function _normalizarServicio(s) {
     CostoBase: Number(s.CostoBase) || 0,
     RequiereAprobacion: _aBooleano(s.RequiereAprobacion),
     Activo: _aBooleano(s.Activo),
-    HorarioInicio: s.HorarioInicio,
-    HorarioFin: s.HorarioFin,
+    HorarioInicio: _horaATexto(s.HorarioInicio),
+    HorarioFin: _horaATexto(s.HorarioFin),
     Descripcion: s.Descripcion,
     PermitePrepedido: _aBooleano(s.PermitePrepedido),
     EsIncluible: _aBooleano(s.EsIncluible)
@@ -383,7 +411,7 @@ function _normalizarProducto(p) {
     Etiquetas: p.Etiquetas ? String(p.Etiquetas) : '',
     TiempoPreparacionMin: Number(p.TiempoPreparacionMin) || 0,
     EsMenuDelDia: _aBooleano(p.EsMenuDelDia),
-    FechaModificacion: p.FechaModificacion,
+    FechaModificacion: _fechaHoraTexto(p.FechaModificacion),
     ModificadoPor: p.ModificadoPor
   };
 }
@@ -420,12 +448,9 @@ function _obtenerCategoriaPorID(categoriaID) {
 
 /** Convierte "HH:MM" a minutos desde medianoche. */
 function _horaAMinutos(hora) {
-  if (!hora) return 0;
-  // Respaldo: si una celda quedo con formato de hora, llega como Date.
-  if (hora instanceof Date) {
-    hora = Utilities.formatDate(hora, _ss().getSpreadsheetTimeZone(), 'HH:mm');
-  }
-  var partes = String(hora).split(':');
+  var texto = _horaATexto(hora); // tolera celdas convertidas a Date por Sheets
+  if (!texto) return 0;
+  var partes = texto.split(':');
   return (parseInt(partes[0], 10) || 0) * 60 + (parseInt(partes[1], 10) || 0);
 }
 
@@ -813,13 +838,13 @@ function obtenerReservas(filtros) {
   }).map(function (r) {
     return {
       ID: r.ID,
-      Timestamp: r.Timestamp,
+      Timestamp: _fechaHoraTexto(r.Timestamp),
       Habitacion: String(r.Habitacion),
       ServicioID: r.ServicioID,
       ServicioNombre: servicios[r.ServicioID] || r.ServicioID,
       Fecha: _fechaISO(r.Fecha),
-      HoraInicio: r.HoraInicio,
-      HoraFin: r.HoraFin,
+      HoraInicio: _horaATexto(r.HoraInicio),
+      HoraFin: _horaATexto(r.HoraFin),
       Personas: Number(r.Personas) || 0,
       Estado: r.Estado,
       SolicitadoPor: r.SolicitadoPor,
@@ -1064,7 +1089,7 @@ function obtenerPedidosPorReserva(reservaID) {
       Habitacion: String(pedido.Habitacion),
       Estado: pedido.Estado,
       Total: Number(pedido.Total) || 0,
-      Timestamp: pedido.Timestamp,
+      Timestamp: _fechaHoraTexto(pedido.Timestamp),
       Notas: pedido.Notas
     },
     detalles: detalles
@@ -1091,10 +1116,10 @@ function obtenerCentroOperaciones(fecha) {
     return _fechaISO(r.Fecha) === fecha && !_esEstadoCancelado(r.Estado);
   });
 
-  // Agrupa por hora de inicio.
+  // Agrupa por hora de inicio (normalizada a texto "HH:MM").
   var mapaHoras = {};
   reservas.forEach(function (r) {
-    var hora = r.HoraInicio;
+    var hora = _horaATexto(r.HoraInicio);
     if (!mapaHoras[hora]) mapaHoras[hora] = [];
     var serv = servicios[r.ServicioID] || {};
     mapaHoras[hora].push({
@@ -1137,10 +1162,10 @@ function _generarAlertasCapacidad(fecha, servicios) {
   var reservas = _leerHojaComoObjetos(HOJAS.RESERVAS).filter(function (r) {
     return _fechaISO(r.Fecha) === fecha && !_esEstadoCancelado(r.Estado);
   });
-  // Agrupa ocupacion por servicio+hora.
+  // Agrupa ocupacion por servicio+hora (hora normalizada a texto).
   var mapa = {};
   reservas.forEach(function (r) {
-    var clave = r.ServicioID + '|' + r.HoraInicio;
+    var clave = r.ServicioID + '|' + _horaATexto(r.HoraInicio);
     mapa[clave] = (mapa[clave] || 0) + (Number(r.Personas) || 0);
   });
   Object.keys(mapa).forEach(function (clave) {
@@ -1177,7 +1202,7 @@ function obtenerNotificaciones(rol, habitacion, soloNoLeidas) {
   }).map(function (n) {
     return {
       ID: n.ID,
-      Timestamp: n.Timestamp,
+      Timestamp: _fechaHoraTexto(n.Timestamp),
       Tipo: n.Tipo,
       Mensaje: n.Mensaje,
       DestinatarioRol: n.DestinatarioRol,
@@ -1264,11 +1289,11 @@ function obtenerBloqueos(fechaInicio, fechaFin, servicioID) {
       ServicioID: b.ServicioID,
       FechaInicio: _fechaISO(b.FechaInicio),
       FechaFin: _fechaISO(b.FechaFin || b.FechaInicio),
-      HoraInicio: b.HoraInicio,
-      HoraFin: b.HoraFin,
+      HoraInicio: _horaATexto(b.HoraInicio),
+      HoraFin: _horaATexto(b.HoraFin),
       Motivo: b.Motivo,
       CreadoPor: b.CreadoPor,
-      Timestamp: b.Timestamp
+      Timestamp: _fechaHoraTexto(b.Timestamp)
     };
   });
 }
@@ -1696,7 +1721,7 @@ function obtenerPedidosDelDia(fecha) {
       Estado: ped.Estado,
       Total: Number(ped.Total) || 0,
       Notas: ped.Notas,
-      HoraReserva: reserva.HoraInicio || '',
+      HoraReserva: _horaATexto(reserva.HoraInicio),
       Detalles: detallesPorPedido[ped.ID] || []
     };
   });

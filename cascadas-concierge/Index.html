@@ -366,11 +366,14 @@ function llamarAPI(nombreFuncion, parametros, opciones) {
       })
       .withFailureHandler(function (error) {
         mostrarLoaderGlobal(false);
-        mostrarModal({
-          titulo: 'Ocurrio un problema',
-          contenidoHTML: '<p class="text-sm">' + (error && error.message ? error.message : 'Error inesperado.') + '</p>',
-          botones: [{ texto: 'Entendido', clase: 'btn-primary', accion: cerrarModal }]
-        });
+        // Con silencioso:true no se muestra modal; el llamador decide que hacer.
+        if (!opciones.silencioso) {
+          mostrarModal({
+            titulo: 'Ocurrio un problema',
+            contenidoHTML: '<p class="text-sm">' + (error && error.message ? error.message : 'Error inesperado.') + '</p>',
+            botones: [{ texto: 'Entendido', clase: 'btn-primary', accion: cerrarModal }]
+          });
+        }
         reject(error);
       })[nombreFuncion].apply(null, parametros || []);
   });
@@ -432,6 +435,15 @@ function mostrarModal(config) {
 function cerrarModal() {
   document.getElementById('contenedorModal').innerHTML = '';
   if (APP.cuentaRegresiva) { clearInterval(APP.cuentaRegresiva); APP.cuentaRegresiva = null; }
+}
+
+/* HTML de error para reemplazar spinners cuando una llamada falla. */
+function htmlError(mensaje, codigoReintento) {
+  return '<div class="card p-6 text-center fade-in">' +
+    '<i class="fa-solid fa-triangle-exclamation text-2xl mb-2" style="color: var(--dorado)"></i>' +
+    '<p class="text-sm opacity-70 mb-3">' + mensaje + '</p>' +
+    (codigoReintento ? '<button class="btn btn-outline" onclick="' + codigoReintento + '"><i class="fa-solid fa-rotate-right"></i> Reintentar</button>' : '') +
+  '</div>';
 }
 
 /* Toast de notificacion breve */
@@ -542,9 +554,11 @@ function entrarComoStaff() {
   });
 }
 function reanudarStaff(email) {
-  llamarAPI('autenticarStaff', [email], { loader: false }).then(function (res) {
+  llamarAPI('autenticarStaff', [email], { loader: false, silencioso: true }).then(function (res) {
     if (res.success) { APP.usuarioStaff = res.usuario; iniciarStaff(); }
     else { document.getElementById('vistaAcceso').classList.remove('oculto'); }
+  }).catch(function () {
+    document.getElementById('vistaAcceso').classList.remove('oculto');
   });
 }
 function cerrarSesionStaff() {
@@ -798,6 +812,8 @@ function renderMisReservas() {
     }
     cont.innerHTML = '<h3 class="text-2xl mb-4" style="color: var(--verde-bosque)">Mis reservas</h3>' +
       reservas.map(tarjetaReserva).join('');
+  }).catch(function () {
+    cont.innerHTML = htmlError('No pudimos cargar tus reservas.', 'renderMisReservas()');
   });
 }
 
@@ -878,6 +894,9 @@ function toggleAcordeon(header, categoriaID) {
         return;
       }
       body.innerHTML = '<div class="p-4 pt-0 space-y-3">' + productos.map(tarjetaProductoCarta).join('') + '</div>';
+    }).catch(function () {
+      body.removeAttribute('data-cargado');
+      body.innerHTML = '<div class="p-4 pt-0 text-sm opacity-60">No pudimos cargar esta categoria. Toca de nuevo para reintentar.</div>';
     });
   }
 }
@@ -907,6 +926,8 @@ function abrirPrepedido(reservaID) {
       });
     }
     renderModalPrepedido();
+  }).catch(function () {
+    mostrarToast('No pudimos abrir el pedido. Intenta de nuevo.', 'error');
   });
 }
 
@@ -940,6 +961,8 @@ function renderModalPrepedido() {
 
     renderCarritoPrepedido();
     iniciarContadorPrepedido(reserva);
+  }).catch(function () {
+    mostrarToast('No pudimos cargar tu reserva. Intenta de nuevo.', 'error');
   });
 }
 
@@ -976,6 +999,8 @@ function cargarProductosPrepedido(categoriaID, btn) {
         '<button class="btn btn-dorado !py-1 !px-3 text-xs" onclick="agregarAlCarrito(\'' + p.ID + '\',\'' + escaparHTML(p.Nombre).replace(/'/g, "\\'") + '\',' + p.Precio + ')">+</button>' +
       '</div>';
     }).join('');
+  }).catch(function () {
+    lista.innerHTML = '<p class="text-xs opacity-60 text-center py-4">No pudimos cargar los productos. Elige la categoria de nuevo.</p>';
   });
 }
 
@@ -1079,11 +1104,11 @@ function navStaff(seccion) {
 }
 
 function refrescarBadgeNotif() {
-  llamarAPI('obtenerNotificaciones', [APP.usuarioStaff.Rol, '', true], { loader: false }).then(function (notifs) {
+  llamarAPI('obtenerNotificaciones', [APP.usuarioStaff.Rol, '', true], { loader: false, silencioso: true }).then(function (notifs) {
     var badge = document.getElementById('badgeNotif');
     if (notifs && notifs.length) { badge.textContent = notifs.length; badge.classList.remove('oculto'); }
     else badge.classList.add('oculto');
-  });
+  }).catch(function () { /* el badge es secundario: no interrumpe */ });
 }
 
 /* ---------- Centro de Operaciones ---------- */
@@ -1111,6 +1136,8 @@ function renderOperaciones() {
 
     cont.innerHTML = '<div class="flex items-center justify-between mb-4"><h2 class="text-2xl" style="color:var(--verde-bosque)">Centro de Operaciones</h2>' +
       '<span class="text-sm opacity-60">' + fecha + '</span></div>' + alertasHTML + timelineHTML;
+  }).catch(function () {
+    cont.innerHTML = htmlError('No pudimos cargar el centro de operaciones.', 'renderOperaciones()');
   });
 }
 
@@ -1150,6 +1177,8 @@ function aplicarFiltrosReservas() {
     tabla.innerHTML = '<table class="tabla"><thead><tr>' +
       '<th>Fecha</th><th>Hora</th><th>Hab</th><th>Servicio</th><th>Pers.</th><th>Estado</th><th>Acciones</th>' +
       '</tr></thead><tbody>' + reservas.map(filaReservaStaff).join('') + '</tbody></table>';
+  }).catch(function () {
+    tabla.innerHTML = htmlError('No pudimos cargar las reservas.', 'aplicarFiltrosReservas()');
   });
 }
 
@@ -1225,6 +1254,8 @@ function renderPedidosStaff() {
           '<div class="flex justify-between font-semibold mt-2 pt-2 border-t" style="border-color:var(--borde)"><span>Total</span><span>' + fmtMoneda(p.Total) + '</span></div>' +
         '</div>';
       }).join('');
+  }).catch(function () {
+    cont.innerHTML = htmlError('No pudimos cargar los pedidos.', 'renderPedidosStaff()');
   });
 }
 
@@ -1259,6 +1290,8 @@ function cargarTablaCarta() {
   llamarAPI('obtenerProductosGestion', [], { loader: false }).then(function (productos) {
     APP.productosGestion = productos;
     filtrarCarta();
+  }).catch(function () {
+    tabla.innerHTML = htmlError('No pudimos cargar la carta.', 'cargarTablaCarta()');
   });
 }
 
@@ -1411,6 +1444,8 @@ function cargarTablaCategorias() {
           '<button class="btn btn-peligro !py-1 !px-2 text-xs" onclick="eliminarCategoriaStaff(\'' + c.ID + '\')"><i class="fa-solid fa-trash"></i></button></td>' +
         '</tr>';
       }).join('') + '</tbody></table>';
+  }).catch(function () {
+    tabla.innerHTML = htmlError('No pudimos cargar las categorias.', 'cargarTablaCategorias()');
   });
 }
 
@@ -1521,6 +1556,8 @@ function buscarHistorial() {
           '<td class="text-xs">' + escaparHTML(r.Resumen) + '</td><td>' + fmtMoneda(r.Total) + '</td>' +
           '<td><span class="pill estado-Finalizada">' + escaparHTML(r.Estado) + '</span></td></tr>';
       }).join('') + '</tbody></table>';
+  }).catch(function () {
+    tabla.innerHTML = htmlError('No pudimos completar la busqueda.', 'buscarHistorial()');
   });
 }
 
@@ -1580,6 +1617,8 @@ function cargarTablaBloqueos() {
           '<td>' + (b.HoraInicio || '—') + ' - ' + (b.HoraFin || '—') + '</td>' +
           '<td class="text-xs">' + escaparHTML(b.Motivo) + '</td></tr>';
       }).join('') + '</tbody></table>';
+  }).catch(function () {
+    tabla.innerHTML = htmlError('No pudimos cargar los bloqueos.', 'cargarTablaBloqueos()');
   });
 }
 
@@ -1610,6 +1649,8 @@ function renderConfig() {
 
     cont.innerHTML = '<h2 class="text-2xl mb-4" style="color:var(--verde-bosque)">Configuracion</h2>' + destacado +
       '<div class="card p-4 grid grid-cols-1 md:grid-cols-2 gap-x-6">' + filas + '</div>';
+  }).catch(function () {
+    cont.innerHTML = htmlError('No pudimos cargar la configuracion.', 'renderConfig()');
   });
 }
 
