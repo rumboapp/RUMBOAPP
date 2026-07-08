@@ -75,6 +75,19 @@
     }
     .card:hover { box-shadow: 0 10px 30px rgba(0,0,0,.08); }
 
+    /* Tarjetas-boton de servicio (vista huesped) */
+    .tarjeta-servicio {
+      cursor: pointer; background: var(--blanco); border: 1px solid var(--borde);
+      border-radius: 16px; transition: all .25s ease;
+    }
+    .tarjeta-servicio:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.10); border-color: var(--arena); }
+    .tarjeta-servicio.activa { border-color: var(--verde-bosque); box-shadow: 0 0 0 2px var(--verde-bosque) inset; }
+    .icono-servicio {
+      width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: .6rem;
+      background: linear-gradient(135deg, var(--verde-bosque), #16302a); color: var(--dorado);
+    }
+
     /* Botones */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
@@ -560,6 +573,10 @@ function iniciarHuesped() {
     APP.servicios = r[0] || [];
     APP.categorias = r[1] || [];
     renderReservar();
+  }).catch(function () {
+    // Aunque falle, muestra el estado de reintento en vez de una pantalla vacia.
+    APP.servicios = APP.servicios || [];
+    renderReservar();
   });
 }
 
@@ -584,83 +601,140 @@ function navHuesped(seccion) {
 }
 
 /* ---------- Reservar ---------- */
+
+/* Icono FontAwesome para cada servicio (por ID, con respaldo por categoria). */
+function iconoServicio(s) {
+  var porID = {
+    S001: 'fa-bowl-food',      // Desayuno Buffet
+    S002: 'fa-mug-saucer',     // Desayuno Habitacion
+    S003: 'fa-utensils',       // Almuerzo
+    S004: 'fa-wine-glass',     // Cena
+    S005: 'fa-hot-tub-person', // Tinaja
+    S006: 'fa-bicycle',        // Bicicletas
+    S007: 'fa-spa'             // Masajes
+  };
+  if (porID[s.ID]) return porID[s.ID];
+  if (s.Categoria === 'Gastronomia') return 'fa-utensils';
+  if (s.Categoria === 'Bienestar') return 'fa-spa';
+  if (s.Categoria === 'Actividad') return 'fa-person-hiking';
+  return 'fa-calendar-check';
+}
+
 function renderReservar() {
-  var opcionesServicios = APP.servicios.map(function (s) {
-    return '<option value="' + s.ID + '">' + escaparHTML(s.Nombre) + '</option>';
+  APP.servicioActivoHuesped = null;
+  APP.horaSeleccionada = null;
+
+  // Estado si por algun motivo no cargaron los servicios.
+  if (!APP.servicios || !APP.servicios.length) {
+    document.getElementById('seccionReservar').innerHTML =
+      '<div class="card p-8 text-center fade-in">' +
+        '<i class="fa-solid fa-triangle-exclamation text-3xl mb-3" style="color: var(--dorado)"></i>' +
+        '<p class="text-sm opacity-70 mb-4">No pudimos cargar los servicios. Revisa tu conexion e intenta de nuevo.</p>' +
+        '<button class="btn btn-primary" onclick="recargarServiciosHuesped()"><i class="fa-solid fa-rotate-right"></i> Reintentar</button>' +
+      '</div>';
+    return;
+  }
+
+  // Tarjetas-boton por servicio.
+  var tarjetas = APP.servicios.map(function (s) {
+    var badge = s.RequiereAprobacion
+      ? '<span class="pill estado-Pendiente absolute top-3 right-3">Requiere aprobacion</span>' : '';
+    var precio = s.CostoBase > 0 ? '<p class="text-xs font-semibold mt-1" style="color: var(--dorado)">Desde ' + fmtMoneda(s.CostoBase) + '</p>' : '';
+    return '<button class="tarjeta-servicio card p-5 text-left relative" data-serv="' + s.ID + '" onclick="seleccionarServicioHuesped(\'' + s.ID + '\')">' +
+      badge +
+      '<div class="icono-servicio"><i class="fa-solid ' + iconoServicio(s) + '"></i></div>' +
+      '<p class="font-semibold text-base leading-tight">' + escaparHTML(s.Nombre) + '</p>' +
+      '<p class="text-xs opacity-60 mt-1 leading-snug">' + escaparHTML(s.Descripcion || '') + '</p>' +
+      precio +
+    '</button>';
   }).join('');
 
   var html =
-    '<div class="card p-6 fade-in">' +
-      '<h3 class="text-2xl mb-1" style="color: var(--verde-bosque)">Reservar un servicio</h3>' +
-      '<p class="text-sm opacity-60 mb-4">Elige el servicio, fecha y horario disponible.</p>' +
+    '<div class="fade-in">' +
+      '<h3 class="text-2xl mb-1 px-1" style="color: var(--verde-bosque)">Reservar un servicio</h3>' +
+      '<p class="text-sm opacity-60 mb-4 px-1">Toca el servicio que quieras reservar.</p>' +
+      '<div class="grid grid-cols-2 gap-3">' + tarjetas + '</div>' +
 
-      '<label class="lbl">Servicio</label>' +
-      '<select id="resServicio" class="input mb-3" onchange="alCambiarServicio()">' + opcionesServicios + '</select>' +
-
-      '<div id="descServicio" class="text-sm opacity-70 mb-3"></div>' +
-
-      '<div id="cajaDesayunoHab" class="oculto mb-3 p-3 rounded-xl" style="background: var(--arena); color:#4a3f28;"></div>' +
-
-      '<label class="lbl">Fecha</label>' +
-      '<input id="resFecha" class="input mb-3" placeholder="Selecciona una fecha">' +
-
-      '<label class="lbl">Personas</label>' +
-      '<input id="resPersonas" type="number" min="1" value="2" class="input mb-3">' +
-
-      '<button class="btn btn-outline w-full mb-3" onclick="buscarHorarios()"><i class="fa-solid fa-magnifying-glass"></i> Ver horarios disponibles</button>' +
-
-      '<div id="resHorarios" class="grid grid-cols-3 gap-2 mb-3"></div>' +
-
-      '<label class="lbl">Notas (opcional)</label>' +
-      '<textarea id="resNotas" class="input mb-4" rows="2" placeholder="Preferencias, alergias, etc."></textarea>' +
-
-      '<button class="btn btn-primary w-full" id="btnConfirmarReserva" onclick="confirmarReserva()" disabled>' +
-        '<i class="fa-solid fa-check"></i> Confirmar reserva</button>' +
+      // Panel de reserva (aparece al elegir un servicio).
+      '<div id="panelReserva" class="oculto"></div>' +
     '</div>';
 
   document.getElementById('seccionReservar').innerHTML = html;
-
-  // Inicializa Flatpickr.
-  flatpickr('#resFecha', { locale: 'es', minDate: 'today', dateFormat: 'Y-m-d' });
-  alCambiarServicio();
 }
 
-function servicioSeleccionado() {
-  var id = document.getElementById('resServicio').value;
-  return APP.servicios.filter(function (s) { return s.ID === id; })[0];
+/* Recarga servicios desde el backend (boton reintentar). */
+function recargarServiciosHuesped() {
+  llamarAPI('obtenerServiciosActivos', []).then(function (servicios) {
+    APP.servicios = servicios || [];
+    renderReservar();
+  });
 }
 
-function alCambiarServicio() {
-  var s = servicioSeleccionado();
+/* Al tocar una tarjeta de servicio: abre el panel con fecha/personas/horarios. */
+function seleccionarServicioHuesped(servicioID) {
+  var s = APP.servicios.filter(function (x) { return x.ID === servicioID; })[0];
   if (!s) return;
-  document.getElementById('descServicio').textContent = s.Descripcion || '';
-  // Reinicia horarios.
-  document.getElementById('resHorarios').innerHTML = '';
-  document.getElementById('btnConfirmarReserva').disabled = true;
+  APP.servicioActivoHuesped = s;
   APP.horaSeleccionada = null;
 
-  // Caso especial: Desayuno Habitacion (S002).
-  var caja = document.getElementById('cajaDesayunoHab');
+  // Resalta la tarjeta elegida.
+  document.querySelectorAll('.tarjeta-servicio').forEach(function (t) {
+    t.classList.toggle('activa', t.getAttribute('data-serv') === servicioID);
+  });
+
+  // Caja informativa del Desayuno Habitacion.
+  var cajaDesayuno = '';
   if (s.ID === 'S002') {
-    caja.classList.remove('oculto');
     var costo = fmtMoneda(APP.config.DESAYUNO_HABITACION_COSTO || 0);
-    caja.innerHTML = '<p class="font-semibold mb-1"><i class="fa-solid fa-mug-saucer"></i> Desayuno continental en habitacion (' + costo + ')</p>' +
-      '<p class="text-xs">' + escaparHTML(APP.config.DESAYUNO_HABITACION_DESCRIPCION || '') + '</p>';
-  } else {
-    caja.classList.add('oculto');
+    cajaDesayuno = '<div class="mb-4 p-3 rounded-xl text-sm" style="background: var(--arena); color:#4a3f28;">' +
+      '<p class="font-semibold mb-1"><i class="fa-solid fa-mug-saucer"></i> Desayuno continental (' + costo + ')</p>' +
+      '<p class="text-xs">' + escaparHTML(APP.config.DESAYUNO_HABITACION_DESCRIPCION || '') + '</p></div>';
   }
+
+  var panel = document.getElementById('panelReserva');
+  panel.className = 'card p-6 mt-4 slide-up';
+  panel.innerHTML =
+    '<div class="flex items-center gap-3 mb-4">' +
+      '<div class="icono-servicio !mb-0 !w-11 !h-11 text-lg"><i class="fa-solid ' + iconoServicio(s) + '"></i></div>' +
+      '<div><p class="font-semibold text-lg">' + escaparHTML(s.Nombre) + '</p>' +
+      '<p class="text-xs opacity-60">' + s.HorarioInicio + ' a ' + s.HorarioFin + ' hrs</p></div>' +
+    '</div>' +
+    cajaDesayuno +
+    '<div class="grid grid-cols-2 gap-3 mb-3">' +
+      '<div><label class="lbl">Fecha</label><input id="resFecha" class="input" placeholder="Elige fecha"></div>' +
+      '<div><label class="lbl">Personas</label><input id="resPersonas" type="number" min="1" value="2" class="input"></div>' +
+    '</div>' +
+    '<button class="btn btn-outline w-full mb-3" onclick="buscarHorarios()"><i class="fa-solid fa-clock"></i> Ver horarios disponibles</button>' +
+    '<div id="resHorarios" class="grid grid-cols-3 gap-2 mb-3"></div>' +
+    '<label class="lbl">Notas (opcional)</label>' +
+    '<textarea id="resNotas" class="input mb-4" rows="2" placeholder="Preferencias, alergias, etc."></textarea>' +
+    '<button class="btn btn-primary w-full" id="btnConfirmarReserva" onclick="confirmarReserva()" disabled>' +
+      '<i class="fa-solid fa-check"></i> Confirmar reserva</button>';
+
+  // Flatpickr sobre el nuevo input.
+  flatpickr('#resFecha', { locale: 'es', minDate: 'today', dateFormat: 'Y-m-d', defaultDate: 'today' });
+
+  // Lleva la vista al panel.
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function buscarHorarios() {
-  var s = servicioSeleccionado();
+  var s = APP.servicioActivoHuesped;
+  if (!s) return;
   var fecha = document.getElementById('resFecha').value;
   var personas = document.getElementById('resPersonas').value;
   if (!fecha) { mostrarToast('Selecciona una fecha.', 'error'); return; }
 
-  llamarAPI('consultarDisponibilidad', [s.ID, fecha, personas]).then(function (res) {
-    var cont = document.getElementById('resHorarios');
+  var cont = document.getElementById('resHorarios');
+  cont.innerHTML = '<div class="col-span-3 flex justify-center py-3"><div class="spinner"></div></div>';
+  APP.horaSeleccionada = null;
+  document.getElementById('btnConfirmarReserva').disabled = true;
+
+  llamarAPI('consultarDisponibilidad', [s.ID, fecha, personas], { loader: false }).then(function (res) {
     if (!res.success || !res.bloques.length) {
-      cont.innerHTML = '<p class="col-span-3 text-sm opacity-60 text-center py-3">No hay horarios disponibles para esa fecha.</p>';
+      var esHoy = fecha === hoyISO();
+      cont.innerHTML = '<p class="col-span-3 text-sm opacity-60 text-center py-3">' +
+        (esHoy ? 'No quedan horarios para hoy. Prueba con otra fecha.' : 'No hay horarios disponibles para esa fecha.') + '</p>';
       return;
     }
     cont.innerHTML = res.bloques.map(function (b) {
@@ -679,7 +753,9 @@ function seleccionarHora(el, hora) {
 }
 
 function confirmarReserva() {
-  var s = servicioSeleccionado();
+  var s = APP.servicioActivoHuesped;
+  if (!s) return;
+  if (!APP.horaSeleccionada) { mostrarToast('Elige un horario.', 'error'); return; }
   var datos = {
     habitacion: APP.habitacion,
     servicioID: s.ID,
@@ -693,9 +769,10 @@ function confirmarReserva() {
     if (!res.success) { mostrarToast(res.mensaje, 'error'); return; }
     mostrarModal({
       titulo: 'Reserva registrada',
-      contenidoHTML: '<p class="text-sm">Tu reserva de <b>' + escaparHTML(s.Nombre) + '</b> quedo en estado <span class="pill ' +
+      contenidoHTML: '<div class="text-center"><i class="fa-solid fa-circle-check text-4xl mb-3" style="color: var(--verde-bosque)"></i>' +
+        '<p class="text-sm">Tu reserva de <b>' + escaparHTML(s.Nombre) + '</b> quedo en estado <span class="pill ' +
         claseEstado(res.estado) + '">' + res.estado + '</span>.</p>' +
-        (s.RequiereAprobacion ? '<p class="text-xs opacity-60 mt-2">Este servicio requiere confirmacion del hotel.</p>' : ''),
+        (s.RequiereAprobacion ? '<p class="text-xs opacity-60 mt-2">Este servicio requiere confirmacion del hotel.</p>' : '') + '</div>',
       botones: [{ texto: 'Ver mis reservas', clase: 'btn-primary', accion: function () { cerrarModal(); navHuesped('MisReservas'); } }]
     });
     renderReservar();
