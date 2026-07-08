@@ -12,6 +12,45 @@
  * ============================================================================
  */
 
+/**
+ * FUNCION DE DIAGNOSTICO. Ejecutala desde el editor de Apps Script y revisa el
+ * "Registro de ejecucion". No forma parte de la app; sirve solo para depurar.
+ */
+function diagnostico() {
+  var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  Logger.log('SPREADSHEET_ID guardado: ' + id);
+  if (!id) {
+    Logger.log('ERROR: no hay SPREADSHEET_ID. Ejecuta crearBaseDeDatos() primero.');
+    return;
+  }
+  var ss;
+  try {
+    ss = SpreadsheetApp.openById(id);
+  } catch (e) {
+    Logger.log('ERROR abriendo el Spreadsheet: ' + e.message);
+    return;
+  }
+  Logger.log('Nombre del Spreadsheet: ' + ss.getName());
+  Logger.log('Hojas encontradas: ' + ss.getSheets().map(function (s) { return s.getName(); }).join(', '));
+
+  var serv = ss.getSheetByName('Servicios');
+  if (!serv) {
+    Logger.log('ERROR: no existe la hoja "Servicios".');
+  } else {
+    Logger.log('Servicios -> ultima fila: ' + serv.getLastRow() + ', ultima columna: ' + serv.getLastColumn());
+    Logger.log('Servicios contenido: ' + JSON.stringify(serv.getDataRange().getValues()));
+  }
+
+  var conf = ss.getSheetByName('Configuracion');
+  Logger.log('Configuracion -> ultima fila: ' + (conf ? conf.getLastRow() : 'NO EXISTE'));
+
+  try {
+    Logger.log('obtenerServiciosActivos() devuelve: ' + JSON.stringify(obtenerServiciosActivos()));
+  } catch (e) {
+    Logger.log('obtenerServiciosActivos() ERROR: ' + e.message);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // CONSTANTES DE NOMBRES DE HOJAS (unica fuente de verdad)
 // ---------------------------------------------------------------------------
