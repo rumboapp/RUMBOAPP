@@ -565,17 +565,23 @@ function iniciarHuesped() {
   actualizarHora();
   setInterval(actualizarHora, 30000);
 
-  // Precarga servicios y categorias.
-  Promise.all([
-    llamarAPI('obtenerServiciosActivos', [], { loader: false }),
-    llamarAPI('obtenerCategoriasMenu', [], { loader: false })
-  ]).then(function (r) {
-    APP.servicios = r[0] || [];
-    APP.categorias = r[1] || [];
+  // Carga servicios y categorias por separado: si una falla, la otra no se cae.
+  cargarServiciosHuesped();
+  llamarAPI('obtenerCategoriasMenu', [], { loader: false }).then(function (c) {
+    APP.categorias = c || [];
+  }).catch(function () { APP.categorias = APP.categorias || []; });
+}
+
+/* Carga los servicios activos de forma aislada y refresca la vista Reservar. */
+function cargarServiciosHuesped() {
+  APP.errorServicios = null;
+  llamarAPI('obtenerServiciosActivos', [], { loader: false }).then(function (servicios) {
+    APP.servicios = servicios || [];
     renderReservar();
-  }).catch(function () {
-    // Aunque falle, muestra el estado de reintento en vez de una pantalla vacia.
-    APP.servicios = APP.servicios || [];
+  }).catch(function (err) {
+    // Guarda el error real para mostrarlo en pantalla y poder diagnosticar.
+    APP.errorServicios = (err && err.message) ? err.message : 'Error desconocido';
+    APP.servicios = [];
     renderReservar();
   });
 }
@@ -626,11 +632,15 @@ function renderReservar() {
 
   // Estado si por algun motivo no cargaron los servicios.
   if (!APP.servicios || !APP.servicios.length) {
+    var detalleError = APP.errorServicios
+      ? '<p class="text-xs mt-3 p-2 rounded-lg" style="background:#FEE2E2;color:#991B1B;">Detalle: ' + escaparHTML(APP.errorServicios) + '</p>'
+      : '<p class="text-xs opacity-40 mt-2">Si acabas de crear la base de datos, espera unos segundos y reintenta.</p>';
     document.getElementById('seccionReservar').innerHTML =
       '<div class="card p-8 text-center fade-in">' +
         '<i class="fa-solid fa-triangle-exclamation text-3xl mb-3" style="color: var(--dorado)"></i>' +
-        '<p class="text-sm opacity-70 mb-4">No pudimos cargar los servicios. Revisa tu conexion e intenta de nuevo.</p>' +
-        '<button class="btn btn-primary" onclick="recargarServiciosHuesped()"><i class="fa-solid fa-rotate-right"></i> Reintentar</button>' +
+        '<p class="text-sm opacity-70 mb-1">No pudimos cargar los servicios.</p>' +
+        '<button class="btn btn-primary mt-3" onclick="recargarServiciosHuesped()"><i class="fa-solid fa-rotate-right"></i> Reintentar</button>' +
+        detalleError +
       '</div>';
     return;
   }
@@ -664,10 +674,7 @@ function renderReservar() {
 
 /* Recarga servicios desde el backend (boton reintentar). */
 function recargarServiciosHuesped() {
-  llamarAPI('obtenerServiciosActivos', []).then(function (servicios) {
-    APP.servicios = servicios || [];
-    renderReservar();
-  });
+  cargarServiciosHuesped();
 }
 
 /* Al tocar una tarjeta de servicio: abre el panel con fecha/personas/horarios. */
@@ -1030,15 +1037,16 @@ function iniciarStaff() {
   // Ajusta visibilidad de pestanas segun rol.
   ajustarNavPorRol();
 
-  Promise.all([
-    llamarAPI('obtenerServiciosActivos', [], { loader: false }),
-    llamarAPI('obtenerCategoriasTodas', [], { loader: false })
-  ]).then(function (r) {
-    APP.servicios = r[0] || [];
-    APP.categorias = r[1] || [];
-    navStaff('Operaciones');
-    refrescarBadgeNotif();
-  });
+  // Carga servicios y categorias por separado para evitar que una falla bloquee todo.
+  llamarAPI('obtenerServiciosActivos', [], { loader: false }).then(function (s) {
+    APP.servicios = s || [];
+  }).catch(function () { APP.servicios = APP.servicios || []; });
+  llamarAPI('obtenerCategoriasTodas', [], { loader: false }).then(function (c) {
+    APP.categorias = c || [];
+  }).catch(function () { APP.categorias = APP.categorias || []; });
+
+  navStaff('Operaciones');
+  refrescarBadgeNotif();
 }
 
 function ajustarNavPorRol() {
