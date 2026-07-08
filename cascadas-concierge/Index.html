@@ -19,177 +19,466 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
-  <!-- Google Fonts: Playfair Display + Inter -->
+  <!-- Google Fonts: Bebas Neue (titulos) + Oswald (interfaz) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <!-- ===== CSS ===== -->
   <style>
+    /* =======================================================================
+       SISTEMA DE DISENO ESCUEOMORFICO — CASCADAS
+       Paleta de marca: grafito #414143 · hueso #E9E7E5 · blanco.
+       Los nombres de variables antiguos se conservan como alias para no
+       tocar el JS: --verde-bosque ahora ES el grafito, --dorado es el laton
+       de los herrajes, --arena es el gris calido claro.
+       ======================================================================= */
     :root {
-      --antracita: #2D2D2D;
-      --arena: #C9B99A;
-      --blanco: #FFFFFF;
-      --verde-bosque: #1B3A2F;
-      --dorado: #D4AF37;
-      --fondo: #FAFAFA;
-      --texto: #333333;
-      --borde: #E5E5E5;
-      --exito: #1B3A2F;
-      --alerta: #D4AF37;
-      --peligro: #8B0000;
+      --grafito: #414143;
+      --grafito-claro: #5A5A5D;
+      --grafito-oscuro: #2E2E30;
+      --hueso: #E9E7E5;
+
+      /* Alias heredados (el JS los referencia) */
+      --antracita: #2E2E30;
+      --arena: #D8D5D1;
+      --blanco: #FBFAF9;
+      --verde-bosque: #414143;
+      --dorado: #A6906B;          /* laton envejecido: acento de herrajes */
+      --fondo: #E9E7E5;
+      --texto: #3A3A3C;
+      --borde: #C9C6C2;
+      --exito: #4E6B54;
+      --alerta: #A6906B;
+      --peligro: #8B3A3A;
     }
 
-    /* Modo oscuro: invierte fondo/texto */
+    /* Modo oscuro: grafito profundo, mismas reglas de relieve */
     .dark-mode {
-      --fondo: #1a1a1a;
-      --texto: #EAEAEA;
-      --blanco: #262626;
-      --borde: #3a3a3a;
+      --fondo: #2A2A2C;
+      --texto: #E9E7E5;
+      --blanco: #3C3C3E;
+      --borde: #232325;
+      --arena: #4A4A4D;
     }
 
     * { box-sizing: border-box; }
 
+    /* Fondo tipo lino: trama fina + vineta superior de luz */
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 300;
       background-color: var(--fondo);
+      background-image:
+        radial-gradient(ellipse at 50% -20%, rgba(255,255,255,.55), transparent 55%),
+        repeating-linear-gradient(0deg, rgba(65,65,67,.025) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(90deg, rgba(65,65,67,.025) 0 1px, transparent 1px 4px);
+      background-attachment: fixed;
       color: var(--texto);
       margin: 0;
       -webkit-font-smoothing: antialiased;
     }
+    .dark-mode body, body.dark-mode {
+      background-image:
+        radial-gradient(ellipse at 50% -20%, rgba(255,255,255,.07), transparent 55%),
+        repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 1px, transparent 1px 4px);
+    }
 
-    h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
+    /* Titulos: Bebas Neue con efecto letterpress (grabado en el material) */
+    h1, h2, h3, .serif {
+      font-family: 'Bebas Neue', 'Oswald', sans-serif;
+      letter-spacing: .05em;
+      font-weight: 400;
+      text-shadow: 0 1px 0 rgba(255,255,255,.7);
+    }
+    .dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode .serif {
+      text-shadow: 0 -1px 0 rgba(0,0,0,.6);
+    }
 
-    /* Animaciones suaves */
-    .fade-in { animation: fadeIn 0.3s ease; }
-    .slide-up { animation: slideUp 0.3s ease; }
+    /* Animaciones (curvas con rebote sutil, como mecanismos reales) */
+    .fade-in { animation: fadeIn .35s ease; }
+    .slide-up { animation: slideUp .45s cubic-bezier(.22, 1, .36, 1); }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
 
-    /* Tarjetas */
+    /* Panel elevado: placa de material con luz superior y sombra al piso */
     .card {
-      background: var(--blanco);
-      border: 1px solid var(--borde);
-      border-radius: 16px;
+      background: linear-gradient(180deg, #FDFCFB, #EFEDEA);
+      border: 1px solid #CFCCC8;
+      border-radius: 14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -1px 0 rgba(0,0,0,.04),
+        0 1px 2px rgba(0,0,0,.08),
+        0 10px 24px -10px rgba(46,46,48,.28);
       transition: box-shadow .3s ease, transform .3s ease;
     }
-    .card:hover { box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+    .card:hover { box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -1px 0 rgba(0,0,0,.04),
+        0 2px 4px rgba(0,0,0,.10),
+        0 16px 32px -12px rgba(46,46,48,.35); }
+    .dark-mode .card {
+      background: linear-gradient(180deg, #454547, #38383A);
+      border-color: #232325;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.07),
+        inset 0 -1px 0 rgba(0,0,0,.3),
+        0 1px 2px rgba(0,0,0,.4),
+        0 12px 26px -10px rgba(0,0,0,.6);
+    }
 
-    /* Tarjetas-boton de servicio (vista huesped) */
+    /* Placa oscura (bienvenida): metal cepillado grafito */
+    .panel-oscuro {
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 1px, transparent 1px 3px),
+        linear-gradient(160deg, #525255, #414143 55%, #353537) !important;
+      border: 1px solid #2A2A2C !important;
+      color: var(--hueso);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        inset 0 -2px 6px rgba(0,0,0,.35),
+        0 12px 28px -10px rgba(46,46,48,.55) !important;
+    }
+    .panel-oscuro h1, .panel-oscuro h2, .panel-oscuro h3 { text-shadow: 0 -1px 0 rgba(0,0,0,.55); }
+
+    /* Cabecera clara (huesped): placa translucida con arista */
+    .header-claro {
+      background: rgba(251,250,249,.92);
+      border-bottom: 1px solid #C9C6C2;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    }
+    .dark-mode .header-claro { background: rgba(48,48,50,.92); border-bottom-color: #232325; }
+
+    /* Cabecera del staff: metal cepillado con arista inferior */
+    .header-metal {
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
+        linear-gradient(180deg, #4C4C4F, #414143 60%, #38383A);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 10px rgba(0,0,0,.35);
+      border-bottom: 1px solid #2A2A2C;
+    }
+
+    /* Tarjetas-boton de servicio: teclas grandes que se presionan.
+       Entran escalonadas, como piezas que se asientan una a una. */
+    .tarjeta-servicio:nth-child(2) { animation-delay: .05s; }
+    .tarjeta-servicio:nth-child(3) { animation-delay: .10s; }
+    .tarjeta-servicio:nth-child(4) { animation-delay: .15s; }
+    .tarjeta-servicio:nth-child(5) { animation-delay: .20s; }
+    .tarjeta-servicio:nth-child(6) { animation-delay: .25s; }
+    .tarjeta-servicio:nth-child(7) { animation-delay: .30s; }
+    .tarjeta-servicio:nth-child(8) { animation-delay: .35s; }
     .tarjeta-servicio {
-      cursor: pointer; background: var(--blanco); border: 1px solid var(--borde);
-      border-radius: 16px; transition: all .25s ease;
+      cursor: pointer;
+      animation: slideUp .5s cubic-bezier(.22,1,.36,1) backwards;
+      background: linear-gradient(180deg, #FDFCFB, #ECEAE7);
+      border: 1px solid #C7C4C0;
+      border-radius: 14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.95),
+        0 3px 0 #BEBBB6,
+        0 8px 16px -6px rgba(46,46,48,.30);
+      transition: transform .12s ease, box-shadow .15s ease;
     }
-    .tarjeta-servicio:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.10); border-color: var(--arena); }
-    .tarjeta-servicio.activa { border-color: var(--verde-bosque); box-shadow: 0 0 0 2px var(--verde-bosque) inset; }
-    .icono-servicio {
-      width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-      font-size: 1.25rem; margin-bottom: .6rem;
-      background: linear-gradient(135deg, var(--verde-bosque), #16302a); color: var(--dorado);
+    .tarjeta-servicio:hover { transform: translateY(-2px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 5px 0 #BEBBB6, 0 14px 24px -8px rgba(46,46,48,.38); }
+    .tarjeta-servicio:active { transform: translateY(2px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 0 #BEBBB6, inset 0 2px 6px rgba(0,0,0,.10); }
+    .tarjeta-servicio.activa {
+      background: linear-gradient(180deg, #E8E5E1, #DEDAD5);
+      box-shadow: inset 0 3px 8px rgba(0,0,0,.16), inset 0 0 0 2px var(--grafito), 0 1px 0 rgba(255,255,255,.7);
+      transform: translateY(1px);
+    }
+    .dark-mode .tarjeta-servicio {
+      background: linear-gradient(180deg, #47474A, #3A3A3C);
+      border-color: #232325;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 3px 0 #1F1F21, 0 8px 16px -6px rgba(0,0,0,.5);
+    }
+    .dark-mode .tarjeta-servicio.activa {
+      background: linear-gradient(180deg, #2F2F31, #333335);
+      box-shadow: inset 0 3px 8px rgba(0,0,0,.5), inset 0 0 0 2px var(--hueso);
     }
 
-    /* Botones */
+    /* Medallon metalico del servicio (moneda grabada) */
+    .icono-servicio {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: .6rem;
+      background: radial-gradient(circle at 32% 26%, #6B6B6F, #414143 62%, #313133);
+      color: var(--hueso);
+      box-shadow:
+        0 2px 5px rgba(0,0,0,.35),
+        inset 0 1px 1px rgba(255,255,255,.28),
+        inset 0 -2px 4px rgba(0,0,0,.4);
+      text-shadow: 0 -1px 0 rgba(0,0,0,.5);
+    }
+
+    /* -------------------- BOTONES FISICOS -------------------- */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-      padding: .75rem 1.25rem; border-radius: 12px; font-weight: 600; cursor: pointer;
-      border: none; transition: all .2s ease; min-height: 44px; font-size: .95rem;
+      padding: .7rem 1.25rem; border-radius: 10px; cursor: pointer;
+      font-family: 'Oswald', sans-serif; font-weight: 500; font-size: .88rem;
+      text-transform: uppercase; letter-spacing: .07em;
+      min-height: 44px; border: 1px solid transparent;
+      transition: transform .08s ease, box-shadow .12s ease, filter .15s ease;
+      -webkit-tap-highlight-color: transparent;
     }
-    .btn-primary { background: var(--verde-bosque); color: #fff; }
-    .btn-primary:hover { background: #16302a; }
-    .btn-dorado { background: var(--dorado); color: var(--antracita); }
-    .btn-dorado:hover { filter: brightness(1.05); }
-    .btn-outline { background: transparent; border: 1px solid var(--borde); color: var(--texto); }
-    .btn-outline:hover { border-color: var(--dorado); }
-    .btn-peligro { background: var(--peligro); color: #fff; }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    /* Tecla grafito (accion principal) */
+    .btn-primary {
+      background: linear-gradient(180deg, #57575A, #414143 50%, #39393B);
+      color: #F2F0EE; border-color: #2A2A2C;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 3px 0 #242426, 0 6px 12px -4px rgba(0,0,0,.4);
+      text-shadow: 0 -1px 0 rgba(0,0,0,.4);
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-primary:active { transform: translateY(3px);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.4), 0 0 0 #242426; }
+    /* Tecla clara (accion secundaria) */
+    .btn-outline {
+      background: linear-gradient(180deg, #FFFFFF, #E8E5E2);
+      color: var(--grafito); border-color: #B9B6B1;
+      box-shadow: inset 0 1px 0 #fff, 0 2px 0 #B3B0AB, 0 5px 10px -4px rgba(46,46,48,.25);
+    }
+    .btn-outline:hover { filter: brightness(1.03); }
+    .btn-outline:active { transform: translateY(2px);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.12), 0 0 0 #B3B0AB; }
+    .dark-mode .btn-outline {
+      background: linear-gradient(180deg, #4C4C4F, #3E3E40);
+      color: var(--hueso); border-color: #232325;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 2px 0 #1E1E20, 0 5px 10px -4px rgba(0,0,0,.5);
+    }
+    /* Tecla de laton (enfasis/seleccion: herraje de hotel) */
+    .btn-dorado {
+      background: linear-gradient(180deg, #C4B294, #A6906B 55%, #8F7A54);
+      color: #2E2A21; border-color: #7A684A;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 #6B5B40, 0 6px 12px -4px rgba(0,0,0,.35);
+      text-shadow: 0 1px 0 rgba(255,255,255,.3);
+    }
+    .btn-dorado:hover { filter: brightness(1.06); }
+    .btn-dorado:active { transform: translateY(3px);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.3), 0 0 0 #6B5B40; }
+    /* Tecla peligro (ladrillo apagado) */
+    .btn-peligro {
+      background: linear-gradient(180deg, #A05252, #8B3A3A 55%, #7A3232);
+      color: #F5EBEA; border-color: #612B2B;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 3px 0 #572626, 0 6px 12px -4px rgba(0,0,0,.35);
+      text-shadow: 0 -1px 0 rgba(0,0,0,.35);
+    }
+    .btn-peligro:active { transform: translateY(3px);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.4), 0 0 0 #572626; }
+    .btn:disabled {
+      opacity: .45; cursor: not-allowed; transform: none !important;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.12) !important; filter: grayscale(.4);
+    }
 
-    /* Pills / badges */
+    /* -------------------- ETIQUETAS / ESTADOS -------------------- */
+    /* Placa cosida: gradiente + borde + luz superior */
     .pill {
-      display: inline-block; padding: .2rem .6rem; border-radius: 999px;
-      font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+      display: inline-block; padding: .22rem .6rem; border-radius: 6px;
+      font-size: .66rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+      border: 1px solid; box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 1px 2px rgba(0,0,0,.10);
+    }
+    .estado-Solicitada { background: linear-gradient(180deg,#F4E9CF,#E9D8AC); color: #77591F; border-color: #C7B183; }
+    .estado-Confirmada { background: linear-gradient(180deg,#E0E9DD,#C8D7C3); color: #3C5A40; border-color: #9CB497; }
+    .estado-Pendiente  { background: linear-gradient(180deg,#E7E3DD,#D7D2CA); color: #6B655C; border-color: #B6B0A6; }
+    .estado-Encurso    { background: linear-gradient(180deg,#DDE5EB,#C5D2DC); color: #3B5367; border-color: #99ADBD; }
+    .estado-Finalizada { background: linear-gradient(180deg,#E5E3E1,#D2D0CE); color: #55534F; border-color: #B2AFAC; }
+    .estado-Cancelada  { background: linear-gradient(180deg,#ECDAD7,#DCC1BD); color: #793A33; border-color: #BF9993; }
+    .estado-Bloqueada  { background: linear-gradient(180deg,#E3DEE8,#CEC6D7); color: #544868; border-color: #A89CBA; }
+
+    /* Etiqueta de producto (Vegano, Sin Gluten...): grabada en la placa */
+    .pill-etiqueta {
+      background: linear-gradient(180deg, #E7E4E0, #D8D5D0);
+      color: #6B6863; border-color: #BCB9B4;
     }
 
-    /* Estados color-coded */
-    .estado-Solicitada { background: #FEF3C7; color: #92400E; }
-    .estado-Confirmada { background: #D1FAE5; color: #065F46; }
-    .estado-Pendiente { background: var(--arena); color: #4a3f28; }
-    .estado-Encurso { background: #DBEAFE; color: #1E40AF; }
-    .estado-Finalizada { background: #E5E7EB; color: #374151; }
-    .estado-Cancelada { background: #FEE2E2; color: #991B1B; }
-    .estado-Bloqueada { background: #ede9fe; color: #5b21b6; }
+    /* Cajas informativas hundidas en el panel */
+    .caja-info {
+      background: linear-gradient(180deg, #E2DFDB, #E9E6E2);
+      border: 1px solid #C5C2BD; border-radius: 10px; color: #5C5A56;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.8);
+    }
+    .caja-error {
+      background: linear-gradient(180deg, #E6D6D3, #EDDCD9);
+      border: 1px solid #C7A19B; border-radius: 10px; color: #7A3B33;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.7);
+      padding: .5rem .75rem;
+    }
+    .dark-mode .caja-info { background: linear-gradient(180deg,#333335,#3A3A3C); border-color: #232325; color: #C9C6C2;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.35); }
 
-    /* Modal */
+    /* -------------------- MODAL -------------------- */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.45);
-      backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+      position: fixed; inset: 0; background: rgba(38,38,40,.55);
+      backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center;
       z-index: 1000; padding: 1rem; animation: fadeIn .2s ease;
     }
     .modal-box {
-      background: var(--blanco); color: var(--texto); border-radius: 20px;
+      background: linear-gradient(180deg, #FDFCFB, #EDEBE8);
+      color: var(--texto); border-radius: 16px; border: 1px solid #C5C2BD;
       max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto;
-      animation: slideUp .3s ease; box-shadow: 0 25px 60px rgba(0,0,0,.3);
+      animation: pop .35s cubic-bezier(.34, 1.4, .64, 1);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        0 30px 70px -10px rgba(0,0,0,.5),
+        0 4px 12px rgba(0,0,0,.25);
+    }
+    .dark-mode .modal-box {
+      background: linear-gradient(180deg, #454547, #38383A);
+      border-color: #232325;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 30px 70px -10px rgba(0,0,0,.7);
     }
 
-    /* Toggle switch */
-    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+    /* -------------------- INTERRUPTOR FISICO -------------------- */
+    .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute; cursor: pointer; inset: 0; background: #ccc;
-      transition: .3s; border-radius: 999px;
+      position: absolute; cursor: pointer; inset: 0; border-radius: 999px;
+      background: linear-gradient(180deg, #C9C6C1, #DDDAD5);
+      border: 1px solid #AEABA6;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.28);
+      transition: background .25s ease, box-shadow .25s ease;
     }
     .slider:before {
-      position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
-      background: #fff; transition: .3s; border-radius: 50%;
+      position: absolute; content: ""; height: 22px; width: 22px; left: 2px; top: 2px;
+      background: radial-gradient(circle at 35% 30%, #FFFFFF, #DDDAD6 70%);
+      border: 1px solid #B5B2AD;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.9);
+      transition: transform .25s cubic-bezier(.34, 1.56, .64, 1);
     }
-    .switch input:checked + .slider { background: var(--verde-bosque); }
-    .switch input:checked + .slider:before { transform: translateX(20px); }
+    .switch input:checked + .slider {
+      background: linear-gradient(180deg, #3A3A3C, #4A4A4D);
+      border-color: #29292B;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.5);
+    }
+    .switch input:checked + .slider:before { transform: translateX(22px); }
 
-    /* Loading spinner */
+    /* -------------------- SPINNER (dial metalico) -------------------- */
     .spinner {
-      width: 40px; height: 40px; border: 4px solid var(--borde);
-      border-top-color: var(--dorado); border-radius: 50%; animation: spin 1s linear infinite;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 4px solid #CFCCC8;
+      border-top-color: var(--dorado);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+      animation: spin .9s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Inputs */
+    /* -------------------- CAMPOS HUNDIDOS -------------------- */
     .input {
-      width: 100%; padding: .7rem .9rem; border: 1px solid var(--borde);
-      border-radius: 12px; background: var(--blanco); color: var(--texto); font-size: .95rem;
-      min-height: 44px;
+      width: 100%; padding: .65rem .9rem; border-radius: 10px;
+      font-family: 'Oswald', sans-serif; font-weight: 300; font-size: .95rem;
+      background: linear-gradient(180deg, #EFEDEA, #F7F6F4 30%);
+      border: 1px solid #BFBCB7; border-top-color: #A9A6A1;
+      color: var(--texto); min-height: 44px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.10), 0 1px 0 rgba(255,255,255,.85);
+      transition: box-shadow .2s ease, border-color .2s ease;
     }
-    .input:focus { outline: none; border-color: var(--dorado); }
-    label.lbl { font-size: .82rem; font-weight: 600; margin-bottom: .3rem; display: block; }
+    .input:focus {
+      outline: none; border-color: var(--grafito);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.10), 0 0 0 3px rgba(65,65,67,.14);
+    }
+    .dark-mode .input {
+      background: linear-gradient(180deg, #2E2E30, #343436 30%);
+      border-color: #1E1E20; color: var(--hueso);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.4);
+    }
+    label.lbl {
+      font-size: .72rem; font-weight: 500; margin-bottom: .3rem; display: block;
+      text-transform: uppercase; letter-spacing: .08em; color: #6E6C69;
+    }
+    .dark-mode label.lbl { color: #A9A6A2; }
 
-    /* Navegacion */
-    .nav-item { cursor: pointer; padding: .6rem .9rem; border-radius: 10px; transition: .2s; font-weight: 500; }
-    .nav-item:hover { background: rgba(212,175,55,.15); }
-    .nav-item.activo { background: var(--verde-bosque); color: #fff; }
+    /* -------------------- NAVEGACION STAFF (sobre metal) -------------------- */
+    .nav-item {
+      cursor: pointer; padding: .55rem .9rem; border-radius: 8px; transition: .2s;
+      font-weight: 400; text-transform: uppercase; letter-spacing: .05em; font-size: .8rem;
+      white-space: nowrap;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.08); }
+    .nav-item.activo {
+      background: rgba(0,0,0,.30); color: #fff;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.07);
+    }
 
     /* Acordeon carta */
-    .acordeon-header { cursor: pointer; }
-    .acordeon-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+    .acordeon-header { cursor: pointer; user-select: none; }
+    .acordeon-header:active { background: rgba(0,0,0,.03); }
+    .acordeon-body { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.22,1,.36,1); }
     .acordeon-body.abierto { max-height: 4000px; }
 
     /* Tabla */
     table.tabla { width: 100%; border-collapse: collapse; }
-    table.tabla th { text-align: left; font-size: .78rem; text-transform: uppercase;
-      letter-spacing: .04em; color: #888; padding: .6rem .5rem; border-bottom: 2px solid var(--borde); }
-    table.tabla td { padding: .7rem .5rem; border-bottom: 1px solid var(--borde); font-size: .9rem; }
+    table.tabla th {
+      text-align: left; font-size: .7rem; text-transform: uppercase; font-weight: 500;
+      letter-spacing: .08em; color: #8A8783; padding: .6rem .5rem;
+      border-bottom: 2px solid #C5C2BD;
+      text-shadow: 0 1px 0 rgba(255,255,255,.7);
+    }
+    table.tabla td { padding: .7rem .5rem; border-bottom: 1px solid #DAD7D3; font-size: .9rem; }
+    table.tabla tbody tr { transition: background .15s ease; }
+    table.tabla tbody tr:hover { background: rgba(65,65,67,.04); }
+    .dark-mode table.tabla th { color: #A9A6A2; border-bottom-color: #232325; text-shadow: none; }
+    .dark-mode table.tabla td { border-bottom-color: #48484A; }
+    .dark-mode table.tabla tbody tr:hover { background: rgba(255,255,255,.04); }
 
     .oculto { display: none !important; }
 
-    /* Bottom nav movil */
+    /* -------------------- BANDEJA INFERIOR (huesped) -------------------- */
     .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; background: var(--blanco);
-      border-top: 1px solid var(--borde); display: flex; justify-content: space-around;
-      padding: .4rem 0; z-index: 50;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, #F8F6F4, #E8E5E2);
+      border-top: 1px solid #C5C2BD;
+      box-shadow: 0 -4px 14px rgba(0,0,0,.12), inset 0 1px 0 #fff;
+      display: flex; justify-content: space-around;
+      padding: .45rem 0 calc(.45rem + env(safe-area-inset-bottom));
+      z-index: 50;
     }
-    .bottom-nav .nav-btn { display: flex; flex-direction: column; align-items: center;
-      gap: 2px; font-size: .68rem; color: #888; padding: .3rem .6rem; cursor: pointer; }
-    .bottom-nav .nav-btn.activo { color: var(--verde-bosque); }
+    .bottom-nav .nav-btn {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 2px; font-size: .66rem; color: #8A8783; padding: .35rem .9rem; cursor: pointer;
+      border-radius: 10px; text-transform: uppercase; letter-spacing: .05em;
+      transition: color .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .bottom-nav .nav-btn.activo {
+      color: var(--grafito);
+      background: rgba(65,65,67,.08);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.12), 0 1px 0 rgba(255,255,255,.8);
+    }
+    .dark-mode .bottom-nav { background: linear-gradient(180deg, #3E3E40, #333335); border-top-color: #232325;
+      box-shadow: 0 -4px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06); }
+    .dark-mode .bottom-nav .nav-btn.activo { color: var(--hueso); background: rgba(0,0,0,.3);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.4); }
 
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-thumb { background: var(--arena); border-radius: 8px; }
+    /* -------------------- FLATPICKR AL ESTILO DE LA CASA -------------------- */
+    .flatpickr-calendar {
+      font-family: 'Oswald', sans-serif;
+      border-radius: 12px; border: 1px solid #C5C2BD;
+      box-shadow: 0 20px 50px -10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.9);
+      background: linear-gradient(180deg, #FDFCFB, #F0EEEB);
+    }
+    .flatpickr-day.selected, .flatpickr-day.selected:hover {
+      background: var(--grafito); border-color: var(--grafito);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.35);
+    }
+    .flatpickr-day.today { border-color: var(--dorado); }
+    .flatpickr-day:hover { background: #E5E2DE; border-color: #E5E2DE; }
+    .flatpickr-months .flatpickr-month,
+    .flatpickr-current-month .flatpickr-monthDropdown-months,
+    span.flatpickr-weekday { color: var(--grafito); fill: var(--grafito); }
+
+    /* Barra de desplazamiento */
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,.05); }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #B5B2AD, #9C9995);
+      border-radius: 8px; border: 2px solid transparent; background-clip: content-box;
+    }
   </style>
 </head>
 
@@ -199,8 +488,9 @@
 
 <!-- Pantalla de carga inicial -->
 <div id="cargaInicial" class="fixed inset-0 flex flex-col items-center justify-center bg-[var(--fondo)] z-[2000]">
-  <div class="spinner mb-4"></div>
-  <p class="serif text-xl" style="color: var(--verde-bosque)">Cascadas</p>
+  <div class="spinner mb-5"></div>
+  <p class="serif text-4xl tracking-widest" style="color: var(--grafito)">CASCADAS</p>
+  <p class="text-xs uppercase tracking-[.3em] opacity-50 mt-1">Hotel · Concierge</p>
 </div>
 
 <!-- ====================== SELECTOR DE ACCESO (sin ?hab) ====================== -->
@@ -238,7 +528,7 @@
 <!-- ====================== VISTA HUESPED ====================== -->
 <div id="vistaHuesped" class="oculto min-h-screen pb-24">
   <!-- Navbar minimalista -->
-  <header class="sticky top-0 z-40 backdrop-blur bg-[var(--blanco)]/90 border-b" style="border-color: var(--borde)">
+  <header class="header-claro sticky top-0 z-40 backdrop-blur">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div>
         <p class="serif text-lg leading-none" style="color: var(--verde-bosque)" id="hotelNombreHeader">Cascadas</p>
@@ -253,9 +543,9 @@
   <main class="max-w-3xl mx-auto px-4">
     <!-- Bienvenida -->
     <section id="huespedBienvenida" class="pt-6">
-      <div class="card p-6 fade-in" style="background: linear-gradient(135deg, var(--verde-bosque), #16302a); color:#fff; border:none;">
+      <div class="card panel-oscuro p-6 fade-in">
         <p class="text-xs uppercase tracking-widest opacity-70">Bienvenido a</p>
-        <h2 class="text-3xl mb-1" style="color:#fff" id="bienvenidaHotel">Cascadas Hotel</h2>
+        <h2 class="text-4xl mb-1" style="color:#fff" id="bienvenidaHotel">Cascadas Hotel</h2>
         <p class="opacity-80 text-sm">Habitacion <span id="bienvenidaHab">—</span> · <span id="bienvenidaHora">—</span></p>
       </div>
     </section>
@@ -282,7 +572,7 @@
 
 <!-- ====================== VISTA STAFF ====================== -->
 <div id="vistaStaff" class="oculto min-h-screen">
-  <header class="sticky top-0 z-40 bg-[var(--verde-bosque)] text-white">
+  <header class="header-metal sticky top-0 z-40 text-white">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <i class="fa-solid fa-mountain-sun text-xl" style="color: var(--dorado)"></i>
@@ -657,7 +947,7 @@ function renderReservar() {
   // Estado si por algun motivo no cargaron los servicios.
   if (!APP.servicios || !APP.servicios.length) {
     var detalleError = APP.errorServicios
-      ? '<p class="text-xs mt-3 p-2 rounded-lg" style="background:#FEE2E2;color:#991B1B;">Detalle: ' + escaparHTML(APP.errorServicios) + '</p>'
+      ? '<p class="caja-error text-xs mt-3">Detalle: ' + escaparHTML(APP.errorServicios) + '</p>'
       : '<p class="text-xs opacity-40 mt-2">Si acabas de crear la base de datos, espera unos segundos y reintenta.</p>';
     document.getElementById('seccionReservar').innerHTML =
       '<div class="card p-8 text-center fade-in">' +
@@ -717,7 +1007,7 @@ function seleccionarServicioHuesped(servicioID) {
   var cajaDesayuno = '';
   if (s.ID === 'S002') {
     var costo = fmtMoneda(APP.config.DESAYUNO_HABITACION_COSTO || 0);
-    cajaDesayuno = '<div class="mb-4 p-3 rounded-xl text-sm" style="background: var(--arena); color:#4a3f28;">' +
+    cajaDesayuno = '<div class="caja-info mb-4 p-3 text-sm">' +
       '<p class="font-semibold mb-1"><i class="fa-solid fa-mug-saucer"></i> Desayuno continental (' + costo + ')</p>' +
       '<p class="text-xs">' + escaparHTML(APP.config.DESAYUNO_HABITACION_DESCRIPCION || '') + '</p></div>';
   }
@@ -951,7 +1241,7 @@ function toggleAcordeon(header, categoriaID) {
 
 function tarjetaProductoCarta(p) {
   var etiquetas = (p.Etiquetas || '').split(',').filter(function (e) { return e.trim(); })
-    .map(function (e) { return '<span class="pill" style="background:var(--arena);color:#4a3f28;">' + escaparHTML(e.trim()) + '</span>'; }).join(' ');
+    .map(function (e) { return '<span class="pill pill-etiqueta">' + escaparHTML(e.trim()) + '</span>'; }).join(' ');
   return '<div class="flex justify-between gap-3 border-b pb-2" style="border-color: var(--borde)">' +
     '<div>' +
       '<p class="font-medium">' + escaparHTML(p.Nombre) + '</p>' +
@@ -1597,7 +1887,7 @@ function cargarTablaCategorias() {
 function abrirFormCategoria(categoriaID) {
   var cat = null;
   if (categoriaID) cat = APP.categorias.filter(function (c) { return c.ID === categoriaID; })[0];
-  cat = cat || { Nombre: '', Orden: 0, Visible: true, IconoFontAwesome: 'fa-utensils', Color: '#D4AF37' };
+  cat = cat || { Nombre: '', Orden: 0, Visible: true, IconoFontAwesome: 'fa-utensils', Color: '#414143' };
   var form =
     '<input type="hidden" id="catID" value="' + (categoriaID || '') + '">' +
     '<label class="lbl">Nombre</label><input id="catNombre" class="input mb-2" value="' + escaparHTML(cat.Nombre) + '">' +

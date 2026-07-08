@@ -1617,7 +1617,7 @@ function guardarCategoria(datos) {
         hoja.getRange(fila, _indiceColumna(hoja, 'Orden') + 1).setValue(orden);
         hoja.getRange(fila, _indiceColumna(hoja, 'Visible') + 1).setValue(visible);
         hoja.getRange(fila, _indiceColumna(hoja, 'IconoFontAwesome') + 1).setValue(datos.iconoFontAwesome || 'fa-utensils');
-        hoja.getRange(fila, _indiceColumna(hoja, 'Color') + 1).setValue(datos.color || '#D4AF37');
+        hoja.getRange(fila, _indiceColumna(hoja, 'Color') + 1).setValue(datos.color || '#414143');
         _invalidarCaches(HOJAS.CATEGORIAS);
         registrarLog('Editar categoria', datos.id, '');
         return { success: true, id: datos.id, mensaje: 'Categoria actualizada.' };
@@ -1627,7 +1627,7 @@ function guardarCategoria(datos) {
   } else {
     var nuevoID = _generarProximaCategoriaID();
     hoja.appendRow([nuevoID, datos.nombre, orden, visible,
-      datos.iconoFontAwesome || 'fa-utensils', datos.color || '#D4AF37']);
+      datos.iconoFontAwesome || 'fa-utensils', datos.color || '#414143']);
     _invalidarCaches(HOJAS.CATEGORIAS);
     registrarLog('Crear categoria', nuevoID + ' ' + datos.nombre, '');
     return { success: true, id: nuevoID, mensaje: 'Categoria creada.' };
