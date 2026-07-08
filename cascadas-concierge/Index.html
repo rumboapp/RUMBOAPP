@@ -1,0 +1,1548 @@
+<!-- ============================================================================
+     CASCADAS CONCIERGE — ACTO 2: FRONTEND (Index.html)
+     Archivo unico autocontenido: CSS + HTML + JS inline.
+     Se sirve desde Code.gs (doGet). La variable HABITACION_QR se inyecta por
+     el motor de plantillas de Apps Script.
+     ============================================================================ -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cascadas Concierge</title>
+
+  <!-- TailwindCSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome v6 via CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Flatpickr via CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+  <!-- Google Fonts: Playfair Display + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ===== CSS ===== -->
+  <style>
+    :root {
+      --antracita: #2D2D2D;
+      --arena: #C9B99A;
+      --blanco: #FFFFFF;
+      --verde-bosque: #1B3A2F;
+      --dorado: #D4AF37;
+      --fondo: #FAFAFA;
+      --texto: #333333;
+      --borde: #E5E5E5;
+      --exito: #1B3A2F;
+      --alerta: #D4AF37;
+      --peligro: #8B0000;
+    }
+
+    /* Modo oscuro: invierte fondo/texto */
+    .dark-mode {
+      --fondo: #1a1a1a;
+      --texto: #EAEAEA;
+      --blanco: #262626;
+      --borde: #3a3a3a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--fondo);
+      color: var(--texto);
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
+
+    /* Animaciones suaves */
+    .fade-in { animation: fadeIn 0.3s ease; }
+    .slide-up { animation: slideUp 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Tarjetas */
+    .card {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      transition: box-shadow .3s ease, transform .3s ease;
+    }
+    .card:hover { box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+
+    /* Botones */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      padding: .75rem 1.25rem; border-radius: 12px; font-weight: 600; cursor: pointer;
+      border: none; transition: all .2s ease; min-height: 44px; font-size: .95rem;
+    }
+    .btn-primary { background: var(--verde-bosque); color: #fff; }
+    .btn-primary:hover { background: #16302a; }
+    .btn-dorado { background: var(--dorado); color: var(--antracita); }
+    .btn-dorado:hover { filter: brightness(1.05); }
+    .btn-outline { background: transparent; border: 1px solid var(--borde); color: var(--texto); }
+    .btn-outline:hover { border-color: var(--dorado); }
+    .btn-peligro { background: var(--peligro); color: #fff; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Pills / badges */
+    .pill {
+      display: inline-block; padding: .2rem .6rem; border-radius: 999px;
+      font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+    }
+
+    /* Estados color-coded */
+    .estado-Solicitada { background: #FEF3C7; color: #92400E; }
+    .estado-Confirmada { background: #D1FAE5; color: #065F46; }
+    .estado-Pendiente { background: var(--arena); color: #4a3f28; }
+    .estado-Encurso { background: #DBEAFE; color: #1E40AF; }
+    .estado-Finalizada { background: #E5E7EB; color: #374151; }
+    .estado-Cancelada { background: #FEE2E2; color: #991B1B; }
+    .estado-Bloqueada { background: #ede9fe; color: #5b21b6; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 1rem; animation: fadeIn .2s ease;
+    }
+    .modal-box {
+      background: var(--blanco); color: var(--texto); border-radius: 20px;
+      max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto;
+      animation: slideUp .3s ease; box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    }
+
+    /* Toggle switch */
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0; background: #ccc;
+      transition: .3s; border-radius: 999px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+      background: #fff; transition: .3s; border-radius: 50%;
+    }
+    .switch input:checked + .slider { background: var(--verde-bosque); }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Loading spinner */
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid var(--borde);
+      border-top-color: var(--dorado); border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Inputs */
+    .input {
+      width: 100%; padding: .7rem .9rem; border: 1px solid var(--borde);
+      border-radius: 12px; background: var(--blanco); color: var(--texto); font-size: .95rem;
+      min-height: 44px;
+    }
+    .input:focus { outline: none; border-color: var(--dorado); }
+    label.lbl { font-size: .82rem; font-weight: 600; margin-bottom: .3rem; display: block; }
+
+    /* Navegacion */
+    .nav-item { cursor: pointer; padding: .6rem .9rem; border-radius: 10px; transition: .2s; font-weight: 500; }
+    .nav-item:hover { background: rgba(212,175,55,.15); }
+    .nav-item.activo { background: var(--verde-bosque); color: #fff; }
+
+    /* Acordeon carta */
+    .acordeon-header { cursor: pointer; }
+    .acordeon-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+    .acordeon-body.abierto { max-height: 4000px; }
+
+    /* Tabla */
+    table.tabla { width: 100%; border-collapse: collapse; }
+    table.tabla th { text-align: left; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .04em; color: #888; padding: .6rem .5rem; border-bottom: 2px solid var(--borde); }
+    table.tabla td { padding: .7rem .5rem; border-bottom: 1px solid var(--borde); font-size: .9rem; }
+
+    .oculto { display: none !important; }
+
+    /* Bottom nav movil */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--blanco);
+      border-top: 1px solid var(--borde); display: flex; justify-content: space-around;
+      padding: .4rem 0; z-index: 50;
+    }
+    .bottom-nav .nav-btn { display: flex; flex-direction: column; align-items: center;
+      gap: 2px; font-size: .68rem; color: #888; padding: .3rem .6rem; cursor: pointer; }
+    .bottom-nav .nav-btn.activo { color: var(--verde-bosque); }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: var(--arena); border-radius: 8px; }
+  </style>
+</head>
+
+<body>
+
+<!-- ===== HTML ===== -->
+
+<!-- Pantalla de carga inicial -->
+<div id="cargaInicial" class="fixed inset-0 flex flex-col items-center justify-center bg-[var(--fondo)] z-[2000]">
+  <div class="spinner mb-4"></div>
+  <p class="serif text-xl" style="color: var(--verde-bosque)">Cascadas</p>
+</div>
+
+<!-- ====================== SELECTOR DE ACCESO (sin ?hab) ====================== -->
+<div id="vistaAcceso" class="oculto min-h-screen flex items-center justify-center p-4">
+  <div class="card p-8 max-w-md w-full text-center fade-in">
+    <i class="fa-solid fa-mountain-sun text-5xl mb-4" style="color: var(--verde-bosque)"></i>
+    <h1 class="text-3xl mb-2" style="color: var(--verde-bosque)">Cascadas</h1>
+    <p class="text-sm opacity-70 mb-6">Centro operacional del hotel</p>
+
+    <div class="space-y-3">
+      <button class="btn btn-primary w-full" onclick="mostrarAccesoHuesped()">
+        <i class="fa-solid fa-bed"></i> Soy Huesped
+      </button>
+      <button class="btn btn-outline w-full" onclick="mostrarAccesoStaff()">
+        <i class="fa-solid fa-user-tie"></i> Soy Personal
+      </button>
+    </div>
+
+    <!-- Fallback huesped: habitacion manual -->
+    <div id="accesoHuesped" class="oculto mt-6 text-left slide-up">
+      <label class="lbl">Numero de habitacion</label>
+      <input id="inputHabManual" class="input mb-3" placeholder="Ej: 105" inputmode="numeric">
+      <button class="btn btn-dorado w-full" onclick="entrarComoHuesped()">Ingresar</button>
+    </div>
+
+    <!-- Acceso staff: email -->
+    <div id="accesoStaff" class="oculto mt-6 text-left slide-up">
+      <label class="lbl">Correo del personal</label>
+      <input id="inputEmailStaff" class="input mb-3" placeholder="recepcion@cascadas.cl" inputmode="email">
+      <button class="btn btn-primary w-full" onclick="entrarComoStaff()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== VISTA HUESPED ====================== -->
+<div id="vistaHuesped" class="oculto min-h-screen pb-24">
+  <!-- Navbar minimalista -->
+  <header class="sticky top-0 z-40 backdrop-blur bg-[var(--blanco)]/90 border-b" style="border-color: var(--borde)">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div>
+        <p class="serif text-lg leading-none" style="color: var(--verde-bosque)" id="hotelNombreHeader">Cascadas</p>
+        <p class="text-xs opacity-60">Habitacion <span id="habLabel">—</span></p>
+      </div>
+      <button class="btn-outline btn !py-2 !px-3" onclick="alternarModoOscuro()" title="Modo oscuro">
+        <i class="fa-solid fa-circle-half-stroke"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4">
+    <!-- Bienvenida -->
+    <section id="huespedBienvenida" class="pt-6">
+      <div class="card p-6 fade-in" style="background: linear-gradient(135deg, var(--verde-bosque), #16302a); color:#fff; border:none;">
+        <p class="text-xs uppercase tracking-widest opacity-70">Bienvenido a</p>
+        <h2 class="text-3xl mb-1" style="color:#fff" id="bienvenidaHotel">Cascadas Hotel</h2>
+        <p class="opacity-80 text-sm">Habitacion <span id="bienvenidaHab">—</span> · <span id="bienvenidaHora">—</span></p>
+      </div>
+    </section>
+
+    <!-- Vistas huesped (secciones conmutables) -->
+    <section id="seccionReservar" class="pt-6"></section>
+    <section id="seccionMisReservas" class="oculto pt-6"></section>
+    <section id="seccionCarta" class="oculto pt-6"></section>
+  </main>
+
+  <!-- Bottom nav movil / navegacion huesped -->
+  <nav class="bottom-nav">
+    <div class="nav-btn activo" data-huesped-nav="Reservar" onclick="navHuesped('Reservar')">
+      <i class="fa-solid fa-calendar-plus text-lg"></i><span>Reservar</span>
+    </div>
+    <div class="nav-btn" data-huesped-nav="MisReservas" onclick="navHuesped('MisReservas')">
+      <i class="fa-solid fa-clipboard-list text-lg"></i><span>Mis Reservas</span>
+    </div>
+    <div class="nav-btn" data-huesped-nav="Carta" onclick="navHuesped('Carta')">
+      <i class="fa-solid fa-book-open text-lg"></i><span>Carta</span>
+    </div>
+  </nav>
+</div>
+
+<!-- ====================== VISTA STAFF ====================== -->
+<div id="vistaStaff" class="oculto min-h-screen">
+  <header class="sticky top-0 z-40 bg-[var(--verde-bosque)] text-white">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-mountain-sun text-xl" style="color: var(--dorado)"></i>
+        <div>
+          <p class="serif text-lg leading-none">Cascadas</p>
+          <p class="text-xs opacity-70">Panel de operaciones · <span id="staffRol">—</span></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn !py-2 !px-3 relative" style="background: rgba(255,255,255,.1); color:#fff"
+                onclick="navStaff('Operaciones')" title="Notificaciones">
+          <i class="fa-solid fa-bell"></i>
+          <span id="badgeNotif" class="oculto absolute -top-1 -right-1 bg-[var(--dorado)] text-[var(--antracita)] text-[10px] rounded-full px-1.5"></span>
+        </button>
+        <button class="btn !py-2 !px-3" style="background: rgba(255,255,255,.1); color:#fff" onclick="cerrarSesionStaff()" title="Salir">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+    <!-- Navbar staff -->
+    <nav class="max-w-7xl mx-auto px-2 pb-2 flex gap-1 overflow-x-auto text-sm">
+      <div class="nav-item text-white/90 activo" data-staff-nav="Operaciones" onclick="navStaff('Operaciones')">Centro de Operaciones</div>
+      <div class="nav-item text-white/90" data-staff-nav="Reservas" onclick="navStaff('Reservas')">Reservas</div>
+      <div class="nav-item text-white/90" data-staff-nav="Pedidos" onclick="navStaff('Pedidos')">Pedidos</div>
+      <div class="nav-item text-white/90" data-staff-nav="Carta" onclick="navStaff('Carta')">Gestion de Carta</div>
+      <div class="nav-item text-white/90" data-staff-nav="Historial" onclick="navStaff('Historial')">Historial</div>
+      <div class="nav-item text-white/90" data-staff-nav="Bloqueos" onclick="navStaff('Bloqueos')">Bloqueos</div>
+      <div class="nav-item text-white/90" data-staff-nav="Config" onclick="navStaff('Config')">Configuracion</div>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="staffOperaciones"></div>
+    <div id="staffReservas" class="oculto"></div>
+    <div id="staffPedidos" class="oculto"></div>
+    <div id="staffCarta" class="oculto"></div>
+    <div id="staffHistorial" class="oculto"></div>
+    <div id="staffBloqueos" class="oculto"></div>
+    <div id="staffConfig" class="oculto"></div>
+  </main>
+</div>
+
+<!-- Contenedor de modales -->
+<div id="contenedorModal"></div>
+<!-- Contenedor de toasts -->
+<div id="contenedorToast" class="fixed bottom-4 right-4 z-[1500] space-y-2"></div>
+
+
+<!-- ===== JS ===== -->
+<script>
+/* ==========================================================================
+   ESTADO GLOBAL DE LA APP
+   ========================================================================== */
+var APP = {
+  habitacion: '<?= HABITACION_QR ?>'.trim(),   // inyectada por Apps Script
+  modo: null,             // 'huesped' | 'staff'
+  usuarioStaff: null,     // {Email, Rol, Nombre}
+  config: {},             // configuracion completa
+  servicios: [],          // servicios activos
+  categorias: [],         // categorias visibles
+  carrito: [],            // prepedido en construccion
+  reservaPrepedido: null, // reserva sobre la que se hace prepedido
+  cuentaRegresiva: null   // intervalo de la cuenta regresiva
+};
+
+/* ==========================================================================
+   WRAPPER DE API (google.script.run)
+   ========================================================================== */
+/**
+ * Llama a una funcion del backend devolviendo una promesa.
+ * Muestra loader global opcional y maneja errores con modal elegante.
+ */
+function llamarAPI(nombreFuncion, parametros, opciones) {
+  opciones = opciones || {};
+  return new Promise(function (resolve, reject) {
+    if (opciones.loader !== false) mostrarLoaderGlobal(true);
+    google.script.run
+      .withSuccessHandler(function (resultado) {
+        mostrarLoaderGlobal(false);
+        resolve(resultado);
+      })
+      .withFailureHandler(function (error) {
+        mostrarLoaderGlobal(false);
+        mostrarModal({
+          titulo: 'Ocurrio un problema',
+          contenidoHTML: '<p class="text-sm">' + (error && error.message ? error.message : 'Error inesperado.') + '</p>',
+          botones: [{ texto: 'Entendido', clase: 'btn-primary', accion: cerrarModal }]
+        });
+        reject(error);
+      })[nombreFuncion].apply(null, parametros || []);
+  });
+}
+
+/* Loader global (overlay ligero) */
+function mostrarLoaderGlobal(mostrar) {
+  var existente = document.getElementById('loaderGlobal');
+  if (mostrar) {
+    if (existente) return;
+    var div = document.createElement('div');
+    div.id = 'loaderGlobal';
+    div.className = 'fixed inset-0 flex items-center justify-center z-[1400]';
+    div.style.background = 'rgba(0,0,0,.12)';
+    div.innerHTML = '<div class="spinner"></div>';
+    document.body.appendChild(div);
+  } else if (existente) {
+    existente.remove();
+  }
+}
+
+/* ==========================================================================
+   SISTEMA DE MODALES
+   ========================================================================== */
+function mostrarModal(config) {
+  var cerrable = config.cerrable !== false;
+  var botonesHTML = (config.botones || []).map(function (b, i) {
+    return '<button class="btn ' + (b.clase || 'btn-outline') + '" data-modal-btn="' + i + '">' + b.texto + '</button>';
+  }).join('');
+
+  var html =
+    '<div class="modal-overlay" id="modalOverlay">' +
+      '<div class="modal-box">' +
+        '<div class="flex items-center justify-between p-5 border-b" style="border-color: var(--borde)">' +
+          '<h3 class="text-xl">' + (config.titulo || '') + '</h3>' +
+          (cerrable ? '<button onclick="cerrarModal()" class="text-2xl opacity-50 hover:opacity-100">&times;</button>' : '') +
+        '</div>' +
+        '<div class="p-5">' + (config.contenidoHTML || '') + '</div>' +
+        (botonesHTML ? '<div class="flex flex-wrap gap-2 justify-end p-5 border-t" style="border-color: var(--borde)">' + botonesHTML + '</div>' : '') +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('contenedorModal').innerHTML = html;
+
+  // Enlaza acciones de botones.
+  (config.botones || []).forEach(function (b, i) {
+    var el = document.querySelector('[data-modal-btn="' + i + '"]');
+    if (el) el.onclick = function () { if (b.accion) b.accion(); };
+  });
+
+  // Cerrar al hacer click en el backdrop.
+  if (cerrable) {
+    document.getElementById('modalOverlay').addEventListener('click', function (e) {
+      if (e.target.id === 'modalOverlay') cerrarModal();
+    });
+  }
+}
+
+function cerrarModal() {
+  document.getElementById('contenedorModal').innerHTML = '';
+  if (APP.cuentaRegresiva) { clearInterval(APP.cuentaRegresiva); APP.cuentaRegresiva = null; }
+}
+
+/* Toast de notificacion breve */
+function mostrarToast(mensaje, tipo) {
+  var color = tipo === 'error' ? 'var(--peligro)' : (tipo === 'exito' ? 'var(--verde-bosque)' : 'var(--antracita)');
+  var div = document.createElement('div');
+  div.className = 'card px-4 py-3 slide-up text-sm shadow-lg';
+  div.style.borderLeft = '4px solid ' + color;
+  div.innerHTML = mensaje;
+  document.getElementById('contenedorToast').appendChild(div);
+  setTimeout(function () { div.remove(); }, 3500);
+}
+
+/* ==========================================================================
+   UTILIDADES
+   ========================================================================== */
+function fmtMoneda(valor) {
+  var simbolo = APP.config.MONEDA_SIMBOLO || '$';
+  var n = Number(valor) || 0;
+  return simbolo + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function claseEstado(estado) {
+  if (!estado) return 'estado-Solicitada';
+  if (estado.indexOf('Cancelada') === 0) return 'estado-Cancelada';
+  if (estado.indexOf('Pendiente') === 0) return 'estado-Pendiente';
+  if (estado === 'En curso') return 'estado-Encurso';
+  return 'estado-' + estado.replace(/\s/g, '');
+}
+
+function escaparHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function hoyISO() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function alternarModoOscuro() {
+  document.body.classList.toggle('dark-mode');
+}
+
+/* ==========================================================================
+   ARRANQUE
+   ========================================================================== */
+window.addEventListener('DOMContentLoaded', function () {
+  // Extrae ?hab= del query string (respaldo si la plantilla no la inyecto).
+  var params = new URLSearchParams(window.location.search);
+  var habQuery = params.get('hab');
+  if (!APP.habitacion && habQuery) APP.habitacion = habQuery.trim();
+
+  // Carga configuracion base y decide vista.
+  llamarAPI('obtenerConfiguracionCompleta', [], { loader: false }).then(function (config) {
+    APP.config = config || {};
+    if ((config.MODO_OSCURO_DEFAULT || '').toString().toUpperCase() === 'TRUE') {
+      document.body.classList.add('dark-mode');
+    }
+    document.getElementById('cargaInicial').classList.add('oculto');
+
+    if (APP.habitacion) {
+      // Guarda en sessionStorage y entra como huesped.
+      sessionStorage.setItem('habitacion', APP.habitacion);
+      iniciarHuesped();
+    } else if (sessionStorage.getItem('staffEmail')) {
+      // Reanuda sesion staff previa.
+      reanudarStaff(sessionStorage.getItem('staffEmail'));
+    } else {
+      document.getElementById('vistaAcceso').classList.remove('oculto');
+    }
+  }).catch(function () {
+    document.getElementById('cargaInicial').classList.add('oculto');
+    document.getElementById('vistaAcceso').classList.remove('oculto');
+  });
+});
+
+/* ==========================================================================
+   ACCESO
+   ========================================================================== */
+function mostrarAccesoHuesped() {
+  document.getElementById('accesoHuesped').classList.remove('oculto');
+  document.getElementById('accesoStaff').classList.add('oculto');
+}
+function mostrarAccesoStaff() {
+  document.getElementById('accesoStaff').classList.remove('oculto');
+  document.getElementById('accesoHuesped').classList.add('oculto');
+}
+function entrarComoHuesped() {
+  var hab = (document.getElementById('inputHabManual').value || '').trim();
+  if (!hab) { mostrarToast('Ingresa un numero de habitacion.', 'error'); return; }
+  APP.habitacion = hab;
+  sessionStorage.setItem('habitacion', hab);
+  document.getElementById('vistaAcceso').classList.add('oculto');
+  iniciarHuesped();
+}
+function entrarComoStaff() {
+  var email = (document.getElementById('inputEmailStaff').value || '').trim();
+  if (!email) { mostrarToast('Ingresa tu correo.', 'error'); return; }
+  llamarAPI('autenticarStaff', [email]).then(function (res) {
+    if (!res.success) { mostrarToast(res.mensaje, 'error'); return; }
+    APP.usuarioStaff = res.usuario;
+    sessionStorage.setItem('staffEmail', email);
+    document.getElementById('vistaAcceso').classList.add('oculto');
+    iniciarStaff();
+  });
+}
+function reanudarStaff(email) {
+  llamarAPI('autenticarStaff', [email], { loader: false }).then(function (res) {
+    if (res.success) { APP.usuarioStaff = res.usuario; iniciarStaff(); }
+    else { document.getElementById('vistaAcceso').classList.remove('oculto'); }
+  });
+}
+function cerrarSesionStaff() {
+  sessionStorage.removeItem('staffEmail');
+  location.reload();
+}
+
+/* ==========================================================================
+   ===================  VISTA HUESPED  ===================
+   ========================================================================== */
+function iniciarHuesped() {
+  APP.modo = 'huesped';
+  document.getElementById('vistaHuesped').classList.remove('oculto');
+  document.getElementById('habLabel').textContent = APP.habitacion;
+  document.getElementById('bienvenidaHab').textContent = APP.habitacion;
+  document.getElementById('hotelNombreHeader').textContent = APP.config.HOTEL_NOMBRE || 'Cascadas';
+  document.getElementById('bienvenidaHotel').textContent = APP.config.HOTEL_NOMBRE || 'Cascadas Hotel';
+  actualizarHora();
+  setInterval(actualizarHora, 30000);
+
+  // Precarga servicios y categorias.
+  Promise.all([
+    llamarAPI('obtenerServiciosActivos', [], { loader: false }),
+    llamarAPI('obtenerCategoriasMenu', [], { loader: false })
+  ]).then(function (r) {
+    APP.servicios = r[0] || [];
+    APP.categorias = r[1] || [];
+    renderReservar();
+  });
+}
+
+function actualizarHora() {
+  var ahora = new Date();
+  var h = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  var el = document.getElementById('bienvenidaHora');
+  if (el) el.textContent = h;
+}
+
+function navHuesped(seccion) {
+  document.querySelectorAll('[data-huesped-nav]').forEach(function (el) {
+    el.classList.toggle('activo', el.getAttribute('data-huesped-nav') === seccion);
+  });
+  document.getElementById('seccionReservar').classList.toggle('oculto', seccion !== 'Reservar');
+  document.getElementById('seccionMisReservas').classList.toggle('oculto', seccion !== 'MisReservas');
+  document.getElementById('seccionCarta').classList.toggle('oculto', seccion !== 'Carta');
+  document.getElementById('huespedBienvenida').classList.toggle('oculto', seccion !== 'Reservar');
+
+  if (seccion === 'MisReservas') renderMisReservas();
+  if (seccion === 'Carta') renderCarta();
+}
+
+/* ---------- Reservar ---------- */
+function renderReservar() {
+  var opcionesServicios = APP.servicios.map(function (s) {
+    return '<option value="' + s.ID + '">' + escaparHTML(s.Nombre) + '</option>';
+  }).join('');
+
+  var html =
+    '<div class="card p-6 fade-in">' +
+      '<h3 class="text-2xl mb-1" style="color: var(--verde-bosque)">Reservar un servicio</h3>' +
+      '<p class="text-sm opacity-60 mb-4">Elige el servicio, fecha y horario disponible.</p>' +
+
+      '<label class="lbl">Servicio</label>' +
+      '<select id="resServicio" class="input mb-3" onchange="alCambiarServicio()">' + opcionesServicios + '</select>' +
+
+      '<div id="descServicio" class="text-sm opacity-70 mb-3"></div>' +
+
+      '<div id="cajaDesayunoHab" class="oculto mb-3 p-3 rounded-xl" style="background: var(--arena); color:#4a3f28;"></div>' +
+
+      '<label class="lbl">Fecha</label>' +
+      '<input id="resFecha" class="input mb-3" placeholder="Selecciona una fecha">' +
+
+      '<label class="lbl">Personas</label>' +
+      '<input id="resPersonas" type="number" min="1" value="2" class="input mb-3">' +
+
+      '<button class="btn btn-outline w-full mb-3" onclick="buscarHorarios()"><i class="fa-solid fa-magnifying-glass"></i> Ver horarios disponibles</button>' +
+
+      '<div id="resHorarios" class="grid grid-cols-3 gap-2 mb-3"></div>' +
+
+      '<label class="lbl">Notas (opcional)</label>' +
+      '<textarea id="resNotas" class="input mb-4" rows="2" placeholder="Preferencias, alergias, etc."></textarea>' +
+
+      '<button class="btn btn-primary w-full" id="btnConfirmarReserva" onclick="confirmarReserva()" disabled>' +
+        '<i class="fa-solid fa-check"></i> Confirmar reserva</button>' +
+    '</div>';
+
+  document.getElementById('seccionReservar').innerHTML = html;
+
+  // Inicializa Flatpickr.
+  flatpickr('#resFecha', { locale: 'es', minDate: 'today', dateFormat: 'Y-m-d' });
+  alCambiarServicio();
+}
+
+function servicioSeleccionado() {
+  var id = document.getElementById('resServicio').value;
+  return APP.servicios.filter(function (s) { return s.ID === id; })[0];
+}
+
+function alCambiarServicio() {
+  var s = servicioSeleccionado();
+  if (!s) return;
+  document.getElementById('descServicio').textContent = s.Descripcion || '';
+  // Reinicia horarios.
+  document.getElementById('resHorarios').innerHTML = '';
+  document.getElementById('btnConfirmarReserva').disabled = true;
+  APP.horaSeleccionada = null;
+
+  // Caso especial: Desayuno Habitacion (S002).
+  var caja = document.getElementById('cajaDesayunoHab');
+  if (s.ID === 'S002') {
+    caja.classList.remove('oculto');
+    var costo = fmtMoneda(APP.config.DESAYUNO_HABITACION_COSTO || 0);
+    caja.innerHTML = '<p class="font-semibold mb-1"><i class="fa-solid fa-mug-saucer"></i> Desayuno continental en habitacion (' + costo + ')</p>' +
+      '<p class="text-xs">' + escaparHTML(APP.config.DESAYUNO_HABITACION_DESCRIPCION || '') + '</p>';
+  } else {
+    caja.classList.add('oculto');
+  }
+}
+
+function buscarHorarios() {
+  var s = servicioSeleccionado();
+  var fecha = document.getElementById('resFecha').value;
+  var personas = document.getElementById('resPersonas').value;
+  if (!fecha) { mostrarToast('Selecciona una fecha.', 'error'); return; }
+
+  llamarAPI('consultarDisponibilidad', [s.ID, fecha, personas]).then(function (res) {
+    var cont = document.getElementById('resHorarios');
+    if (!res.success || !res.bloques.length) {
+      cont.innerHTML = '<p class="col-span-3 text-sm opacity-60 text-center py-3">No hay horarios disponibles para esa fecha.</p>';
+      return;
+    }
+    cont.innerHTML = res.bloques.map(function (b) {
+      return '<button class="btn btn-outline !py-2 text-sm" onclick="seleccionarHora(this,\'' + b.hora + '\')">' + b.hora + '</button>';
+    }).join('');
+  });
+}
+
+function seleccionarHora(el, hora) {
+  document.querySelectorAll('#resHorarios button').forEach(function (b) {
+    b.classList.remove('btn-dorado'); b.classList.add('btn-outline');
+  });
+  el.classList.remove('btn-outline'); el.classList.add('btn-dorado');
+  APP.horaSeleccionada = hora;
+  document.getElementById('btnConfirmarReserva').disabled = false;
+}
+
+function confirmarReserva() {
+  var s = servicioSeleccionado();
+  var datos = {
+    habitacion: APP.habitacion,
+    servicioID: s.ID,
+    fecha: document.getElementById('resFecha').value,
+    horaInicio: APP.horaSeleccionada,
+    personas: document.getElementById('resPersonas').value,
+    notas: document.getElementById('resNotas').value,
+    solicitadoPor: 'Huesped Hab ' + APP.habitacion
+  };
+  llamarAPI('crearReserva', [datos]).then(function (res) {
+    if (!res.success) { mostrarToast(res.mensaje, 'error'); return; }
+    mostrarModal({
+      titulo: 'Reserva registrada',
+      contenidoHTML: '<p class="text-sm">Tu reserva de <b>' + escaparHTML(s.Nombre) + '</b> quedo en estado <span class="pill ' +
+        claseEstado(res.estado) + '">' + res.estado + '</span>.</p>' +
+        (s.RequiereAprobacion ? '<p class="text-xs opacity-60 mt-2">Este servicio requiere confirmacion del hotel.</p>' : ''),
+      botones: [{ texto: 'Ver mis reservas', clase: 'btn-primary', accion: function () { cerrarModal(); navHuesped('MisReservas'); } }]
+    });
+    renderReservar();
+  });
+}
+
+/* ---------- Mis Reservas ---------- */
+function renderMisReservas() {
+  var cont = document.getElementById('seccionMisReservas');
+  cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
+  llamarAPI('obtenerReservas', [{ habitacion: APP.habitacion }], { loader: false }).then(function (reservas) {
+    if (!reservas.length) {
+      cont.innerHTML = '<div class="card p-8 text-center"><i class="fa-regular fa-calendar text-3xl opacity-30 mb-2"></i>' +
+        '<p class="text-sm opacity-60">Aun no tienes reservas.</p></div>';
+      return;
+    }
+    cont.innerHTML = '<h3 class="text-2xl mb-4" style="color: var(--verde-bosque)">Mis reservas</h3>' +
+      reservas.map(tarjetaReserva).join('');
+  });
+}
+
+function tarjetaReserva(r) {
+  var puedeCancelar = ['Solicitada', 'Pendiente aprobacion', 'Confirmada'].indexOf(r.Estado) !== -1;
+  var esGastroPrepedible = (r.ServicioID === 'S003' || r.ServicioID === 'S004') && r.Estado === 'Confirmada';
+  var linkPrepedido = '';
+  if (esGastroPrepedible) {
+    var texto = r.PrepedidoID ? 'Ver/modificar pedido' : 'Agregar pedido a esta reserva';
+    linkPrepedido = '<a class="text-xs text-gray-400 hover:text-gray-600 underline cursor-pointer mt-2 inline-block" ' +
+      'onclick="abrirPrepedido(\'' + r.ID + '\')">' + texto + '</a>';
+  }
+  return '<div class="card p-4 mb-3 fade-in">' +
+    '<div class="flex items-start justify-between gap-2">' +
+      '<div>' +
+        '<p class="font-semibold">' + escaparHTML(r.ServicioNombre) + '</p>' +
+        '<p class="text-sm opacity-60">' + r.Fecha + ' · ' + r.HoraInicio + ' · ' + r.Personas + ' pers.</p>' +
+        (r.Notas ? '<p class="text-xs opacity-50 mt-1"><i class="fa-solid fa-note-sticky"></i> ' + escaparHTML(r.Notas) + '</p>' : '') +
+        linkPrepedido +
+      '</div>' +
+      '<span class="pill ' + claseEstado(r.Estado) + '">' + r.Estado + '</span>' +
+    '</div>' +
+    (puedeCancelar ? '<div class="mt-3 text-right"><button class="btn btn-outline !py-2 text-sm" onclick="cancelarReservaHuesped(\'' + r.ID + '\')">Cancelar</button></div>' : '') +
+  '</div>';
+}
+
+function cancelarReservaHuesped(id) {
+  mostrarModal({
+    titulo: 'Cancelar reserva',
+    contenidoHTML: '<p class="text-sm mb-2">Cuentanos el motivo (opcional):</p>' +
+      '<input id="motivoCancel" class="input" placeholder="Motivo">',
+    botones: [
+      { texto: 'Volver', clase: 'btn-outline', accion: cerrarModal },
+      { texto: 'Confirmar cancelacion', clase: 'btn-peligro', accion: function () {
+          var motivo = document.getElementById('motivoCancel').value;
+          llamarAPI('cancelarReserva', [id, motivo, false]).then(function (res) {
+            cerrarModal();
+            mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+            if (res.success) renderMisReservas();
+          });
+      }}
+    ]
+  });
+}
+
+/* ---------- Carta Digital (acordeon, sin fotos) ---------- */
+function renderCarta() {
+  var cont = document.getElementById('seccionCarta');
+  cont.innerHTML = '<h3 class="text-2xl mb-4" style="color: var(--verde-bosque)">Carta</h3>' +
+    APP.categorias.map(function (c) {
+      return '<div class="card mb-2 overflow-hidden">' +
+        '<div class="acordeon-header flex items-center justify-between p-4" onclick="toggleAcordeon(this,\'' + c.ID + '\')">' +
+          '<span class="font-semibold"><i class="fa-solid ' + c.IconoFontAwesome + ' mr-2" style="color:' + c.Color + '"></i>' + escaparHTML(c.Nombre) + '</span>' +
+          '<i class="fa-solid fa-chevron-down transition-transform"></i>' +
+        '</div>' +
+        '<div class="acordeon-body" id="cat-' + c.ID + '"><div class="p-4 pt-0 text-sm opacity-50">Cargando...</div></div>' +
+      '</div>';
+    }).join('');
+}
+
+function toggleAcordeon(header, categoriaID) {
+  var body = document.getElementById('cat-' + categoriaID);
+  var chevron = header.querySelector('.fa-chevron-down');
+  var abierto = body.classList.contains('abierto');
+  if (abierto) {
+    body.classList.remove('abierto');
+    chevron.style.transform = '';
+    return;
+  }
+  body.classList.add('abierto');
+  chevron.style.transform = 'rotate(180deg)';
+  // Carga productos si aun no se cargaron.
+  if (!body.getAttribute('data-cargado')) {
+    llamarAPI('obtenerProductosPorCategoria', [categoriaID], { loader: false }).then(function (productos) {
+      body.setAttribute('data-cargado', '1');
+      if (!productos.length) {
+        body.innerHTML = '<div class="p-4 pt-0 text-sm opacity-50">Sin productos disponibles.</div>';
+        return;
+      }
+      body.innerHTML = '<div class="p-4 pt-0 space-y-3">' + productos.map(tarjetaProductoCarta).join('') + '</div>';
+    });
+  }
+}
+
+function tarjetaProductoCarta(p) {
+  var etiquetas = (p.Etiquetas || '').split(',').filter(function (e) { return e.trim(); })
+    .map(function (e) { return '<span class="pill" style="background:var(--arena);color:#4a3f28;">' + escaparHTML(e.trim()) + '</span>'; }).join(' ');
+  return '<div class="flex justify-between gap-3 border-b pb-2" style="border-color: var(--borde)">' +
+    '<div>' +
+      '<p class="font-medium">' + escaparHTML(p.Nombre) + '</p>' +
+      (p.Descripcion ? '<p class="text-xs opacity-60">' + escaparHTML(p.Descripcion) + '</p>' : '') +
+      (etiquetas ? '<div class="mt-1 space-x-1">' + etiquetas + '</div>' : '') +
+    '</div>' +
+    '<div class="whitespace-nowrap font-semibold" style="color: var(--verde-bosque)">' + fmtMoneda(p.Precio) + '</div>' +
+  '</div>';
+}
+
+/* ---------- Prepedido (modal) ---------- */
+function abrirPrepedido(reservaID) {
+  APP.reservaPrepedido = reservaID;
+  APP.carrito = [];
+  // Carga pedido existente (si lo hay) y la carta.
+  llamarAPI('obtenerPedidosPorReserva', [reservaID], { loader: true }).then(function (existente) {
+    if (existente && existente.detalles) {
+      APP.carrito = existente.detalles.map(function (d) {
+        return { productoID: d.ProductoID, nombre: d.Nombre, precio: d.PrecioUnitario, cantidad: d.Cantidad };
+      });
+    }
+    renderModalPrepedido();
+  });
+}
+
+function renderModalPrepedido() {
+  var reserva = null;
+  // Busca hora de la reserva para la cuenta regresiva.
+  llamarAPI('obtenerReservas', [{ habitacion: APP.habitacion }], { loader: false }).then(function (reservas) {
+    reserva = reservas.filter(function (r) { return r.ID === APP.reservaPrepedido; })[0];
+
+    var categoriasHTML = APP.categorias.map(function (c) {
+      return '<button class="btn btn-outline !py-1.5 text-xs" onclick="cargarProductosPrepedido(\'' + c.ID + '\', this)">' + escaparHTML(c.Nombre) + '</button>';
+    }).join(' ');
+
+    var contenido =
+      '<div id="contadorPrepedido" class="text-xs mb-3 text-center opacity-70"></div>' +
+      '<div class="flex flex-wrap gap-1 mb-3">' + categoriasHTML + '</div>' +
+      '<div id="listaProductosPrepedido" class="space-y-2 mb-4 max-h-60 overflow-y-auto"><p class="text-xs opacity-50 text-center py-4">Elige una categoria para ver productos.</p></div>' +
+      '<div class="border-t pt-3" style="border-color: var(--borde)">' +
+        '<p class="font-semibold mb-2"><i class="fa-solid fa-basket-shopping"></i> Tu pedido</p>' +
+        '<div id="carritoPrepedido"></div>' +
+      '</div>';
+
+    mostrarModal({
+      titulo: 'Agregar pedido',
+      contenidoHTML: contenido,
+      botones: [
+        { texto: 'Cerrar', clase: 'btn-outline', accion: cerrarModal },
+        { texto: 'Guardar pedido', clase: 'btn-primary', accion: guardarPrepedido }
+      ]
+    });
+
+    renderCarritoPrepedido();
+    iniciarContadorPrepedido(reserva);
+  });
+}
+
+function iniciarContadorPrepedido(reserva) {
+  if (!reserva) return;
+  var limite = Number(APP.config.PREPEDIDO_MINUTOS_LIMITE) || 30;
+  var cont = document.getElementById('contadorPrepedido');
+  function tick() {
+    if (!cont) return;
+    var objetivo = new Date(reserva.Fecha + 'T' + reserva.HoraInicio + ':00');
+    var limiteMs = objetivo.getTime() - limite * 60000;
+    var restante = limiteMs - Date.now();
+    if (restante <= 0) {
+      cont.innerHTML = '<span style="color: var(--peligro)"><i class="fa-solid fa-lock"></i> Ventana de modificacion cerrada</span>';
+    } else {
+      var min = Math.floor(restante / 60000);
+      var seg = Math.floor((restante % 60000) / 1000);
+      cont.innerHTML = '<i class="fa-regular fa-clock"></i> Puedes modificar por ' + min + 'm ' + seg + 's mas';
+    }
+  }
+  tick();
+  if (APP.cuentaRegresiva) clearInterval(APP.cuentaRegresiva);
+  APP.cuentaRegresiva = setInterval(tick, 1000);
+}
+
+function cargarProductosPrepedido(categoriaID, btn) {
+  var lista = document.getElementById('listaProductosPrepedido');
+  lista.innerHTML = '<div class="flex justify-center py-3"><div class="spinner"></div></div>';
+  llamarAPI('obtenerProductosPorCategoria', [categoriaID], { loader: false }).then(function (productos) {
+    if (!productos.length) { lista.innerHTML = '<p class="text-xs opacity-50 text-center py-4">Sin productos.</p>'; return; }
+    lista.innerHTML = productos.map(function (p) {
+      return '<div class="flex items-center justify-between gap-2 text-sm">' +
+        '<div><p class="font-medium">' + escaparHTML(p.Nombre) + '</p><p class="text-xs opacity-60">' + fmtMoneda(p.Precio) + '</p></div>' +
+        '<button class="btn btn-dorado !py-1 !px-3 text-xs" onclick="agregarAlCarrito(\'' + p.ID + '\',\'' + escaparHTML(p.Nombre).replace(/'/g, "\\'") + '\',' + p.Precio + ')">+</button>' +
+      '</div>';
+    }).join('');
+  });
+}
+
+function agregarAlCarrito(productoID, nombre, precio) {
+  var item = APP.carrito.filter(function (i) { return i.productoID === productoID; })[0];
+  if (item) item.cantidad += 1;
+  else APP.carrito.push({ productoID: productoID, nombre: nombre, precio: precio, cantidad: 1 });
+  renderCarritoPrepedido();
+}
+
+function cambiarCantidad(productoID, delta) {
+  var item = APP.carrito.filter(function (i) { return i.productoID === productoID; })[0];
+  if (!item) return;
+  item.cantidad += delta;
+  if (item.cantidad <= 0) APP.carrito = APP.carrito.filter(function (i) { return i.productoID !== productoID; });
+  renderCarritoPrepedido();
+}
+
+function renderCarritoPrepedido() {
+  var cont = document.getElementById('carritoPrepedido');
+  if (!cont) return;
+  if (!APP.carrito.length) {
+    cont.innerHTML = '<p class="text-xs opacity-50">Tu pedido esta vacio.</p>';
+    return;
+  }
+  var total = 0;
+  var html = APP.carrito.map(function (i) {
+    total += i.precio * i.cantidad;
+    return '<div class="flex items-center justify-between gap-2 text-sm mb-1">' +
+      '<span>' + escaparHTML(i.nombre) + '</span>' +
+      '<span class="flex items-center gap-2">' +
+        '<button class="btn btn-outline !py-0 !px-2" onclick="cambiarCantidad(\'' + i.productoID + '\',-1)">-</button>' +
+        '<b>' + i.cantidad + '</b>' +
+        '<button class="btn btn-outline !py-0 !px-2" onclick="cambiarCantidad(\'' + i.productoID + '\',1)">+</button>' +
+      '</span>' +
+    '</div>';
+  }).join('');
+  html += '<div class="flex justify-between font-semibold mt-2 pt-2 border-t" style="border-color: var(--borde)"><span>Total</span><span>' + fmtMoneda(total) + '</span></div>';
+  cont.innerHTML = html;
+}
+
+function guardarPrepedido() {
+  if (!APP.carrito.length) { mostrarToast('Agrega al menos un producto.', 'error'); return; }
+  var items = APP.carrito.map(function (i) { return { productoID: i.productoID, cantidad: i.cantidad }; });
+  llamarAPI('crearPedido', [APP.reservaPrepedido, items, '']).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success) { cerrarModal(); renderMisReservas(); }
+  });
+}
+
+/* ==========================================================================
+   ===================  VISTA STAFF  ===================
+   ========================================================================== */
+function iniciarStaff() {
+  APP.modo = 'staff';
+  document.getElementById('vistaStaff').classList.remove('oculto');
+  document.getElementById('staffRol').textContent = APP.usuarioStaff.Rol;
+
+  // Ajusta visibilidad de pestanas segun rol.
+  ajustarNavPorRol();
+
+  Promise.all([
+    llamarAPI('obtenerServiciosActivos', [], { loader: false }),
+    llamarAPI('obtenerCategoriasTodas', [], { loader: false })
+  ]).then(function (r) {
+    APP.servicios = r[0] || [];
+    APP.categorias = r[1] || [];
+    navStaff('Operaciones');
+    refrescarBadgeNotif();
+  });
+}
+
+function ajustarNavPorRol() {
+  var rol = APP.usuarioStaff.Rol;
+  // Historial: ADMIN y RECEPCION.
+  var historial = document.querySelector('[data-staff-nav="Historial"]');
+  if (historial) historial.classList.toggle('oculto', ['ADMINISTRADOR', 'RECEPCION'].indexOf(rol) === -1);
+  // Config y Bloqueos: RECEPCION y ADMIN.
+  ['Config', 'Bloqueos'].forEach(function (nav) {
+    var el = document.querySelector('[data-staff-nav="' + nav + '"]');
+    if (el) el.classList.toggle('oculto', ['ADMINISTRADOR', 'RECEPCION'].indexOf(rol) === -1);
+  });
+  // Carta: COCINA y ADMIN (RECEPCION solo lectura permitida tambien).
+}
+
+function navStaff(seccion) {
+  document.querySelectorAll('[data-staff-nav]').forEach(function (el) {
+    el.classList.toggle('activo', el.getAttribute('data-staff-nav') === seccion);
+  });
+  ['Operaciones', 'Reservas', 'Pedidos', 'Carta', 'Historial', 'Bloqueos', 'Config'].forEach(function (s) {
+    document.getElementById('staff' + s).classList.toggle('oculto', s !== seccion);
+  });
+  if (seccion === 'Operaciones') renderOperaciones();
+  if (seccion === 'Reservas') renderReservasStaff();
+  if (seccion === 'Pedidos') renderPedidosStaff();
+  if (seccion === 'Carta') renderCartaStaff();
+  if (seccion === 'Historial') renderHistorial();
+  if (seccion === 'Bloqueos') renderBloqueos();
+  if (seccion === 'Config') renderConfig();
+}
+
+function refrescarBadgeNotif() {
+  llamarAPI('obtenerNotificaciones', [APP.usuarioStaff.Rol, '', true], { loader: false }).then(function (notifs) {
+    var badge = document.getElementById('badgeNotif');
+    if (notifs && notifs.length) { badge.textContent = notifs.length; badge.classList.remove('oculto'); }
+    else badge.classList.add('oculto');
+  });
+}
+
+/* ---------- Centro de Operaciones ---------- */
+function renderOperaciones() {
+  var cont = document.getElementById('staffOperaciones');
+  cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
+  var fecha = hoyISO();
+  llamarAPI('obtenerCentroOperaciones', [fecha], { loader: false }).then(function (data) {
+    var alertasHTML = (data.alertas || []).length ?
+      '<div class="card p-4 mb-4" style="border-left:4px solid var(--dorado)"><p class="font-semibold mb-2"><i class="fa-solid fa-triangle-exclamation" style="color:var(--dorado)"></i> Alertas</p>' +
+      data.alertas.map(function (a) { return '<p class="text-sm opacity-80">· ' + escaparHTML(a) + '</p>'; }).join('') + '</div>' : '';
+
+    var timelineHTML = (data.bloques || []).length ? data.bloques.map(function (b) {
+      return '<div class="flex gap-3 mb-4">' +
+        '<div class="w-16 text-right font-semibold" style="color:var(--verde-bosque)">' + b.hora + '</div>' +
+        '<div class="flex-1 border-l-2 pl-4 pb-2" style="border-color: var(--borde)">' +
+          b.items.map(function (it) {
+            return '<div class="card p-3 mb-2 flex items-center justify-between">' +
+              '<div><p class="font-medium text-sm">' + escaparHTML(it.servicioNombre) + ' · Hab ' + it.habitacion + '</p>' +
+              '<p class="text-xs opacity-60">' + it.personas + ' pers.</p></div>' +
+              '<span class="pill ' + claseEstado(it.estado) + '">' + it.estado + '</span></div>';
+          }).join('') +
+        '</div></div>';
+    }).join('') : '<div class="card p-8 text-center opacity-60 text-sm">Sin actividad registrada para hoy.</div>';
+
+    cont.innerHTML = '<div class="flex items-center justify-between mb-4"><h2 class="text-2xl" style="color:var(--verde-bosque)">Centro de Operaciones</h2>' +
+      '<span class="text-sm opacity-60">' + fecha + '</span></div>' + alertasHTML + timelineHTML;
+  });
+}
+
+/* ---------- Gestion de Reservas ---------- */
+function renderReservasStaff() {
+  var cont = document.getElementById('staffReservas');
+  var serviciosOpts = '<option value="">Todos los servicios</option>' + APP.servicios.map(function (s) {
+    return '<option value="' + s.ID + '">' + escaparHTML(s.Nombre) + '</option>';
+  }).join('');
+  cont.innerHTML =
+    '<h2 class="text-2xl mb-4" style="color:var(--verde-bosque)">Gestion de Reservas</h2>' +
+    '<div class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">' +
+      '<div><label class="lbl">Desde</label><input id="filtroDesde" class="input"></div>' +
+      '<div><label class="lbl">Hasta</label><input id="filtroHasta" class="input"></div>' +
+      '<div><label class="lbl">Habitacion</label><input id="filtroHab" class="input" placeholder="Ej: 105"></div>' +
+      '<div><label class="lbl">Servicio</label><select id="filtroServicio" class="input">' + serviciosOpts + '</select></div>' +
+    '</div>' +
+    '<div class="mb-3"><button class="btn btn-primary" onclick="aplicarFiltrosReservas()"><i class="fa-solid fa-filter"></i> Filtrar</button></div>' +
+    '<div class="card p-4 overflow-x-auto"><div id="tablaReservas"></div></div>';
+
+  flatpickr('#filtroDesde', { locale: 'es', dateFormat: 'Y-m-d' });
+  flatpickr('#filtroHasta', { locale: 'es', dateFormat: 'Y-m-d' });
+  aplicarFiltrosReservas();
+}
+
+function aplicarFiltrosReservas() {
+  var filtros = {
+    fechaDesde: document.getElementById('filtroDesde').value || '',
+    fechaHasta: document.getElementById('filtroHasta').value || '',
+    habitacion: document.getElementById('filtroHab').value || '',
+    servicioID: document.getElementById('filtroServicio').value || ''
+  };
+  var tabla = document.getElementById('tablaReservas');
+  tabla.innerHTML = '<div class="flex justify-center py-6"><div class="spinner"></div></div>';
+  llamarAPI('obtenerReservas', [filtros], { loader: false }).then(function (reservas) {
+    if (!reservas.length) { tabla.innerHTML = '<p class="text-sm opacity-60 py-4 text-center">Sin reservas.</p>'; return; }
+    tabla.innerHTML = '<table class="tabla"><thead><tr>' +
+      '<th>Fecha</th><th>Hora</th><th>Hab</th><th>Servicio</th><th>Pers.</th><th>Estado</th><th>Acciones</th>' +
+      '</tr></thead><tbody>' + reservas.map(filaReservaStaff).join('') + '</tbody></table>';
+  });
+}
+
+function filaReservaStaff(r) {
+  var acciones = '';
+  if (['Solicitada', 'Pendiente aprobacion'].indexOf(r.Estado) !== -1) {
+    acciones += '<button class="btn btn-primary !py-1 !px-2 text-xs mr-1" onclick="confirmarReservaStaff(\'' + r.ID + '\')" title="Confirmar"><i class="fa-solid fa-check"></i></button>';
+  }
+  if (['Solicitada', 'Pendiente aprobacion', 'Confirmada'].indexOf(r.Estado) !== -1) {
+    acciones += '<button class="btn btn-peligro !py-1 !px-2 text-xs mr-1" onclick="cancelarReservaStaff(\'' + r.ID + '\')" title="Cancelar"><i class="fa-solid fa-xmark"></i></button>';
+  }
+  if (r.PrepedidoID) {
+    acciones += '<button class="btn btn-outline !py-1 !px-2 text-xs" onclick="verPedidoStaff(\'' + r.ID + '\')" title="Ver pedido"><i class="fa-solid fa-utensils"></i></button>';
+  }
+  return '<tr>' +
+    '<td>' + r.Fecha + '</td><td>' + r.HoraInicio + '</td><td>' + r.Habitacion + '</td>' +
+    '<td>' + escaparHTML(r.ServicioNombre) + '</td><td>' + r.Personas + '</td>' +
+    '<td><span class="pill ' + claseEstado(r.Estado) + '">' + r.Estado + '</span></td>' +
+    '<td class="whitespace-nowrap">' + (acciones || '—') + '</td>' +
+  '</tr>';
+}
+
+function confirmarReservaStaff(id) {
+  llamarAPI('cambiarEstadoReserva', [id, 'Confirmada']).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success) aplicarFiltrosReservas();
+  });
+}
+function cancelarReservaStaff(id) {
+  mostrarModal({
+    titulo: 'Cancelar reserva (hotel)',
+    contenidoHTML: '<input id="motivoCancelStaff" class="input" placeholder="Motivo de cancelacion">',
+    botones: [
+      { texto: 'Volver', clase: 'btn-outline', accion: cerrarModal },
+      { texto: 'Cancelar reserva', clase: 'btn-peligro', accion: function () {
+        var motivo = document.getElementById('motivoCancelStaff').value;
+        llamarAPI('cancelarReserva', [id, motivo, true]).then(function (res) {
+          cerrarModal(); mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+          if (res.success) aplicarFiltrosReservas();
+        });
+      }}
+    ]
+  });
+}
+function verPedidoStaff(reservaID) {
+  llamarAPI('obtenerPedidosPorReserva', [reservaID]).then(function (data) {
+    if (!data) { mostrarToast('Sin pedido asociado.', 'error'); return; }
+    var det = data.detalles.map(function (d) {
+      return '<div class="flex justify-between text-sm"><span>' + d.Cantidad + 'x ' + escaparHTML(d.Nombre) + '</span><span>' + fmtMoneda(d.Subtotal) + '</span></div>';
+    }).join('');
+    mostrarModal({
+      titulo: 'Pedido Hab ' + data.pedido.Habitacion,
+      contenidoHTML: det + '<div class="flex justify-between font-semibold mt-3 pt-2 border-t" style="border-color:var(--borde)"><span>Total</span><span>' + fmtMoneda(data.pedido.Total) + '</span></div>',
+      botones: [{ texto: 'Cerrar', clase: 'btn-primary', accion: cerrarModal }]
+    });
+  });
+}
+
+/* ---------- Gestion de Pedidos ---------- */
+function renderPedidosStaff() {
+  var cont = document.getElementById('staffPedidos');
+  cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
+  llamarAPI('obtenerPedidosDelDia', [hoyISO()], { loader: false }).then(function (pedidos) {
+    if (!pedidos.length) { cont.innerHTML = '<h2 class="text-2xl mb-4" style="color:var(--verde-bosque)">Pedidos de hoy</h2><div class="card p-8 text-center opacity-60 text-sm">Sin pedidos.</div>'; return; }
+    cont.innerHTML = '<h2 class="text-2xl mb-4" style="color:var(--verde-bosque)">Pedidos de hoy</h2>' +
+      pedidos.map(function (p) {
+        return '<div class="card p-4 mb-3">' +
+          '<div class="flex justify-between items-center mb-2"><p class="font-semibold">Hab ' + p.Habitacion + (p.HoraReserva ? ' · ' + p.HoraReserva : '') + '</p>' +
+          '<span class="pill estado-Confirmada">' + escaparHTML(p.Estado) + '</span></div>' +
+          p.Detalles.map(function (d) {
+            return '<div class="flex justify-between text-sm"><span>' + d.Cantidad + 'x ' + escaparHTML(d.Nombre) + (d.Notas ? ' <i class="opacity-50">(' + escaparHTML(d.Notas) + ')</i>' : '') + '</span><span>' + fmtMoneda(d.Subtotal) + '</span></div>';
+          }).join('') +
+          '<div class="flex justify-between font-semibold mt-2 pt-2 border-t" style="border-color:var(--borde)"><span>Total</span><span>' + fmtMoneda(p.Total) + '</span></div>' +
+        '</div>';
+      }).join('');
+  });
+}
+
+/* ---------- Gestion de Carta ---------- */
+function renderCartaStaff() {
+  var cont = document.getElementById('staffCarta');
+  var esAdmin = APP.usuarioStaff.Rol === 'ADMINISTRADOR';
+  var catOpts = '<option value="">Todas las categorias</option>' + APP.categorias.map(function (c) {
+    return '<option value="' + c.ID + '">' + escaparHTML(c.Nombre) + '</option>';
+  }).join('');
+  cont.innerHTML =
+    '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">' +
+      '<h2 class="text-2xl" style="color:var(--verde-bosque)">Gestion de Carta</h2>' +
+      '<button class="btn btn-dorado" onclick="abrirFormProducto()"><i class="fa-solid fa-plus"></i> Nuevo Plato</button>' +
+    '</div>' +
+    '<div class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">' +
+      '<div><label class="lbl">Categoria</label><select id="filtroCatCarta" class="input" onchange="filtrarCarta()">' + catOpts + '</select></div>' +
+      '<div class="md:col-span-2"><label class="lbl">Buscar por nombre</label><input id="buscarCarta" class="input" oninput="filtrarCarta()" placeholder="Ej: ceviche"></div>' +
+    '</div>' +
+    '<div class="card p-4 overflow-x-auto"><div id="tablaCarta"></div></div>' +
+    (esAdmin ? '<div class="mt-6"><div class="flex items-center justify-between mb-3"><h3 class="text-xl" style="color:var(--verde-bosque)">Categorias</h3>' +
+      '<button class="btn btn-outline" onclick="abrirFormCategoria()"><i class="fa-solid fa-plus"></i> Nueva Categoria</button></div>' +
+      '<div class="card p-4 overflow-x-auto"><div id="tablaCategorias"></div></div></div>' : '');
+
+  cargarTablaCarta();
+  if (esAdmin) cargarTablaCategorias();
+}
+
+function cargarTablaCarta() {
+  var tabla = document.getElementById('tablaCarta');
+  tabla.innerHTML = '<div class="flex justify-center py-6"><div class="spinner"></div></div>';
+  llamarAPI('obtenerProductosGestion', [], { loader: false }).then(function (productos) {
+    APP.productosGestion = productos;
+    filtrarCarta();
+  });
+}
+
+function filtrarCarta() {
+  var productos = APP.productosGestion || [];
+  var cat = document.getElementById('filtroCatCarta').value;
+  var busqueda = (document.getElementById('buscarCarta').value || '').toLowerCase();
+  var catNombre = {};
+  APP.categorias.forEach(function (c) { catNombre[c.ID] = c.Nombre; });
+
+  var filtrados = productos.filter(function (p) {
+    if (cat && p.CategoriaID !== cat) return false;
+    if (busqueda && p.Nombre.toLowerCase().indexOf(busqueda) === -1) return false;
+    return true;
+  });
+
+  var tabla = document.getElementById('tablaCarta');
+  if (!filtrados.length) { tabla.innerHTML = '<p class="text-sm opacity-60 py-4 text-center">Sin productos.</p>'; return; }
+  tabla.innerHTML = '<table class="tabla"><thead><tr>' +
+    '<th>Nombre</th><th>Categoria</th><th>Precio</th><th>Disponible</th><th>Visible</th><th>Orden</th><th>Acciones</th>' +
+    '</tr></thead><tbody>' + filtrados.map(function (p) {
+      return '<tr>' +
+        '<td>' + escaparHTML(p.Nombre) + '</td>' +
+        '<td class="text-xs opacity-70">' + escaparHTML(catNombre[p.CategoriaID] || p.CategoriaID) + '</td>' +
+        '<td>' + fmtMoneda(p.Precio) + '</td>' +
+        '<td><label class="switch"><input type="checkbox" ' + (p.Disponible ? 'checked' : '') + ' onchange="toggleDisponible(\'' + p.ID + '\', this.checked)"><span class="slider"></span></label></td>' +
+        '<td>' + (p.Visible ? '<i class="fa-solid fa-eye" style="color:var(--verde-bosque)"></i>' : '<i class="fa-solid fa-eye-slash opacity-40"></i>') + '</td>' +
+        '<td>' + p.Orden + '</td>' +
+        '<td class="whitespace-nowrap">' +
+          '<button class="btn btn-outline !py-1 !px-2 text-xs mr-1" onclick="abrirFormProducto(\'' + p.ID + '\')" title="Editar"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-peligro !py-1 !px-2 text-xs" onclick="eliminarProductoStaff(\'' + p.ID + '\')" title="Ocultar"><i class="fa-solid fa-trash"></i></button>' +
+        '</td>' +
+      '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function toggleDisponible(productoID, nuevoEstado) {
+  llamarAPI('toggleDisponibleProducto', [productoID, nuevoEstado, APP.usuarioStaff.Email], { loader: false }).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success && APP.productosGestion) {
+      APP.productosGestion.forEach(function (p) { if (p.ID === productoID) p.Disponible = nuevoEstado; });
+    }
+  });
+}
+
+function eliminarProductoStaff(productoID) {
+  mostrarModal({
+    titulo: 'Ocultar producto',
+    contenidoHTML: '<p class="text-sm">El producto se ocultara de la carta (soft delete). Podras reactivarlo despues. Se conserva el historial de pedidos.</p>',
+    botones: [
+      { texto: 'Cancelar', clase: 'btn-outline', accion: cerrarModal },
+      { texto: 'Ocultar', clase: 'btn-peligro', accion: function () {
+        llamarAPI('eliminarProducto', [productoID, APP.usuarioStaff.Email]).then(function (res) {
+          cerrarModal(); mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+          if (res.success) cargarTablaCarta();
+        });
+      }}
+    ]
+  });
+}
+
+function abrirFormProducto(productoID) {
+  var catOpts = APP.categorias.map(function (c) { return '<option value="' + c.ID + '">' + escaparHTML(c.Nombre) + '</option>'; }).join('');
+
+  function pintarForm(p) {
+    p = p || { CategoriaID: APP.categorias[0] ? APP.categorias[0].ID : '', Disponible: true, Visible: true, Orden: 0, TiempoPreparacionMin: 0, EsMenuDelDia: false, Etiquetas: '', Precio: 0, Nombre: '', Descripcion: '' };
+    var etiquetasSel = (p.Etiquetas || '').split(',').map(function (e) { return e.trim(); });
+    function chkEtiqueta(nombre) { return etiquetasSel.indexOf(nombre) !== -1 ? 'checked' : ''; }
+
+    var form =
+      '<input type="hidden" id="prodID" value="' + (p.ID || '') + '">' +
+      '<label class="lbl">Categoria</label><select id="prodCat" class="input mb-2">' + catOpts + '</select>' +
+      '<label class="lbl">Nombre</label><input id="prodNombre" class="input mb-2" value="' + escaparHTML(p.Nombre) + '">' +
+      '<label class="lbl">Descripcion</label><textarea id="prodDesc" class="input mb-2" rows="2">' + escaparHTML(p.Descripcion) + '</textarea>' +
+      '<div class="grid grid-cols-2 gap-2">' +
+        '<div><label class="lbl">Precio</label><input id="prodPrecio" type="number" class="input mb-2" value="' + p.Precio + '"></div>' +
+        '<div><label class="lbl">Orden</label><input id="prodOrden" type="number" class="input mb-2" value="' + p.Orden + '"></div>' +
+      '</div>' +
+      '<div class="grid grid-cols-2 gap-2">' +
+        '<div><label class="lbl">Tiempo prep. (min)</label><input id="prodTiempo" type="number" class="input mb-2" value="' + p.TiempoPreparacionMin + '"></div>' +
+        '<div><label class="lbl">Etiquetas</label>' +
+          '<div class="flex flex-col gap-1 text-sm">' +
+            '<label><input type="checkbox" class="etq" value="Vegano" ' + chkEtiqueta('Vegano') + '> Vegano</label>' +
+            '<label><input type="checkbox" class="etq" value="Sin Gluten" ' + chkEtiqueta('Sin Gluten') + '> Sin Gluten</label>' +
+            '<label><input type="checkbox" class="etq" value="Picante" ' + chkEtiqueta('Picante') + '> Picante</label>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex gap-6 mt-3">' +
+        '<label class="flex items-center gap-2 text-sm"><span class="switch"><input type="checkbox" id="prodDisp" ' + (p.Disponible ? 'checked' : '') + '><span class="slider"></span></span> Disponible</label>' +
+        '<label class="flex items-center gap-2 text-sm"><span class="switch"><input type="checkbox" id="prodVis" ' + (p.Visible ? 'checked' : '') + '><span class="slider"></span></span> Visible</label>' +
+        '<label class="flex items-center gap-2 text-sm"><span class="switch"><input type="checkbox" id="prodMenu" ' + (p.EsMenuDelDia ? 'checked' : '') + '><span class="slider"></span></span> Menu del dia</label>' +
+      '</div>';
+
+    mostrarModal({
+      titulo: productoID ? 'Editar plato' : 'Nuevo plato',
+      contenidoHTML: form,
+      botones: [
+        { texto: 'Cancelar', clase: 'btn-outline', accion: cerrarModal },
+        { texto: 'Guardar', clase: 'btn-primary', accion: guardarProductoStaff }
+      ]
+    });
+    if (p.CategoriaID) document.getElementById('prodCat').value = p.CategoriaID;
+  }
+
+  if (productoID) {
+    llamarAPI('obtenerProductoParaEditar', [productoID]).then(pintarForm);
+  } else {
+    pintarForm(null);
+  }
+}
+
+function guardarProductoStaff() {
+  var etiquetas = Array.prototype.slice.call(document.querySelectorAll('.etq:checked')).map(function (e) { return e.value; }).join(', ');
+  var datos = {
+    id: document.getElementById('prodID').value,
+    categoriaID: document.getElementById('prodCat').value,
+    nombre: document.getElementById('prodNombre').value,
+    descripcion: document.getElementById('prodDesc').value,
+    precio: document.getElementById('prodPrecio').value,
+    orden: document.getElementById('prodOrden').value,
+    tiempoPreparacionMin: document.getElementById('prodTiempo').value,
+    etiquetas: etiquetas,
+    disponible: document.getElementById('prodDisp').checked,
+    visible: document.getElementById('prodVis').checked,
+    esMenuDelDia: document.getElementById('prodMenu').checked,
+    email: APP.usuarioStaff.Email
+  };
+  if (!datos.nombre) { mostrarToast('El nombre es obligatorio.', 'error'); return; }
+  llamarAPI('guardarProducto', [datos]).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success) { cerrarModal(); cargarTablaCarta(); }
+  });
+}
+
+/* ---------- Categorias (solo Admin) ---------- */
+function cargarTablaCategorias() {
+  var tabla = document.getElementById('tablaCategorias');
+  if (!tabla) return;
+  llamarAPI('obtenerCategoriasTodas', [], { loader: false }).then(function (cats) {
+    APP.categorias = cats;
+    tabla.innerHTML = '<table class="tabla"><thead><tr><th>Nombre</th><th>Orden</th><th>Visible</th><th>Icono</th><th>Acciones</th></tr></thead><tbody>' +
+      cats.map(function (c) {
+        return '<tr>' +
+          '<td><i class="fa-solid ' + c.IconoFontAwesome + '" style="color:' + c.Color + '"></i> ' + escaparHTML(c.Nombre) + '</td>' +
+          '<td>' + c.Orden + '</td>' +
+          '<td>' + (c.Visible ? '<i class="fa-solid fa-eye" style="color:var(--verde-bosque)"></i>' : '<i class="fa-solid fa-eye-slash opacity-40"></i>') + '</td>' +
+          '<td class="text-xs opacity-60">' + c.IconoFontAwesome + '</td>' +
+          '<td><button class="btn btn-outline !py-1 !px-2 text-xs mr-1" onclick="abrirFormCategoria(\'' + c.ID + '\')"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-peligro !py-1 !px-2 text-xs" onclick="eliminarCategoriaStaff(\'' + c.ID + '\')"><i class="fa-solid fa-trash"></i></button></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  });
+}
+
+function abrirFormCategoria(categoriaID) {
+  var cat = null;
+  if (categoriaID) cat = APP.categorias.filter(function (c) { return c.ID === categoriaID; })[0];
+  cat = cat || { Nombre: '', Orden: 0, Visible: true, IconoFontAwesome: 'fa-utensils', Color: '#D4AF37' };
+  var form =
+    '<input type="hidden" id="catID" value="' + (categoriaID || '') + '">' +
+    '<label class="lbl">Nombre</label><input id="catNombre" class="input mb-2" value="' + escaparHTML(cat.Nombre) + '">' +
+    '<div class="grid grid-cols-2 gap-2">' +
+      '<div><label class="lbl">Orden</label><input id="catOrden" type="number" class="input mb-2" value="' + cat.Orden + '"></div>' +
+      '<div><label class="lbl">Icono (FontAwesome)</label><input id="catIcono" class="input mb-2" value="' + escaparHTML(cat.IconoFontAwesome) + '"></div>' +
+    '</div>' +
+    '<label class="lbl">Color</label><input id="catColor" type="color" class="input mb-2 h-11" value="' + cat.Color + '">' +
+    '<label class="flex items-center gap-2 text-sm mt-2"><span class="switch"><input type="checkbox" id="catVisible" ' + (cat.Visible ? 'checked' : '') + '><span class="slider"></span></span> Visible</label>';
+  mostrarModal({
+    titulo: categoriaID ? 'Editar categoria' : 'Nueva categoria',
+    contenidoHTML: form,
+    botones: [
+      { texto: 'Cancelar', clase: 'btn-outline', accion: cerrarModal },
+      { texto: 'Guardar', clase: 'btn-primary', accion: guardarCategoriaStaff }
+    ]
+  });
+}
+
+function guardarCategoriaStaff() {
+  var datos = {
+    id: document.getElementById('catID').value,
+    nombre: document.getElementById('catNombre').value,
+    orden: document.getElementById('catOrden').value,
+    iconoFontAwesome: document.getElementById('catIcono').value,
+    color: document.getElementById('catColor').value,
+    visible: document.getElementById('catVisible').checked,
+    email: APP.usuarioStaff.Email
+  };
+  llamarAPI('guardarCategoria', [datos]).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success) { cerrarModal(); cargarTablaCategorias(); }
+  });
+}
+
+function eliminarCategoriaStaff(categoriaID) {
+  mostrarModal({
+    titulo: 'Ocultar categoria',
+    contenidoHTML: '<p class="text-sm">La categoria se ocultara (soft delete).</p>',
+    botones: [
+      { texto: 'Cancelar', clase: 'btn-outline', accion: cerrarModal },
+      { texto: 'Ocultar', clase: 'btn-peligro', accion: function () {
+        llamarAPI('eliminarCategoria', [categoriaID, APP.usuarioStaff.Email]).then(function (res) {
+          cerrarModal(); mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+          if (res.success) cargarTablaCategorias();
+        });
+      }}
+    ]
+  });
+}
+
+/* ---------- Historial de Pedidos ---------- */
+function renderHistorial() {
+  var cont = document.getElementById('staffHistorial');
+  var serviciosOpts = '<option value="">Todos</option>' + APP.servicios.map(function (s) {
+    return '<option value="' + s.ID + '">' + escaparHTML(s.Nombre) + '</option>';
+  }).join('');
+  cont.innerHTML =
+    '<h2 class="text-2xl mb-1" style="color:var(--verde-bosque)">Historial de Pedidos</h2>' +
+    '<p class="text-sm opacity-60 mb-4">Consulta interna. No genera comprobantes. Cada busqueda queda registrada para auditoria.</p>' +
+    '<div class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">' +
+      '<div><label class="lbl">Habitacion</label><input id="hisHab" class="input" placeholder="Ej: 105"></div>' +
+      '<div><label class="lbl">Desde</label><input id="hisDesde" class="input"></div>' +
+      '<div><label class="lbl">Hasta</label><input id="hisHasta" class="input"></div>' +
+      '<div><label class="lbl">Servicio</label><select id="hisServicio" class="input">' + serviciosOpts + '</select></div>' +
+      '<div class="md:col-span-4"><label class="lbl">Producto (nombre)</label><input id="hisProducto" class="input" placeholder="Ej: ceviche"></div>' +
+    '</div>' +
+    '<div class="mb-3"><button class="btn btn-primary" onclick="buscarHistorial()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button></div>' +
+    '<div class="card p-4 overflow-x-auto"><div id="tablaHistorial"><p class="text-sm opacity-60 py-4 text-center">Ingresa filtros y busca.</p></div></div>';
+  flatpickr('#hisDesde', { locale: 'es', dateFormat: 'Y-m-d' });
+  flatpickr('#hisHasta', { locale: 'es', dateFormat: 'Y-m-d' });
+}
+
+function buscarHistorial() {
+  // Resuelve productoID por nombre (si se ingreso).
+  var nombreProd = (document.getElementById('hisProducto').value || '').toLowerCase();
+  var productoID = '';
+  if (nombreProd && APP.productosGestion) {
+    var encontrado = APP.productosGestion.filter(function (p) { return p.Nombre.toLowerCase().indexOf(nombreProd) !== -1; })[0];
+    if (encontrado) productoID = encontrado.ID;
+  }
+  var filtros = {
+    habitacion: document.getElementById('hisHab').value || '',
+    fechaDesde: document.getElementById('hisDesde').value || '',
+    fechaHasta: document.getElementById('hisHasta').value || '',
+    servicioID: document.getElementById('hisServicio').value || '',
+    productoID: productoID,
+    usuarioConsulta: APP.usuarioStaff.Email
+  };
+  var tabla = document.getElementById('tablaHistorial');
+  tabla.innerHTML = '<div class="flex justify-center py-6"><div class="spinner"></div></div>';
+  // Asegura productos cargados para la resolucion de nombre proxima vez.
+  if (!APP.productosGestion) {
+    llamarAPI('obtenerProductosGestion', [], { loader: false }).then(function (p) { APP.productosGestion = p; });
+  }
+  llamarAPI('buscarHistorialPedidos', [filtros], { loader: false }).then(function (resultados) {
+    if (!resultados.length) { tabla.innerHTML = '<p class="text-sm opacity-60 py-4 text-center">Sin resultados.</p>'; return; }
+    tabla.innerHTML = '<table class="tabla"><thead><tr><th>Fecha</th><th>Hab</th><th>Servicio</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead><tbody>' +
+      resultados.map(function (r) {
+        return '<tr><td>' + r.Fecha + '</td><td>' + r.Habitacion + '</td><td>' + escaparHTML(r.ServicioNombre) + '</td>' +
+          '<td class="text-xs">' + escaparHTML(r.Resumen) + '</td><td>' + fmtMoneda(r.Total) + '</td>' +
+          '<td><span class="pill estado-Finalizada">' + escaparHTML(r.Estado) + '</span></td></tr>';
+      }).join('') + '</tbody></table>';
+  });
+}
+
+/* ---------- Bloqueos ---------- */
+function renderBloqueos() {
+  var cont = document.getElementById('staffBloqueos');
+  var serviciosOpts = '<option value="">Todos los servicios</option>' + APP.servicios.map(function (s) {
+    return '<option value="' + s.ID + '">' + escaparHTML(s.Nombre) + '</option>';
+  }).join('');
+  cont.innerHTML =
+    '<h2 class="text-2xl mb-4" style="color:var(--verde-bosque)">Bloqueos y Eventos</h2>' +
+    '<div class="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">' +
+      '<div><label class="lbl">Tipo</label><select id="blqTipo" class="input"><option>Mantencion</option><option>Evento privado</option><option>Cierre</option><option>Bloqueo</option></select></div>' +
+      '<div><label class="lbl">Servicio</label><select id="blqServicio" class="input">' + serviciosOpts + '</select></div>' +
+      '<div><label class="lbl">Motivo</label><input id="blqMotivo" class="input" placeholder="Motivo"></div>' +
+      '<div><label class="lbl">Fecha inicio</label><input id="blqFechaIni" class="input"></div>' +
+      '<div><label class="lbl">Fecha fin</label><input id="blqFechaFin" class="input"></div>' +
+      '<div class="grid grid-cols-2 gap-2"><div><label class="lbl">Hora inicio</label><input id="blqHoraIni" class="input" placeholder="HH:MM"></div>' +
+        '<div><label class="lbl">Hora fin</label><input id="blqHoraFin" class="input" placeholder="HH:MM"></div></div>' +
+    '</div>' +
+    '<div class="mb-4"><button class="btn btn-primary" onclick="crearBloqueoStaff()"><i class="fa-solid fa-lock"></i> Crear bloqueo</button></div>' +
+    '<div class="card p-4 overflow-x-auto"><div id="tablaBloqueos"></div></div>';
+  flatpickr('#blqFechaIni', { locale: 'es', dateFormat: 'Y-m-d', minDate: 'today' });
+  flatpickr('#blqFechaFin', { locale: 'es', dateFormat: 'Y-m-d', minDate: 'today' });
+  cargarTablaBloqueos();
+}
+
+function crearBloqueoStaff() {
+  var datos = {
+    tipo: document.getElementById('blqTipo').value,
+    servicioID: document.getElementById('blqServicio').value,
+    motivo: document.getElementById('blqMotivo').value,
+    fechaInicio: document.getElementById('blqFechaIni').value,
+    fechaFin: document.getElementById('blqFechaFin').value,
+    horaInicio: document.getElementById('blqHoraIni').value,
+    horaFin: document.getElementById('blqHoraFin').value,
+    email: APP.usuarioStaff.Email
+  };
+  if (!datos.fechaInicio) { mostrarToast('Selecciona la fecha de inicio.', 'error'); return; }
+  llamarAPI('crearBloqueo', [datos]).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success) cargarTablaBloqueos();
+  });
+}
+
+function cargarTablaBloqueos() {
+  var tabla = document.getElementById('tablaBloqueos');
+  var hoy = hoyISO();
+  var enUnAno = (new Date().getFullYear() + 1) + '-12-31';
+  llamarAPI('obtenerBloqueos', [hoy, enUnAno, ''], { loader: false }).then(function (bloqueos) {
+    if (!bloqueos.length) { tabla.innerHTML = '<p class="text-sm opacity-60 py-4 text-center">Sin bloqueos vigentes.</p>'; return; }
+    var servNombre = {}; APP.servicios.forEach(function (s) { servNombre[s.ID] = s.Nombre; });
+    tabla.innerHTML = '<table class="tabla"><thead><tr><th>Tipo</th><th>Servicio</th><th>Desde</th><th>Hasta</th><th>Horario</th><th>Motivo</th></tr></thead><tbody>' +
+      bloqueos.map(function (b) {
+        return '<tr><td>' + escaparHTML(b.Tipo) + '</td><td>' + escaparHTML(servNombre[b.ServicioID] || 'Todos') + '</td>' +
+          '<td>' + b.FechaInicio + '</td><td>' + b.FechaFin + '</td>' +
+          '<td>' + (b.HoraInicio || '—') + ' - ' + (b.HoraFin || '—') + '</td>' +
+          '<td class="text-xs">' + escaparHTML(b.Motivo) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  });
+}
+
+/* ---------- Configuracion ---------- */
+function renderConfig() {
+  var cont = document.getElementById('staffConfig');
+  cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
+  llamarAPI('obtenerConfiguracionCompleta', [], { loader: false }).then(function (config) {
+    APP.config = config;
+    // Agrupa claves relevantes editables.
+    var claves = Object.keys(config);
+    var filas = claves.map(function (k) {
+      var valor = config[k];
+      var esDesc = k === 'DESAYUNO_HABITACION_DESCRIPCION';
+      var input = esDesc
+        ? '<textarea id="cfg-' + k + '" class="input" rows="2">' + escaparHTML(valor) + '</textarea>'
+        : '<input id="cfg-' + k + '" class="input" value="' + escaparHTML(valor) + '">';
+      return '<div class="mb-3"><label class="lbl">' + k + '</label>' + input +
+        '<button class="btn btn-outline !py-1 !px-3 text-xs mt-1" onclick="guardarConfig(\'' + k + '\')"><i class="fa-solid fa-floppy-disk"></i> Guardar</button></div>';
+    }).join('');
+
+    // Toggle destacado para Desayuno Habitacion.
+    var activo = (config.DESAYUNO_HABITACION_ACTIVO || '').toString().toUpperCase() === 'TRUE';
+    var destacado = '<div class="card p-4 mb-4" style="border-left:4px solid var(--dorado)">' +
+      '<div class="flex items-center justify-between"><div><p class="font-semibold">Desayuno a la habitacion</p>' +
+      '<p class="text-xs opacity-60">Habilita o deshabilita el servicio para los huespedes.</p></div>' +
+      '<label class="switch"><input type="checkbox" id="toggleDesayunoHab" ' + (activo ? 'checked' : '') + ' onchange="toggleDesayunoHab(this.checked)"><span class="slider"></span></label></div></div>';
+
+    cont.innerHTML = '<h2 class="text-2xl mb-4" style="color:var(--verde-bosque)">Configuracion</h2>' + destacado +
+      '<div class="card p-4 grid grid-cols-1 md:grid-cols-2 gap-x-6">' + filas + '</div>';
+  });
+}
+
+function guardarConfig(clave) {
+  var valor = document.getElementById('cfg-' + clave).value;
+  llamarAPI('actualizarConfiguracion', [clave, valor, APP.usuarioStaff.Email]).then(function (res) {
+    mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+    if (res.success) APP.config[clave] = valor;
+  });
+}
+
+function toggleDesayunoHab(activo) {
+  llamarAPI('actualizarConfiguracion', ['DESAYUNO_HABITACION_ACTIVO', activo ? 'TRUE' : 'FALSE', APP.usuarioStaff.Email], { loader: false })
+    .then(function (res) {
+      mostrarToast(res.mensaje, res.success ? 'exito' : 'error');
+      if (res.success) APP.config.DESAYUNO_HABITACION_ACTIVO = activo ? 'TRUE' : 'FALSE';
+    });
+}
+</script>
+</body>
+</html>
