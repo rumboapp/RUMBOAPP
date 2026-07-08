@@ -52,6 +52,10 @@ function crearBaseDeDatos() {
   // Elimina la hoja "Hoja 1" / "Sheet1" creada por defecto.
   _eliminarHojaPorDefecto(ss);
 
+  // Fuerza los horarios como TEXTO para que Sheets no los convierta a fechas.
+  // (_normalizarHorariosComoTexto esta definida en Code.gs, mismo proyecto.)
+  _normalizarHorariosComoTexto(ss);
+
   // Persiste el ID para que Code.gs lo use sin configuración manual.
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', id);
 

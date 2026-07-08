@@ -51,6 +51,59 @@ function diagnostico() {
   }
 }
 
+/**
+ * MIGRACION. Reescribe los horarios de Servicios y Configuracion como TEXTO
+ * "HH:MM", porque Google Sheets los convirtio a valores de hora (fechas) y eso
+ * rompe el motor de horarios. Ejecutala UNA vez desde el editor.
+ */
+function repararHorarios() {
+  _normalizarHorariosComoTexto(_ss());
+  Logger.log('Horarios reparados como texto. Revisa la hoja Servicios (columnas I y J).');
+}
+
+/**
+ * Fuerza formato de texto y reescribe los horarios correctos en un Spreadsheet.
+ * Se usa tanto en la migracion como al final de crearBaseDeDatos().
+ * @param {Spreadsheet} ss
+ */
+function _normalizarHorariosComoTexto(ss) {
+  // Servicios: columnas HorarioInicio (9) y HorarioFin (10).
+  var serv = ss.getSheetByName('Servicios');
+  if (serv) {
+    var horariosServicios = {
+      'S001': ['08:30', '10:30'], 'S002': ['08:30', '10:30'], 'S003': ['13:00', '22:00'],
+      'S004': ['19:00', '22:00'], 'S005': ['10:00', '22:00'], 'S006': ['10:00', '18:00'],
+      'S007': ['10:00', '20:00']
+    };
+    var datosServ = serv.getDataRange().getValues();
+    for (var i = 1; i < datosServ.length; i++) {
+      var idServ = datosServ[i][0];
+      if (horariosServicios[idServ]) {
+        serv.getRange(i + 1, 9).setNumberFormat('@').setValue(horariosServicios[idServ][0]);
+        serv.getRange(i + 1, 10).setNumberFormat('@').setValue(horariosServicios[idServ][1]);
+      }
+    }
+  }
+
+  // Configuracion: los valores de horario tambien como texto.
+  var conf = ss.getSheetByName('Configuracion');
+  if (conf) {
+    var horariosConfig = {
+      'DESAYUNO_HORARIO_INICIO': '08:30', 'DESAYUNO_HORARIO_FIN': '10:30',
+      'ALMUERZO_HORARIO_INICIO': '13:00', 'ALMUERZO_HORARIO_FIN': '22:00',
+      'CENA_HORARIO_INICIO': '19:00', 'CENA_HORARIO_FIN': '22:00',
+      'TINAJA_HORARIO_INICIO': '10:00', 'TINAJA_HORARIO_FIN': '22:00'
+    };
+    var datosConf = conf.getDataRange().getValues();
+    for (var j = 1; j < datosConf.length; j++) {
+      var clave = datosConf[j][0];
+      if (horariosConfig[clave]) {
+        conf.getRange(j + 1, 2).setNumberFormat('@').setValue(horariosConfig[clave]);
+      }
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // CONSTANTES DE NOMBRES DE HOJAS (unica fuente de verdad)
 // ---------------------------------------------------------------------------
@@ -368,6 +421,10 @@ function _obtenerCategoriaPorID(categoriaID) {
 /** Convierte "HH:MM" a minutos desde medianoche. */
 function _horaAMinutos(hora) {
   if (!hora) return 0;
+  // Respaldo: si una celda quedo con formato de hora, llega como Date.
+  if (hora instanceof Date) {
+    hora = Utilities.formatDate(hora, _ss().getSpreadsheetTimeZone(), 'HH:mm');
+  }
   var partes = String(hora).split(':');
   return (parseInt(partes[0], 10) || 0) * 60 + (parseInt(partes[1], 10) || 0);
 }
