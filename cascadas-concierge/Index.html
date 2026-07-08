@@ -293,7 +293,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button class="btn !py-2 !px-3 relative" style="background: rgba(255,255,255,.1); color:#fff"
-                onclick="navStaff('Operaciones')" title="Notificaciones">
+                onclick="abrirPanelNotificaciones()" title="Notificaciones">
           <i class="fa-solid fa-bell"></i>
           <span id="badgeNotif" class="oculto absolute -top-1 -right-1 bg-[var(--dorado)] text-[var(--antracita)] text-[10px] rounded-full px-1.5"></span>
         </button>
@@ -343,6 +343,10 @@ var APP = {
   config: {},             // configuracion completa
   servicios: [],          // servicios activos
   categorias: [],         // categorias visibles
+  categoriasTodas: [],    // todas las categorias (gestion staff)
+  carta: null,            // carta completa en memoria {categorias, productosPorCategoria}
+  misReservas: [],        // reservas del huesped en memoria
+  fechaOps: null,         // fecha visible en el centro de operaciones
   carrito: [],            // prepedido en construccion
   reservaPrepedido: null, // reserva sobre la que se hace prepedido
   cuentaRegresiva: null   // intervalo de la cuenta regresiva
@@ -499,10 +503,14 @@ window.addEventListener('DOMContentLoaded', function () {
   var habQuery = params.get('hab');
   if (!APP.habitacion && habQuery) APP.habitacion = habQuery.trim();
 
-  // Carga configuracion base y decide vista.
-  llamarAPI('obtenerConfiguracionCompleta', [], { loader: false }).then(function (config) {
-    APP.config = config || {};
-    if ((config.MODO_OSCURO_DEFAULT || '').toString().toUpperCase() === 'TRUE') {
+  // Carga TODO lo inicial en UNA sola llamada (config + servicios + categorias):
+  // cada viaje al servidor cuesta ~1-2s, asi que agruparlos acelera el arranque.
+  llamarAPI('obtenerDatosIniciales', [], { loader: false }).then(function (datos) {
+    APP.config = datos.config || {};
+    APP.servicios = datos.servicios || [];
+    APP.categorias = datos.categorias || [];
+    APP.categoriasTodas = datos.categoriasTodas || [];
+    if ((APP.config.MODO_OSCURO_DEFAULT || '').toString().toUpperCase() === 'TRUE') {
       document.body.classList.add('dark-mode');
     }
     document.getElementById('cargaInicial').classList.add('oculto');
@@ -579,11 +587,13 @@ function iniciarHuesped() {
   actualizarHora();
   setInterval(actualizarHora, 30000);
 
-  // Carga servicios y categorias por separado: si una falla, la otra no se cae.
-  cargarServiciosHuesped();
-  llamarAPI('obtenerCategoriasMenu', [], { loader: false }).then(function (c) {
-    APP.categorias = c || [];
-  }).catch(function () { APP.categorias = APP.categorias || []; });
+  // Los servicios y categorias ya llegaron con obtenerDatosIniciales.
+  // Solo se piden de nuevo si por algun motivo no estan (respaldo).
+  if (APP.servicios && APP.servicios.length) {
+    renderReservar();
+  } else {
+    cargarServiciosHuesped();
+  }
 }
 
 /* Carga los servicios activos de forma aislada y refresca la vista Reservar. */
@@ -788,14 +798,34 @@ function confirmarReserva() {
   };
   llamarAPI('crearReserva', [datos]).then(function (res) {
     if (!res.success) { mostrarToast(res.mensaje, 'error'); return; }
-    mostrarModal({
-      titulo: 'Reserva registrada',
-      contenidoHTML: '<div class="text-center"><i class="fa-solid fa-circle-check text-4xl mb-3" style="color: var(--verde-bosque)"></i>' +
-        '<p class="text-sm">Tu reserva de <b>' + escaparHTML(s.Nombre) + '</b> quedo en estado <span class="pill ' +
-        claseEstado(res.estado) + '">' + res.estado + '</span>.</p>' +
-        (s.RequiereAprobacion ? '<p class="text-xs opacity-60 mt-2">Este servicio requiere confirmacion del hotel.</p>' : '') + '</div>',
-      botones: [{ texto: 'Ver mis reservas', clase: 'btn-primary', accion: function () { cerrarModal(); navHuesped('MisReservas'); } }]
-    });
+
+    var encabezadoExito = '<div class="text-center"><i class="fa-solid fa-circle-check text-4xl mb-3" style="color: var(--verde-bosque)"></i>' +
+      '<p class="text-sm">Tu reserva de <b>' + escaparHTML(s.Nombre) + '</b> quedo en estado <span class="pill ' +
+      claseEstado(res.estado) + '">' + res.estado + '</span>.</p>';
+
+    if (s.PermitePrepedido) {
+      // Restaurant (almuerzo/cena): ofrece dejar el pedido listo de una vez.
+      var reservaNueva = {
+        ID: res.id, ServicioID: s.ID, ServicioNombre: s.Nombre, Estado: res.estado,
+        Fecha: datos.fecha, HoraInicio: datos.horaInicio, Personas: datos.personas, PrepedidoID: ''
+      };
+      mostrarModal({
+        titulo: 'Reserva registrada',
+        contenidoHTML: encabezadoExito +
+          '<p class="text-sm mt-3 opacity-80">¿Quieres dejar tu pedido listo para que la cocina lo prepare a tiempo?</p></div>',
+        botones: [
+          { texto: 'Solo la reserva', clase: 'btn-outline', accion: function () { cerrarModal(); navHuesped('MisReservas'); } },
+          { texto: 'Agregar pedido ahora', clase: 'btn-primary', accion: function () { abrirPrepedido(res.id, reservaNueva); } }
+        ]
+      });
+    } else {
+      mostrarModal({
+        titulo: 'Reserva registrada',
+        contenidoHTML: encabezadoExito +
+          (s.RequiereAprobacion ? '<p class="text-xs opacity-60 mt-2">Este servicio requiere confirmacion del hotel.</p>' : '') + '</div>',
+        botones: [{ texto: 'Ver mis reservas', clase: 'btn-primary', accion: function () { cerrarModal(); navHuesped('MisReservas'); } }]
+      });
+    }
     renderReservar();
   });
 }
@@ -805,6 +835,7 @@ function renderMisReservas() {
   var cont = document.getElementById('seccionMisReservas');
   cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
   llamarAPI('obtenerReservas', [{ habitacion: APP.habitacion }], { loader: false }).then(function (reservas) {
+    APP.misReservas = reservas || []; // en memoria para abrir prepedidos sin otra llamada
     if (!reservas.length) {
       cont.innerHTML = '<div class="card p-8 text-center"><i class="fa-regular fa-calendar text-3xl opacity-30 mb-2"></i>' +
         '<p class="text-sm opacity-60">Aun no tienes reservas.</p></div>';
@@ -819,7 +850,11 @@ function renderMisReservas() {
 
 function tarjetaReserva(r) {
   var puedeCancelar = ['Solicitada', 'Pendiente aprobacion', 'Confirmada'].indexOf(r.Estado) !== -1;
-  var esGastroPrepedible = (r.ServicioID === 'S003' || r.ServicioID === 'S004') && r.Estado === 'Confirmada';
+  // El prepedido aplica a servicios con PermitePrepedido (almuerzo/cena),
+  // desde que se solicita la reserva hasta que se confirma.
+  var servicio = (APP.servicios || []).filter(function (s) { return s.ID === r.ServicioID; })[0];
+  var esGastroPrepedible = servicio && servicio.PermitePrepedido &&
+    ['Solicitada', 'Confirmada'].indexOf(r.Estado) !== -1;
   var linkPrepedido = '';
   if (esGastroPrepedible) {
     var texto = r.PrepedidoID ? 'Ver/modificar pedido' : 'Agregar pedido a esta reserva';
@@ -860,16 +895,48 @@ function cancelarReservaHuesped(id) {
 }
 
 /* ---------- Carta Digital (acordeon, sin fotos) ---------- */
+
+/**
+ * Garantiza que la carta completa este en memoria (APP.carta).
+ * Se pide UNA sola vez al servidor y queda cacheada para toda la sesion.
+ * @return {Promise}
+ */
+function asegurarCarta() {
+  if (APP.carta) return Promise.resolve(APP.carta);
+  return llamarAPI('obtenerCartaCompleta', [], { loader: false, silencioso: true }).then(function (c) {
+    APP.carta = c;
+    return c;
+  });
+}
+
 function renderCarta() {
   var cont = document.getElementById('seccionCarta');
+  if (!APP.carta) {
+    cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
+    asegurarCarta().then(pintarCarta).catch(function () {
+      cont.innerHTML = htmlError('No pudimos cargar la carta.', 'renderCarta()');
+    });
+  } else {
+    pintarCarta();
+  }
+}
+
+/* Pinta el acordeon completo desde memoria: abrir categorias es instantaneo. */
+function pintarCarta() {
+  var cont = document.getElementById('seccionCarta');
   cont.innerHTML = '<h3 class="text-2xl mb-4" style="color: var(--verde-bosque)">Carta</h3>' +
-    APP.categorias.map(function (c) {
+    APP.carta.categorias.map(function (c) {
+      var productos = APP.carta.productosPorCategoria[c.ID] || [];
+      var cuerpo = productos.length
+        ? '<div class="p-4 pt-0 space-y-3">' + productos.map(tarjetaProductoCarta).join('') + '</div>'
+        : '<div class="p-4 pt-0 text-sm opacity-50">Sin productos disponibles.</div>';
       return '<div class="card mb-2 overflow-hidden">' +
         '<div class="acordeon-header flex items-center justify-between p-4" onclick="toggleAcordeon(this,\'' + c.ID + '\')">' +
-          '<span class="font-semibold"><i class="fa-solid ' + c.IconoFontAwesome + ' mr-2" style="color:' + c.Color + '"></i>' + escaparHTML(c.Nombre) + '</span>' +
+          '<span class="font-semibold"><i class="fa-solid ' + c.IconoFontAwesome + ' mr-2" style="color:' + c.Color + '"></i>' + escaparHTML(c.Nombre) +
+          ' <span class="text-xs opacity-40 font-normal">(' + productos.length + ')</span></span>' +
           '<i class="fa-solid fa-chevron-down transition-transform"></i>' +
         '</div>' +
-        '<div class="acordeon-body" id="cat-' + c.ID + '"><div class="p-4 pt-0 text-sm opacity-50">Cargando...</div></div>' +
+        '<div class="acordeon-body" id="cat-' + c.ID + '">' + cuerpo + '</div>' +
       '</div>';
     }).join('');
 }
@@ -878,27 +945,8 @@ function toggleAcordeon(header, categoriaID) {
   var body = document.getElementById('cat-' + categoriaID);
   var chevron = header.querySelector('.fa-chevron-down');
   var abierto = body.classList.contains('abierto');
-  if (abierto) {
-    body.classList.remove('abierto');
-    chevron.style.transform = '';
-    return;
-  }
-  body.classList.add('abierto');
-  chevron.style.transform = 'rotate(180deg)';
-  // Carga productos si aun no se cargaron.
-  if (!body.getAttribute('data-cargado')) {
-    llamarAPI('obtenerProductosPorCategoria', [categoriaID], { loader: false }).then(function (productos) {
-      body.setAttribute('data-cargado', '1');
-      if (!productos.length) {
-        body.innerHTML = '<div class="p-4 pt-0 text-sm opacity-50">Sin productos disponibles.</div>';
-        return;
-      }
-      body.innerHTML = '<div class="p-4 pt-0 space-y-3">' + productos.map(tarjetaProductoCarta).join('') + '</div>';
-    }).catch(function () {
-      body.removeAttribute('data-cargado');
-      body.innerHTML = '<div class="p-4 pt-0 text-sm opacity-60">No pudimos cargar esta categoria. Toca de nuevo para reintentar.</div>';
-    });
-  }
+  body.classList.toggle('abierto', !abierto);
+  chevron.style.transform = abierto ? '' : 'rotate(180deg)';
 }
 
 function tarjetaProductoCarta(p) {
@@ -915,55 +963,63 @@ function tarjetaProductoCarta(p) {
 }
 
 /* ---------- Prepedido (modal) ---------- */
-function abrirPrepedido(reservaID) {
+
+/**
+ * Abre el modal de prepedido para una reserva.
+ * @param {string} reservaID
+ * @param {Object} reservaObj Opcional: la reserva ya conocida (recien creada),
+ *   para no volver a pedirla al servidor.
+ */
+function abrirPrepedido(reservaID, reservaObj) {
   APP.reservaPrepedido = reservaID;
   APP.carrito = [];
-  // Carga pedido existente (si lo hay) y la carta.
-  llamarAPI('obtenerPedidosPorReserva', [reservaID], { loader: true }).then(function (existente) {
+
+  // La reserva ya esta en memoria (recien creada o listada en Mis Reservas).
+  var reserva = reservaObj ||
+    (APP.misReservas || []).filter(function (r) { return r.ID === reservaID; })[0] || null;
+
+  // En paralelo: pedido existente (si lo hay) + carta en memoria.
+  Promise.all([
+    llamarAPI('obtenerPedidosPorReserva', [reservaID], { loader: true }),
+    asegurarCarta()
+  ]).then(function (resultados) {
+    var existente = resultados[0];
     if (existente && existente.detalles) {
       APP.carrito = existente.detalles.map(function (d) {
         return { productoID: d.ProductoID, nombre: d.Nombre, precio: d.PrecioUnitario, cantidad: d.Cantidad };
       });
     }
-    renderModalPrepedido();
+    renderModalPrepedido(reserva);
   }).catch(function () {
     mostrarToast('No pudimos abrir el pedido. Intenta de nuevo.', 'error');
   });
 }
 
-function renderModalPrepedido() {
-  var reserva = null;
-  // Busca hora de la reserva para la cuenta regresiva.
-  llamarAPI('obtenerReservas', [{ habitacion: APP.habitacion }], { loader: false }).then(function (reservas) {
-    reserva = reservas.filter(function (r) { return r.ID === APP.reservaPrepedido; })[0];
+function renderModalPrepedido(reserva) {
+  var categoriasHTML = APP.carta.categorias.map(function (c) {
+    return '<button class="btn btn-outline !py-1.5 text-xs" onclick="cargarProductosPrepedido(\'' + c.ID + '\')">' + escaparHTML(c.Nombre) + '</button>';
+  }).join(' ');
 
-    var categoriasHTML = APP.categorias.map(function (c) {
-      return '<button class="btn btn-outline !py-1.5 text-xs" onclick="cargarProductosPrepedido(\'' + c.ID + '\', this)">' + escaparHTML(c.Nombre) + '</button>';
-    }).join(' ');
+  var contenido =
+    '<div id="contadorPrepedido" class="text-xs mb-3 text-center opacity-70"></div>' +
+    '<div class="flex flex-wrap gap-1 mb-3">' + categoriasHTML + '</div>' +
+    '<div id="listaProductosPrepedido" class="space-y-2 mb-4 max-h-60 overflow-y-auto"><p class="text-xs opacity-50 text-center py-4">Elige una categoria para ver productos.</p></div>' +
+    '<div class="border-t pt-3" style="border-color: var(--borde)">' +
+      '<p class="font-semibold mb-2"><i class="fa-solid fa-basket-shopping"></i> Tu pedido</p>' +
+      '<div id="carritoPrepedido"></div>' +
+    '</div>';
 
-    var contenido =
-      '<div id="contadorPrepedido" class="text-xs mb-3 text-center opacity-70"></div>' +
-      '<div class="flex flex-wrap gap-1 mb-3">' + categoriasHTML + '</div>' +
-      '<div id="listaProductosPrepedido" class="space-y-2 mb-4 max-h-60 overflow-y-auto"><p class="text-xs opacity-50 text-center py-4">Elige una categoria para ver productos.</p></div>' +
-      '<div class="border-t pt-3" style="border-color: var(--borde)">' +
-        '<p class="font-semibold mb-2"><i class="fa-solid fa-basket-shopping"></i> Tu pedido</p>' +
-        '<div id="carritoPrepedido"></div>' +
-      '</div>';
-
-    mostrarModal({
-      titulo: 'Agregar pedido',
-      contenidoHTML: contenido,
-      botones: [
-        { texto: 'Cerrar', clase: 'btn-outline', accion: cerrarModal },
-        { texto: 'Guardar pedido', clase: 'btn-primary', accion: guardarPrepedido }
-      ]
-    });
-
-    renderCarritoPrepedido();
-    iniciarContadorPrepedido(reserva);
-  }).catch(function () {
-    mostrarToast('No pudimos cargar tu reserva. Intenta de nuevo.', 'error');
+  mostrarModal({
+    titulo: 'Agregar pedido',
+    contenidoHTML: contenido,
+    botones: [
+      { texto: 'Cerrar', clase: 'btn-outline', accion: cerrarModal },
+      { texto: 'Guardar pedido', clase: 'btn-primary', accion: guardarPrepedido }
+    ]
   });
+
+  renderCarritoPrepedido();
+  iniciarContadorPrepedido(reserva);
 }
 
 function iniciarContadorPrepedido(reserva) {
@@ -988,20 +1044,17 @@ function iniciarContadorPrepedido(reserva) {
   APP.cuentaRegresiva = setInterval(tick, 1000);
 }
 
-function cargarProductosPrepedido(categoriaID, btn) {
+function cargarProductosPrepedido(categoriaID) {
+  // Los productos ya estan en memoria (APP.carta): render instantaneo.
   var lista = document.getElementById('listaProductosPrepedido');
-  lista.innerHTML = '<div class="flex justify-center py-3"><div class="spinner"></div></div>';
-  llamarAPI('obtenerProductosPorCategoria', [categoriaID], { loader: false }).then(function (productos) {
-    if (!productos.length) { lista.innerHTML = '<p class="text-xs opacity-50 text-center py-4">Sin productos.</p>'; return; }
-    lista.innerHTML = productos.map(function (p) {
-      return '<div class="flex items-center justify-between gap-2 text-sm">' +
-        '<div><p class="font-medium">' + escaparHTML(p.Nombre) + '</p><p class="text-xs opacity-60">' + fmtMoneda(p.Precio) + '</p></div>' +
-        '<button class="btn btn-dorado !py-1 !px-3 text-xs" onclick="agregarAlCarrito(\'' + p.ID + '\',\'' + escaparHTML(p.Nombre).replace(/'/g, "\\'") + '\',' + p.Precio + ')">+</button>' +
-      '</div>';
-    }).join('');
-  }).catch(function () {
-    lista.innerHTML = '<p class="text-xs opacity-60 text-center py-4">No pudimos cargar los productos. Elige la categoria de nuevo.</p>';
-  });
+  var productos = (APP.carta && APP.carta.productosPorCategoria[categoriaID]) || [];
+  if (!productos.length) { lista.innerHTML = '<p class="text-xs opacity-50 text-center py-4">Sin productos.</p>'; return; }
+  lista.innerHTML = productos.map(function (p) {
+    return '<div class="flex items-center justify-between gap-2 text-sm">' +
+      '<div><p class="font-medium">' + escaparHTML(p.Nombre) + '</p><p class="text-xs opacity-60">' + fmtMoneda(p.Precio) + '</p></div>' +
+      '<button class="btn btn-dorado !py-1 !px-3 text-xs" onclick="agregarAlCarrito(\'' + p.ID + '\',\'' + escaparHTML(p.Nombre).replace(/'/g, "\\'") + '\',' + p.Precio + ')">+</button>' +
+    '</div>';
+  }).join('');
 }
 
 function agregarAlCarrito(productoID, nombre, precio) {
@@ -1062,13 +1115,11 @@ function iniciarStaff() {
   // Ajusta visibilidad de pestanas segun rol.
   ajustarNavPorRol();
 
-  // Carga servicios y categorias por separado para evitar que una falla bloquee todo.
-  llamarAPI('obtenerServiciosActivos', [], { loader: false }).then(function (s) {
-    APP.servicios = s || [];
-  }).catch(function () { APP.servicios = APP.servicios || []; });
-  llamarAPI('obtenerCategoriasTodas', [], { loader: false }).then(function (c) {
-    APP.categorias = c || [];
-  }).catch(function () { APP.categorias = APP.categorias || []; });
+  // El staff usa TODAS las categorias (incluidas ocultas) para gestion.
+  // Ya llegaron con obtenerDatosIniciales; no hay que volver a pedirlas.
+  if (APP.categoriasTodas && APP.categoriasTodas.length) {
+    APP.categorias = APP.categoriasTodas;
+  }
 
   navStaff('Operaciones');
   refrescarBadgeNotif();
@@ -1103,6 +1154,62 @@ function navStaff(seccion) {
   if (seccion === 'Config') renderConfig();
 }
 
+/* ---------- Panel de notificaciones (campana) ---------- */
+function abrirPanelNotificaciones() {
+  mostrarModal({
+    titulo: '<i class="fa-solid fa-bell mr-1" style="color: var(--dorado)"></i> Notificaciones',
+    contenidoHTML: '<div id="listaNotifs" class="max-h-96 overflow-y-auto"><div class="flex justify-center py-6"><div class="spinner"></div></div></div>',
+    botones: [
+      { texto: 'Marcar todas como leidas', clase: 'btn-outline', accion: marcarTodasLeidas },
+      { texto: 'Cerrar', clase: 'btn-primary', accion: cerrarModal }
+    ]
+  });
+  cargarListaNotificaciones();
+}
+
+function cargarListaNotificaciones() {
+  var lista = document.getElementById('listaNotifs');
+  llamarAPI('obtenerNotificaciones', [APP.usuarioStaff.Rol, '', false], { loader: false, silencioso: true })
+    .then(function (notifs) {
+      if (!lista) return; // el modal pudo cerrarse mientras cargaba
+      if (!notifs || !notifs.length) {
+        lista.innerHTML = '<p class="text-sm opacity-60 text-center py-6"><i class="fa-regular fa-bell-slash mr-1"></i> No hay notificaciones.</p>';
+        return;
+      }
+      lista.innerHTML = notifs.slice(0, 50).map(function (n) {
+        var noLeida = !n.Leida;
+        return '<div class="flex items-start gap-2 py-2 border-b" style="border-color: var(--borde);' + (noLeida ? '' : 'opacity:.55;') + '">' +
+          '<i class="fa-solid ' + (n.Tipo === 'capacidad' ? 'fa-triangle-exclamation' : 'fa-circle-info') + ' mt-1 text-sm" style="color: var(--dorado)"></i>' +
+          '<div class="flex-1">' +
+            '<p class="text-sm' + (noLeida ? ' font-semibold' : '') + '">' + escaparHTML(n.Mensaje) + '</p>' +
+            '<p class="text-[11px] opacity-50">' + escaparHTML(n.Timestamp) + '</p>' +
+          '</div>' +
+          (noLeida ? '<button class="btn btn-outline !py-1 !px-2 text-xs" title="Marcar leida" onclick="marcarLeidaUI(\'' + n.ID + '\', this)"><i class="fa-solid fa-check"></i></button>' : '') +
+        '</div>';
+      }).join('');
+    })
+    .catch(function () {
+      if (lista) lista.innerHTML = htmlError('No pudimos cargar las notificaciones.', 'cargarListaNotificaciones()');
+    });
+}
+
+function marcarLeidaUI(id, boton) {
+  boton.disabled = true;
+  llamarAPI('marcarNotificacionLeida', [id], { loader: false, silencioso: true }).then(function () {
+    var fila = boton.parentElement;
+    fila.style.opacity = '.55';
+    boton.remove();
+    refrescarBadgeNotif();
+  }).catch(function () { boton.disabled = false; });
+}
+
+function marcarTodasLeidas() {
+  llamarAPI('marcarTodasNotificacionesLeidas', [APP.usuarioStaff.Rol], { loader: false }).then(function () {
+    cargarListaNotificaciones();
+    refrescarBadgeNotif();
+  });
+}
+
 function refrescarBadgeNotif() {
   llamarAPI('obtenerNotificaciones', [APP.usuarioStaff.Rol, '', true], { loader: false, silencioso: true }).then(function (notifs) {
     var badge = document.getElementById('badgeNotif');
@@ -1112,10 +1219,48 @@ function refrescarBadgeNotif() {
 }
 
 /* ---------- Centro de Operaciones ---------- */
-function renderOperaciones() {
+
+/* Cambia el dia mostrado en el centro de operaciones (delta en dias). */
+function cambiarDiaOps(delta) {
+  var d = new Date((APP.fechaOps || hoyISO()) + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  renderOperaciones(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+}
+
+/* Nombre legible del dia: "Miercoles 9 de julio". */
+function nombreDia(fechaISO) {
+  var d = new Date(fechaISO + 'T12:00:00');
+  var texto = d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function renderOperaciones(fecha) {
+  APP.fechaOps = fecha || APP.fechaOps || hoyISO();
+  fecha = APP.fechaOps;
+  var esHoy = fecha === hoyISO();
+
   var cont = document.getElementById('staffOperaciones');
-  cont.innerHTML = '<div class="flex justify-center py-8"><div class="spinner"></div></div>';
-  var fecha = hoyISO();
+  // Barra de navegacion de fechas (siempre visible, el contenido carga abajo).
+  cont.innerHTML =
+    '<div class="flex flex-wrap items-center justify-between gap-3 mb-4">' +
+      '<h2 class="text-2xl" style="color:var(--verde-bosque)">Centro de Operaciones</h2>' +
+      '<div class="flex items-center gap-2">' +
+        '<button class="btn btn-outline !py-2 !px-3" onclick="cambiarDiaOps(-1)" title="Dia anterior"><i class="fa-solid fa-chevron-left"></i></button>' +
+        '<input id="fechaOps" class="input !w-40 text-center cursor-pointer" readonly>' +
+        '<button class="btn btn-outline !py-2 !px-3" onclick="cambiarDiaOps(1)" title="Dia siguiente"><i class="fa-solid fa-chevron-right"></i></button>' +
+        (esHoy ? '' : '<button class="btn btn-dorado !py-2 !px-3 text-sm" onclick="renderOperaciones(hoyISO())">Hoy</button>') +
+      '</div>' +
+    '</div>' +
+    '<p class="text-sm opacity-60 mb-4 -mt-2">' + nombreDia(fecha) + (esHoy ? ' · Hoy' : '') + '</p>' +
+    '<div id="opsContenido"><div class="flex justify-center py-8"><div class="spinner"></div></div></div>';
+
+  // Calendario para saltar a cualquier fecha.
+  flatpickr('#fechaOps', {
+    locale: 'es', dateFormat: 'Y-m-d', defaultDate: fecha,
+    onChange: function (sel, fechaStr) { if (fechaStr && fechaStr !== APP.fechaOps) renderOperaciones(fechaStr); }
+  });
+
+  var zona = document.getElementById('opsContenido');
   llamarAPI('obtenerCentroOperaciones', [fecha], { loader: false }).then(function (data) {
     var alertasHTML = (data.alertas || []).length ?
       '<div class="card p-4 mb-4" style="border-left:4px solid var(--dorado)"><p class="font-semibold mb-2"><i class="fa-solid fa-triangle-exclamation" style="color:var(--dorado)"></i> Alertas</p>' +
@@ -1132,12 +1277,12 @@ function renderOperaciones() {
               '<span class="pill ' + claseEstado(it.estado) + '">' + it.estado + '</span></div>';
           }).join('') +
         '</div></div>';
-    }).join('') : '<div class="card p-8 text-center opacity-60 text-sm">Sin actividad registrada para hoy.</div>';
+    }).join('') : '<div class="card p-8 text-center opacity-60 text-sm"><i class="fa-regular fa-calendar text-2xl block mb-2 opacity-50"></i>Sin actividad registrada para ' + (esHoy ? 'hoy' : 'este dia') + '.</div>';
 
-    cont.innerHTML = '<div class="flex items-center justify-between mb-4"><h2 class="text-2xl" style="color:var(--verde-bosque)">Centro de Operaciones</h2>' +
-      '<span class="text-sm opacity-60">' + fecha + '</span></div>' + alertasHTML + timelineHTML;
+    // Solo el contenido se reemplaza; la barra de fechas queda intacta.
+    zona.innerHTML = alertasHTML + timelineHTML;
   }).catch(function () {
-    cont.innerHTML = htmlError('No pudimos cargar el centro de operaciones.', 'renderOperaciones()');
+    zona.innerHTML = htmlError('No pudimos cargar el centro de operaciones.', 'renderOperaciones()');
   });
 }
 

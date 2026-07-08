@@ -225,11 +225,25 @@ function _hoja(nombre) {
 }
 
 /**
+ * Cache de lecturas dentro de una misma ejecucion. Solo para hojas "estaticas"
+ * (catalogos que no cambian durante una peticion): evita releer la planilla
+ * varias veces por llamada, que es lo mas lento de Apps Script.
+ */
+var _lecturaCache = {};
+var HOJAS_CACHEABLES = {
+  'Configuracion': true, 'Servicios': true, 'CategoriasProducto': true,
+  'Productos': true, 'Habitaciones': true, 'Usuarios': true
+};
+
+/**
  * Lee una hoja completa como array de objetos {columna: valor}.
  * @param {string} nombreHoja
  * @return {Array<Object>}
  */
 function _leerHojaComoObjetos(nombreHoja) {
+  if (HOJAS_CACHEABLES[nombreHoja] && _lecturaCache[nombreHoja]) {
+    return _lecturaCache[nombreHoja];
+  }
   var hoja = _hoja(nombreHoja);
   var datos = hoja.getDataRange().getValues();
   if (datos.length < 2) return [];
@@ -243,7 +257,38 @@ function _leerHojaComoObjetos(nombreHoja) {
     obj._fila = i + 1; // numero de fila real en la hoja (1-indexed)
     objetos.push(obj);
   }
+  if (HOJAS_CACHEABLES[nombreHoja]) _lecturaCache[nombreHoja] = objetos;
   return objetos;
+}
+
+// ---------------------------------------------------------------------------
+// CACHE ENTRE PETICIONES (CacheService)
+// Los catalogos (config, servicios, carta) casi no cambian: se sirven desde
+// cache por unos minutos y se invalidan al editar productos/categorias/config.
+// ---------------------------------------------------------------------------
+var CACHE_TTL_SEGUNDOS = 120;
+
+/** Lee un objeto JSON del cache de script (o null). */
+function _cacheGet(clave) {
+  try {
+    var v = CacheService.getScriptCache().get(clave);
+    return v ? JSON.parse(v) : null;
+  } catch (e) { return null; }
+}
+
+/** Guarda un objeto JSON en el cache de script. */
+function _cachePut(clave, obj, ttl) {
+  try {
+    CacheService.getScriptCache().put(clave, JSON.stringify(obj), ttl || CACHE_TTL_SEGUNDOS);
+  } catch (e) { /* si el objeto es muy grande, simplemente no se cachea */ }
+}
+
+/** Invalida los caches derivados y la lectura en memoria de una hoja. */
+function _invalidarCaches(nombreHoja) {
+  if (nombreHoja) _lecturaCache[nombreHoja] = null;
+  try {
+    CacheService.getScriptCache().removeAll(['datosIniciales', 'cartaCompleta']);
+  } catch (e) { /* nunca romper el flujo por el cache */ }
 }
 
 /** Convierte un valor de celda a booleano real (soporta "TRUE"/true/1). */
@@ -263,6 +308,49 @@ function _indiceColumna(hoja, nombreColumna) {
 // ===========================================================================
 // 6.2. FUNCIONES DE DATOS
 // ===========================================================================
+
+/**
+ * Devuelve en UNA sola llamada todo lo necesario para arrancar la app:
+ * configuracion, servicios activos y categorias. Cada llamada de
+ * google.script.run cuesta ~1-2s, asi que agruparlas acelera mucho la carga.
+ * Se sirve desde CacheService cuando es posible.
+ * @return {Object} {config, servicios, categorias, categoriasTodas}
+ */
+function obtenerDatosIniciales() {
+  var cacheado = _cacheGet('datosIniciales');
+  if (cacheado) return cacheado;
+  var datos = {
+    config: obtenerConfiguracionCompleta(),
+    servicios: obtenerServiciosActivos(),
+    categorias: obtenerCategoriasMenu(),
+    categoriasTodas: obtenerCategoriasTodas()
+  };
+  _cachePut('datosIniciales', datos);
+  return datos;
+}
+
+/**
+ * Devuelve la carta completa (categorias visibles + productos agrupados por
+ * categoria) en UNA sola llamada, cacheada. Evita una llamada por categoria.
+ * @return {Object} {categorias, productosPorCategoria}
+ */
+function obtenerCartaCompleta() {
+  var cacheado = _cacheGet('cartaCompleta');
+  if (cacheado) return cacheado;
+  var categorias = obtenerCategoriasMenu();
+  var productos = _leerHojaComoObjetos(HOJAS.PRODUCTOS)
+    .filter(function (p) { return _aBooleano(p.Disponible) && _aBooleano(p.Visible); })
+    .map(_normalizarProducto)
+    .sort(function (a, b) { return a.Orden - b.Orden; });
+  var porCategoria = {};
+  productos.forEach(function (p) {
+    if (!porCategoria[p.CategoriaID]) porCategoria[p.CategoriaID] = [];
+    porCategoria[p.CategoriaID].push(p);
+  });
+  var datos = { categorias: categorias, productosPorCategoria: porCategoria };
+  _cachePut('cartaCompleta', datos);
+  return datos;
+}
 
 /**
  * Devuelve toda la configuracion como objeto {clave: valor}.
@@ -1261,6 +1349,26 @@ function marcarNotificacionLeida(id) {
   return { success: false, mensaje: 'Notificacion no encontrada.' };
 }
 
+/**
+ * Marca como leidas todas las notificaciones de un rol.
+ * @param {string} rol
+ * @return {Object} {success, marcadas}
+ */
+function marcarTodasNotificacionesLeidas(rol) {
+  var hoja = _hoja(HOJAS.NOTIFICACIONES);
+  var datos = _leerHojaComoObjetos(HOJAS.NOTIFICACIONES);
+  var col = _indiceColumna(hoja, 'Leida') + 1;
+  var marcadas = 0;
+  datos.forEach(function (d) {
+    var paraRol = !d.DestinatarioRol || d.DestinatarioRol === 'TODOS' || d.DestinatarioRol === rol;
+    if (paraRol && !_aBooleano(d.Leida)) {
+      hoja.getRange(d._fila, col).setValue('TRUE');
+      marcadas++;
+    }
+  });
+  return { success: true, marcadas: marcadas };
+}
+
 // ===========================================================================
 // 6.6. BLOQUEOS Y EVENTOS
 // ===========================================================================
@@ -1370,6 +1478,7 @@ function guardarProducto(datos) {
     hoja.getRange(fila, _indiceColumna(hoja, 'EsMenuDelDia') + 1).setValue(esMenu);
     hoja.getRange(fila, _indiceColumna(hoja, 'FechaModificacion') + 1).setValue(ahora);
     hoja.getRange(fila, _indiceColumna(hoja, 'ModificadoPor') + 1).setValue(modificadoPor);
+    _invalidarCaches(HOJAS.PRODUCTOS);
     registrarLog('Editar producto', datos.id + ' ' + datos.nombre, '');
     return { success: true, id: datos.id, mensaje: 'Producto actualizado.' };
   } else {
@@ -1379,6 +1488,7 @@ function guardarProducto(datos) {
       nuevoID, datos.categoriaID, datos.nombre, datos.descripcion || '', precio,
       disponible, visible, orden, datos.etiquetas || '', tiempo, esMenu, ahora, modificadoPor
     ]);
+    _invalidarCaches(HOJAS.PRODUCTOS);
     registrarLog('Crear producto', nuevoID + ' ' + datos.nombre, '');
     return { success: true, id: nuevoID, mensaje: 'Producto creado.' };
   }
@@ -1421,6 +1531,7 @@ function eliminarProducto(productoID, email) {
       hoja.getRange(fila, _indiceColumna(hoja, 'Disponible') + 1).setValue('FALSE');
       hoja.getRange(fila, _indiceColumna(hoja, 'FechaModificacion') + 1).setValue(new Date());
       hoja.getRange(fila, _indiceColumna(hoja, 'ModificadoPor') + 1).setValue(email || 'sistema');
+      _invalidarCaches(HOJAS.PRODUCTOS);
       registrarLog('Eliminar producto (soft)', productoID, '');
       return { success: true, mensaje: 'Producto ocultado.' };
     }
@@ -1460,6 +1571,7 @@ function toggleDisponibleProducto(productoID, nuevoEstado, email) {
       hoja.getRange(fila, _indiceColumna(hoja, 'Disponible') + 1).setValue(nuevoEstado ? 'TRUE' : 'FALSE');
       hoja.getRange(fila, _indiceColumna(hoja, 'FechaModificacion') + 1).setValue(new Date());
       hoja.getRange(fila, _indiceColumna(hoja, 'ModificadoPor') + 1).setValue(email || 'sistema');
+      _invalidarCaches(HOJAS.PRODUCTOS);
       registrarLog('Toggle disponible', productoID + ' -> ' + nuevoEstado, '');
       return { success: true, mensaje: 'Disponibilidad actualizada.' };
     }
@@ -1506,6 +1618,7 @@ function guardarCategoria(datos) {
         hoja.getRange(fila, _indiceColumna(hoja, 'Visible') + 1).setValue(visible);
         hoja.getRange(fila, _indiceColumna(hoja, 'IconoFontAwesome') + 1).setValue(datos.iconoFontAwesome || 'fa-utensils');
         hoja.getRange(fila, _indiceColumna(hoja, 'Color') + 1).setValue(datos.color || '#D4AF37');
+        _invalidarCaches(HOJAS.CATEGORIAS);
         registrarLog('Editar categoria', datos.id, '');
         return { success: true, id: datos.id, mensaje: 'Categoria actualizada.' };
       }
@@ -1515,6 +1628,7 @@ function guardarCategoria(datos) {
     var nuevoID = _generarProximaCategoriaID();
     hoja.appendRow([nuevoID, datos.nombre, orden, visible,
       datos.iconoFontAwesome || 'fa-utensils', datos.color || '#D4AF37']);
+    _invalidarCaches(HOJAS.CATEGORIAS);
     registrarLog('Crear categoria', nuevoID + ' ' + datos.nombre, '');
     return { success: true, id: nuevoID, mensaje: 'Categoria creada.' };
   }
@@ -1547,6 +1661,7 @@ function eliminarCategoria(categoriaID, email) {
   for (var i = 0; i < cats.length; i++) {
     if (cats[i].ID === categoriaID) {
       hoja.getRange(cats[i]._fila, _indiceColumna(hoja, 'Visible') + 1).setValue('FALSE');
+      _invalidarCaches(HOJAS.CATEGORIAS);
       registrarLog('Eliminar categoria (soft)', categoriaID, '');
       return { success: true, mensaje: 'Categoria ocultada.' };
     }
@@ -1675,6 +1790,7 @@ function actualizarConfiguracion(clave, valor, email) {
   for (var i = 0; i < filas.length; i++) {
     if (filas[i].Clave === clave) {
       hoja.getRange(filas[i]._fila, _indiceColumna(hoja, 'Valor') + 1).setValue(valor);
+      _invalidarCaches(HOJAS.CONFIGURACION);
       registrarLog('Editar configuracion', clave + ' = ' + valor, '');
       return { success: true, mensaje: 'Configuracion actualizada.' };
     }
