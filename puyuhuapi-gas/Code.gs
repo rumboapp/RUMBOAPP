@@ -43,16 +43,35 @@ function onOpen() {
 }
 
 function configurar() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = planilla_();
   Object.keys(TABLAS).forEach(hoja_);
   if (!leer_('Config').length) sembrar_();
   ['Hoja 1', 'Hoja1', 'Sheet1'].forEach(function (n) {
     const h = ss.getSheetByName(n);
     if (h && h.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(h);
   });
-  aviso_('Listo ✅\n\nPIN del jefe: ' + config_('PIN_JEFE') +
-    '\nPIN de ejemplo de los guías: 1111 y 2222.\n\nCámbialos dentro de la app (pestaña Guías).\n' +
+  aviso_('Listo ✅\n\nLos datos se guardan en la Planilla:\n' + ss.getUrl() +
+    '\n\nPIN del jefe: ' + config_('PIN_JEFE') +
+    '\nPIN de ejemplo de los guías: 1111 y 2222.\nCámbialos dentro de la app (pestaña Guías).\n' +
     'Ahora ve a Implementar > Nueva implementación > App web.');
+}
+
+/**
+ * Planilla donde viven los datos. Funciona tanto si el script se creó desde una Planilla
+ * (Extensiones > Apps Script) como si se creó suelto en script.google.com: en ese caso
+ * crea la Planilla "Rumbo Puyuhuapi - Datos" en tu Drive la primera vez y la recuerda.
+ */
+function planilla_() {
+  if (planilla_.cache) return planilla_.cache;
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('PLANILLA_ID');
+  let ss = null;
+  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) ss = SpreadsheetApp.create('Rumbo Puyuhuapi - Datos');
+  if (ss.getId() !== id) props.setProperty('PLANILLA_ID', ss.getId());
+  planilla_.cache = ss;
+  return ss;
 }
 
 function mostrarEnlace() {
@@ -61,7 +80,8 @@ function mostrarEnlace() {
 }
 
 function aviso_(msg) {
-  try { SpreadsheetApp.getUi().alert(msg); } catch (e) { Logger.log(msg); }
+  Logger.log(msg); // se ve en el "Registro de ejecución" del editor
+  try { SpreadsheetApp.getUi().alert(msg); } catch (e) {}
 }
 
 /* ───────────────────────── API usada por la app ───────────────────────── */
@@ -195,7 +215,7 @@ function sesion_(token) {
 /* ───────────────────────── Acceso a hojas ───────────────────────── */
 
 function hoja_(nombre) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = planilla_();
   const cols = TABLAS[nombre];
   let sh = ss.getSheetByName(nombre);
   if (!sh) {

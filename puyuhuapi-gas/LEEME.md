@@ -5,6 +5,8 @@ Los datos se guardan en una Planilla de Google. La app se abre desde el Mac o el
 
 ## Instalación (una sola vez, ~5 minutos)
 
+> Si prefieres crear el proyecto directamente en script.google.com, también funciona: al ejecutar `configurar` se crea sola la Planilla **"Rumbo Puyuhuapi - Datos"** en tu Drive. El enlace aparece en el Registro de ejecución.
+
 1. Entra a https://sheets.new para crear una Planilla nueva. Ponle un nombre, por ejemplo "Rumbo Puyuhuapi".
 2. En la Planilla, abre el menú **Extensiones › Apps Script**.
 3. Pega el archivo **Code.gs**:
