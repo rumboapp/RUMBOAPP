@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rumbo · Puyuhuapi Lodge</title>
+<style>
+:root{
+  --bg:#f3f5f2; --card:#fff; --ink:#1c2a27; --muted:#63726e; --line:#dde3df;
+  --pri:#1f5f55; --pri2:#e3efec; --acc:#c2703d;
+  --err:#b3261e; --errbg:#fdecea; --warn:#8a5a00; --warnbg:#fff4d6; --ok:#2e7d4f; --okbg:#e5f4ea;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px}
+button:hover{border-color:var(--pri)}
+button.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.del{color:var(--err);border-color:#e8b9b5}
+button.del.sure{background:var(--err);color:#fff}
+button.sm{padding:3px 8px;font-size:13px}
+button.link{border:0;background:none;color:var(--pri);padding:2px 4px;text-decoration:underline}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;width:100%}
+textarea{min-height:70px;resize:vertical}
+input[type=checkbox]{width:auto}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
+label>input,label>select,label>textarea{margin-top:3px;font-size:15px;color:var(--ink)}
+h1,h2,h3{margin:0}
+h2{font-size:20px;margin:6px 0 12px}
+h2::first-letter,.list-h::first-letter{text-transform:uppercase}
+h3{font-size:15px;margin-bottom:8px}
+small,.muted{color:var(--muted)}
+header{background:var(--pri);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{font-size:17px;font-weight:600;flex:1}
+header h1 span{opacity:.75;font-weight:400}
+header small{color:rgba(255,255,255,.85)}
+header button{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+nav{display:flex;gap:4px;overflow-x:auto;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:46px;z-index:4}
+nav button{border:0;white-space:nowrap;border-radius:20px;padding:6px 14px}
+nav button.on{background:var(--pri2);color:var(--pri);font-weight:600}
+main{padding:14px 16px 60px;max-width:1150px;margin:0 auto}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.bar input[type=date]{width:auto}
+.bar select,.bar input[type=search]{width:auto;min-width:130px}
+.grow{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:4px 10px;font-size:13px;border:1px solid var(--line);background:#fff}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:#eef1ef;color:var(--muted);vertical-align:middle;font-weight:600}
+.b-Confirmada{background:#dcebff;color:#1a4d8f}.b-Realizada{background:var(--okbg);color:var(--ok)}.b-Cancelada{background:#eee;color:#888;text-decoration:line-through}
+.ex{display:flex;gap:12px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--pri);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;cursor:pointer}
+.ex:hover{box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.ex.cancel{opacity:.55}
+.ex .hora{font-weight:700;min-width:48px;font-variant-numeric:tabular-nums}
+.ex .hora small{display:block;font-weight:400}
+.ex .body{flex:1;min-width:0}
+.meta{font-size:13px;color:var(--muted);margin-top:2px}
+.alert{font-size:13px;border-radius:6px;padding:3px 8px;margin-top:4px}
+.alert.err{background:var(--errbg);color:var(--err)}
+.alert.warn{background:var(--warnbg);color:var(--warn)}
+.alert.info{background:#eef4ff;color:#244a86}
+.empty{color:var(--muted);text-align:center;padding:26px;border:1px dashed var(--line);border-radius:var(--r);background:#fff}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;font-size:14px;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+.sem th.dh{cursor:pointer;text-align:center}
+.sem td.c{min-width:112px;text-align:center;border-left:1px solid var(--line)}
+.sem td.c.ed{cursor:pointer}
+.sem td.c.ed:hover{outline:2px solid var(--pri);outline-offset:-2px}
+.sem td.hoy,.sem th.hoy{background:#f5fbf9}
+.sem tr.yo td{background:#fffbef}
+.turno{display:block;border-radius:6px;padding:3px 4px;font-size:13px;font-weight:600}
+.turno small{display:block;font-weight:400;color:#445}
+.mini{font-size:11px;color:var(--muted);text-align:left;margin-top:3px;line-height:1.3}
+.mini.x{color:var(--err)}
+.row{display:flex;gap:8px;align-items:center}
+.pxrow{display:grid;grid-template-columns:1fr 70px 32px;gap:6px;margin-bottom:6px;align-items:center}
+.pxrow .r{grid-column:1/-1;font-size:12px;color:var(--err);margin-top:-3px}
+.gchk{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:14px;color:var(--ink)}
+.gchk small{margin-left:auto}
+.gchk.bad small{color:var(--err);font-weight:600}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin-bottom:4px}
+#modal{position:fixed;inset:0;background:rgba(20,30,28,.45);display:none;align-items:flex-start;justify-content:center;z-index:20;overflow-y:auto;padding:30px 12px}
+#modal.on{display:flex}
+.mbox{background:#fff;border-radius:14px;width:100%;max-width:640px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.mhead{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mhead h3{flex:1;margin:0;font-size:17px}
+.mbody{padding:14px 16px}
+.mfoot{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1c2a27;color:#fff;padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;z-index:30;pointer-events:none}
+#toast.on{opacity:1}
+#toast.err{background:var(--err)}
+#login{max-width:360px;margin:60px auto;padding:0 16px}
+#login .card{padding:22px}
+.logo{font-size:26px;font-weight:700;color:var(--pri);text-align:center}
+.sub{text-align:center;color:var(--muted);margin-bottom:18px}
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.list-h{font-weight:700;margin:16px 0 6px}
+.kv{font-size:13px;margin:2px 0}
+.kv b{color:var(--muted);font-weight:600}
+.ro input,.ro select,.ro textarea{background:#f7f8f7}
+@media (max-width:640px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  main{padding:12px 12px 60px}
+  header h1 span{display:none}
+}
+@media print{
+  header,nav,.bar,button{display:none!important}
+  body{background:#fff}
+  .card,.ex{break-inside:avoid;border-color:#bbb}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Cargando…</div></div>
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ───────────── utilidades ───────────── */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const pd = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const addD = (s, n) => { const d = pd(s); d.setDate(d.getDate() + n); return iso(d); };
+const hoy = () => iso(new Date());
+const lunes = s => { const d = pd(s); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return iso(d); };
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const DIASL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const fCorta = s => { const d = pd(s); return DIAS[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1); };
+const fLarga = s => { const d = pd(s); return DIASL[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()]; };
+const toM = t => { if (!t) return null; const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
+const fromM = m => pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60);
+const J = (s, def) => { if (s && typeof s === 'object') return s; try { return s ? JSON.parse(s) : def; } catch (e) { return def; } };
+const lines = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
+const num = v => Number(String(v || '').replace(',', '.')) || 0;
+const ESTADOS = ['Programada', 'Confirmada', 'Realizada', 'Cancelada'];
+
+function api(fn, ...args) {
+  return new Promise((res, rej) => {
+    google.script.run.withSuccessHandler(res).withFailureHandler(e => {
+      const msg = (e && e.message) || String(e);
+      if (msg.indexOf('SESION') >= 0) { salirLocal(); rej(new Error('Tu sesión expiró. Vuelve a entrar.')); }
+      else rej(new Error(msg));
+    })[fn](...args);
+  });
+}
+function toast(m, err) {
+  const t = $('#toast'); t.textContent = m; t.className = 'on' + (err ? ' err' : '');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', err ? 4500 : 2200);
+}
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+};
+
+/* ───────────── estado ───────────── */
+const S = { tok: store.get('rumbo_tk'), me: null, d: null, vista: 'dia', fecha: hoy(), semana: lunes(hoy()),
+  fx: { desde: hoy(), hasta: addD(hoy(), 14), guia: '', estado: '', q: '', mias: true },
+  fh: { q: '', todos: false } };
+const esJefe = () => S.me && S.me.rol === 'jefe';
+
+const T = n => S.d[n] || [];
+const by = (n, id) => T(n).find(x => x.id === id);
+const guia = id => by('Guias', id);
+const act = ex => by('Actividades', ex.actividadId);
+const nomAct = ex => (act(ex) || {}).nombre || '(actividad eliminada)';
+const guiasActivas = () => T('Guias').filter(g => g.activo !== 'no');
+const exGuias = ex => String(ex.guias || '').split(',').filter(Boolean);
+const exPax = ex => J(ex.pasajeros, []).reduce((a, p) => a + (num(p.pax) || 0), 0);
+const cfg = k => (T('Config').find(c => c.id === k) || {}).valor || '';
+
+function finEx(ex) {
+  if (ex.fin) return ex.fin;
+  const a = act(ex); const s = toM(ex.inicio);
+  return s == null ? '' : fromM(s + (num(a && a.duracion) || 60));
+}
+function rango(ex) {
+  const s = toM(ex.inicio); let e = toM(finEx(ex));
+  if (s == null) return null;
+  if (e == null || e <= s) e = (e == null ? s + 60 : e + 1440);
+  return [s, e];
+}
+function solapa(a, b) {
+  if (a.fecha !== b.fecha) return false;
+  const x = rango(a), y = rango(b);
+  return !!(x && y && x[0] < y[1] && y[0] < x[1]);
+}
+function turnoDe(gid, fecha) {
+  const t = T('Turnos').find(x => x.guiaId === gid && x.fecha === fecha);
+  if (!t) return null;
+  return Object.assign({}, t, { tipo: by('TiposTurno', t.tipoId) });
+}
+function txtTurno(tu) {
+  if (!tu) return 'sin turno';
+  if (!tu.tipo) return '(turno eliminado)';
+  if (tu.tipo.esLibre === 'si') return tu.tipo.nombre.toUpperCase();
+  return tu.tipo.nombre + (tu.tipo.inicio ? ' ' + tu.tipo.inicio + '–' + tu.tipo.fin : '');
+}
+function necesidad(list) {
+  const out = {};
+  list.forEach(ex => {
+    const a = act(ex); if (!a) return;
+    const imp = J(a.implementos, {}); const pax = exPax(ex);
+    Object.keys(imp).forEach(k => { const n = Math.ceil(num(imp[k]) * pax); if (n) out[k] = (out[k] || 0) + n; });
+  });
+  return out;
+}
+const vivas = () => T('Excursiones').filter(e => e.estado !== 'Cancelada');
+const exsDe = f => T('Excursiones').filter(e => e.fecha === f).sort((a, b) => (a.inicio || '').localeCompare(b.inicio || ''));
+
+function alertas(ex) {
+  const out = [];
+  if (ex.estado === 'Cancelada' || !ex.fecha) return out;
+  const a = act(ex);
+  const otras = vivas().filter(o => o.id !== ex.id && solapa(o, ex));
+  const gs = exGuias(ex);
+  if (!gs.length && !(a && /arriendo/i.test(a.nombre))) out.push({ t: 'warn', m: 'Sin guía asignado' });
+  gs.forEach(gid => {
+    const g = guia(gid); const n = g ? g.nombre : '(guía eliminado)';
+    const tu = turnoDe(gid, ex.fecha);
+    if (!tu) out.push({ t: 'warn', m: n + ': no tiene turno asignado ese día' });
+    else if (tu.tipo && tu.tipo.esLibre === 'si') out.push({ t: 'err', m: n + ' tiene ' + tu.tipo.nombre.toUpperCase() + ' ese día' });
+    else if (tu.tipo && tu.tipo.inicio && tu.tipo.fin) {
+      const r = rango(ex); let ts = toM(tu.tipo.inicio), te = toM(tu.tipo.fin); if (te <= ts) te += 1440;
+      if (r && (r[0] < ts || r[1] > te)) out.push({ t: 'warn', m: n + ': fuera de su turno (' + tu.tipo.inicio + '–' + tu.tipo.fin + ')' });
+    }
+    otras.filter(o => exGuias(o).includes(gid)).forEach(o =>
+      out.push({ t: 'err', m: n + ' ya está en ' + nomAct(o) + ' ' + o.inicio + '–' + finEx(o) }));
+  });
+  if (ex.recursoId) {
+    const r = by('Recursos', ex.recursoId); const rn = r ? r.nombre : 'Recurso';
+    otras.filter(o => o.recursoId === ex.recursoId).forEach(o =>
+      out.push({ t: 'err', m: rn + ' ocupado en ' + nomAct(o) + ' ' + o.inicio + '–' + finEx(o) }));
+    if (r && num(r.capacidad) && exPax(ex) > num(r.capacidad)) out.push({ t: 'err', m: exPax(ex) + ' pax supera la capacidad de ' + rn + ' (' + r.capacidad + ')' });
+  }
+  if (a && num(a.capacidad) && exPax(ex) > num(a.capacidad)) out.push({ t: 'warn', m: exPax(ex) + ' pax supera el máximo de la actividad (' + a.capacidad + ')' });
+  const propia = necesidad([ex]);
+  const total = necesidad([ex].concat(otras));
+  Object.keys(propia).forEach(k => {
+    const im = by('Implementos', k); if (!im) return;
+    const stock = num(im.cantidad);
+    if (total[k] > stock) out.push({ t: 'err', m: im.nombre + ': se necesitan ' + total[k] + (total[k] > propia[k] ? ' (sumando excursiones a la misma hora)' : '') + ' y hay ' + stock });
+  });
+  J(ex.pasajeros, []).forEach(p => {
+    const h = p.h && by('Huespedes', p.h);
+    if (h && ((h.llegada && ex.fecha < h.llegada) || (h.salida && ex.fecha > h.salida)))
+      out.push({ t: 'warn', m: h.nombre + ' no está alojado ese día (' + (h.llegada || '?') + ' → ' + (h.salida || '?') + ')' });
+  });
+  return out;
+}
+function paxNombre(p) {
+  const h = p.h && by('Huespedes', p.h);
+  return h ? h.nombre + (h.habitacion ? ' (hab. ' + h.habitacion + ')' : '') : (p.nombre || 'Sin nombre');
+}
+function restricciones(ex) {
+  const out = [];
+  J(ex.pasajeros, []).forEach(p => {
+    const h = p.h && by('Huespedes', p.h); if (!h) return;
+    const r = [h.restricciones, h.salud].filter(Boolean).join(' · ');
+    if (r) out.push(h.nombre + ': ' + r);
+  });
+  return out;
+}
+const alertHTML = list => list.map(a => `<div class="alert ${a.t}">${a.t === 'err' ? '⛔' : a.t === 'warn' ? '⚠️' : 'ℹ️'} ${esc(a.m)}</div>`).join('');
+
+/* ───────────── arranque y login ───────────── */
+function salirLocal() { S.tok = null; S.me = null; S.d = null; store.set('rumbo_tk', null); }
+
+async function boot() {
+  if (!S.tok) return pantallaLogin();
+  try {
+    const r = await api('cargar', S.tok);
+    S.me = r.me; S.d = r.datos;
+    if (!esJefe()) S.fx.guia = '';
+    render();
+  } catch (e) { toast(e.message, true); pantallaLogin(); }
+}
+async function recargar(silencioso) {
+  try { const r = await api('cargar', S.tok); S.me = r.me; S.d = r.datos; render(); if (!silencioso) toast('Actualizado'); }
+  catch (e) { toast(e.message, true); if (!S.tok) pantallaLogin(); }
+}
+
+async function pantallaLogin() {
+  $('#app').innerHTML = '<div class="loading">Cargando…</div>';
+  let info = { lodge: 'Puyuhuapi Lodge & Spa', guias: [] };
+  try { info = await api('listaAcceso'); } catch (e) { toast(e.message, true); }
+  $('#app').innerHTML = `<div id="login"><div class="card">
+    <div class="logo">Rumbo</div><div class="sub">${esc(info.lodge)}</div>
+    <label>¿Quién eres?<select id="lq"><option value="jefe">Jefe de excursiones</option>
+      ${info.guias.map(g => `<option value="${esc(g.id)}">${esc(g.nombre)}</option>`).join('')}</select></label>
+    <label>PIN<input id="lp" type="password" inputmode="numeric" autocomplete="current-password"></label>
+    <button class="pri" style="width:100%" id="lb">Entrar</button></div></div>`;
+  const last = store.get('rumbo_quien'); if (last && [...$('#lq').options].some(o => o.value === last)) $('#lq').value = last;
+  const go = async () => {
+    $('#lb').disabled = true; $('#lb').textContent = 'Entrando…';
+    try {
+      const r = await api('login', $('#lq').value, $('#lp').value);
+      S.tok = r.token; store.set('rumbo_tk', r.token); store.set('rumbo_quien', $('#lq').value);
+      S.vista = 'dia'; boot();
+    } catch (e) { toast(e.message, true); $('#lb').disabled = false; $('#lb').textContent = 'Entrar'; }
+  };
+  $('#lb').onclick = go; $('#lp').onkeydown = e => { if (e.key === 'Enter') go(); };
+  $('#lp').focus();
+}
+
+/* ───────────── layout ───────────── */
+function vistas() {
+  const v = [['dia', 'Día'], ['semana', 'Semana y turnos'], ['exc', 'Excursiones'], ['hues', 'Huéspedes'], ['cat', 'Actividades'], ['equipo', 'Equipo']];
+  if (esJefe()) v.push(['guias', 'Guías']);
+  return v;
+}
+function render() {
+  if (!S.d) return;
+  const V = { dia: vDia, semana: vSemana, exc: vExc, hues: vHues, cat: vCat, equipo: vEquipo, guias: vGuias };
+  if (!V[S.vista] || (S.vista === 'guias' && !esJefe())) S.vista = 'dia';
+  const y = window.scrollY;
+  $('#app').innerHTML = `<header><h1>Rumbo <span>· ${esc(cfg('LODGE') || 'Puyuhuapi Lodge')}</span></h1>
+      <small>${esc(S.me.nombre)}</small>
+      <button class="sm" data-a="recargar" title="Traer cambios de los demás">↻</button>
+      <button class="sm" data-a="salir">Salir</button></header>
+    <nav>${vistas().map(([k, n]) => `<button class="${S.vista === k ? 'on' : ''}" data-a="vista" data-v="${k}">${n}</button>`).join('')}</nav>
+    <main>${V[S.vista]()}</main>`;
+  window.scrollTo(0, y);
+}
+
+/* ───────────── vista DÍA ───────────── */
+function tarjetaEx(ex, conFecha) {
+  const a = act(ex) || {};
+  const gs = exGuias(ex).map(id => (guia(id) || {}).nombre || '?');
+  const r = ex.recursoId && by('Recursos', ex.recursoId);
+  const cl = lines(a.checklist); const hechos = J(ex.checklist, []).filter(x => cl.includes(x)).length;
+  const pax = J(ex.pasajeros, []);
+  const rs = restricciones(ex);
+  return `<div class="ex ${ex.estado === 'Cancelada' ? 'cancel' : ''}" style="border-left-color:${esc(a.color || '#1f5f55')}" data-a="editar-ex" data-id="${esc(ex.id)}">
+    <div class="hora">${esc(ex.inicio || '--:--')}<small>${esc(finEx(ex))}</small>${conFecha ? `<small>${esc(fCorta(ex.fecha))}</small>` : ''}</div>
+    <div class="body"><b>${esc(nomAct(ex))}</b> <span class="badge b-${esc(ex.estado)}">${esc(ex.estado || 'Programada')}</span>
+      <div class="meta">👤 ${gs.length ? esc(gs.join(', ')) : '<i>sin guía</i>'}${r ? ' · 🚐 ' + esc(r.nombre) : ''} · 👥 ${exPax(ex)} pax${cl.length ? ` · ✓ ${hechos}/${cl.length}` : ''}</div>
+      ${pax.length ? `<div class="meta">${esc(pax.map(p => paxNombre(p) + (num(p.pax) > 1 ? ' ×' + p.pax : '')).join(' · '))}</div>` : ''}
+      ${rs.map(x => `<div class="alert info">📋 ${esc(x)}</div>`).join('')}
+      ${ex.notas ? `<div class="meta">📝 ${esc(ex.notas)}</div>` : ''}
+      ${alertHTML(alertas(ex))}</div></div>`;
+}
+function vDia() {
+  const f = S.fecha, exs = exsDe(f);
+  const chips = guiasActivas().map(g => {
+    const tu = turnoDe(g.id, f); const n = exs.filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).length;
+    return `<span class="chip" style="background:${esc((tu && tu.tipo && tu.tipo.color) || '#fff')}"><span class="dot" style="background:${esc(g.color || '#888')}"></span><b>${esc(g.nombre)}</b> ${esc(txtTurno(tu))}${n ? ` · ${n} exc.` : ''}</span>`;
+  }).join('') || '<small>No hay guías. Agrégalos en la pestaña Guías.</small>';
+  // uso de implementos (peor momento del día)
+  const vv = exs.filter(e => e.estado !== 'Cancelada');
+  const peak = {};
+  vv.forEach(ex => { const n = necesidad(vv.filter(o => o === ex || solapa(o, ex))); Object.keys(n).forEach(k => peak[k] = Math.max(peak[k] || 0, n[k])); });
+  const eq = Object.keys(peak).map(k => { const im = by('Implementos', k); if (!im) return ''; const ok = peak[k] <= num(im.cantidad);
+    return `<span class="chip" style="${ok ? '' : 'background:var(--errbg);color:var(--err)'}">${esc(im.nombre)}: <b>${peak[k]}</b>/${esc(im.cantidad || 0)}</span>`; }).join('');
+  const llegan = T('Huespedes').filter(h => h.llegada === f), salen = T('Huespedes').filter(h => h.salida === f);
+  const enCasa = T('Huespedes').filter(h => h.llegada && h.llegada <= f && (!h.salida || h.salida >= f));
+  const paxDia = vv.reduce((a, e) => a + exPax(e), 0);
+  const nAl = vv.reduce((a, e) => a + alertas(e).filter(x => x.t === 'err').length, 0);
+  return `<div class="bar"><button data-a="dia-mov" data-n="-1">‹</button><input type="date" value="${f}" data-a="dia-fecha"><button data-a="dia-mov" data-n="1">›</button>
+      <button data-a="dia-hoy">Hoy</button><span class="grow"></span>
+      <button data-a="copiar-dia">📲 WhatsApp</button><button data-a="imprimir">🖨️</button><button class="pri" data-a="nueva-ex">+ Excursión</button></div>
+    <h2>${esc(fLarga(f))}${f === hoy() ? ' · hoy' : ''}</h2>
+    <div class="card"><h3>Guías</h3><div class="chips">${chips}</div></div>
+    ${nAl ? `<div class="alert err" style="margin-bottom:10px">⛔ Hay ${nAl} conflicto(s) en este día. Revisa las excursiones marcadas.</div>` : ''}
+    <h3>Excursiones <small>(${vv.length} · ${paxDia} pax)</small></h3>
+    ${exs.map(e => tarjetaEx(e)).join('') || '<div class="empty">No hay excursiones este día.</div>'}
+    ${eq ? `<div class="card" style="margin-top:12px"><h3>Implementos en uso (momento de mayor uso)</h3><div class="chips">${eq}</div></div>` : ''}
+    <div class="card"><h3>Huéspedes</h3>
+      <div class="kv"><b>En el lodge:</b> ${enCasa.length} fichas · ${enCasa.reduce((a, h) => a + (num(h.pax) || 1), 0)} personas</div>
+      ${llegan.length ? `<div class="kv"><b>Llegan:</b> ${esc(llegan.map(h => h.nombre).join(', '))}</div>` : ''}
+      ${salen.length ? `<div class="kv"><b>Salen:</b> ${esc(salen.map(h => h.nombre).join(', '))}</div>` : ''}
+      ${sinExc(f, enCasa)}</div>`;
+}
+function sinExc(f, enCasa) {
+  const con = new Set(); T('Excursiones').filter(e => e.estado !== 'Cancelada' && e.fecha >= f).forEach(e => J(e.pasajeros, []).forEach(p => p.h && con.add(p.h)));
+  const libres = enCasa.filter(h => !con.has(h.id));
+  return libres.length ? `<div class="kv"><b>Sin excursiones reservadas:</b> ${esc(libres.map(h => h.nombre + (h.habitacion ? ' (' + h.habitacion + ')' : '')).join(', '))}</div>` : '';
+}
+
+/* ───────────── vista SEMANA / TURNOS ───────────── */
+function horasTurno(tu) {
+  if (!tu || !tu.tipo || tu.tipo.esLibre === 'si' || !tu.tipo.inicio || !tu.tipo.fin) return 0;
+  let s = toM(tu.tipo.inicio), e = toM(tu.tipo.fin); if (e <= s) e += 1440; return (e - s) / 60;
+}
+function vSemana() {
+  const L = S.semana, dias = [...Array(7)].map((_, i) => addD(L, i)), h = hoy();
+  const gs = guiasActivas();
+  const filas = gs.map(g => {
+    let horas = 0, libres = 0, sin = 0;
+    const celdas = dias.map(f => {
+      const tu = turnoDe(g.id, f); horas += horasTurno(tu);
+      if (tu && tu.tipo && tu.tipo.esLibre === 'si') libres++; if (!tu) sin++;
+      const exs = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id));
+      const malas = exs.filter(e => alertas(e).some(a => a.t === 'err'));
+      return `<td class="c ${esJefe() ? 'ed' : ''} ${f === h ? 'hoy' : ''}" ${esJefe() ? `data-a="turno" data-g="${esc(g.id)}" data-f="${f}"` : ''}>
+        ${tu ? `<span class="turno" style="background:${esc((tu.tipo && tu.tipo.color) || '#eee')}">${esc(tu.tipo ? tu.tipo.nombre : '?')}${tu.tipo && tu.tipo.inicio ? `<small>${esc(tu.tipo.inicio)}–${esc(tu.tipo.fin)}</small>` : ''}</span>` : '<small>—</small>'}
+        ${tu && tu.nota ? `<div class="mini">📝 ${esc(tu.nota)}</div>` : ''}
+        ${exs.map(e => `<div class="mini ${malas.includes(e) ? 'x' : ''}">${esc(e.inicio)} ${esc(nomAct(e))}</div>`).join('')}</td>`;
+    }).join('');
+    return `<tr class="${S.me.guiaId === g.id ? 'yo' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>
+      <div class="mini">${horas}h · ${libres} libre${libres === 1 ? '' : 's'}${sin ? ` · <span style="color:var(--warn)">${sin} sin asignar</span>` : ''}</div></td>${celdas}</tr>`;
+  }).join('');
+  const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada'); return `<td class="c ${f === h ? 'hoy' : ''}"><small>${v.length} exc · ${v.reduce((a, e) => a + exPax(e), 0)} pax</small></td>`; }).join('');
+  const leyenda = T('TiposTurno').map(t => `<span class="chip" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}${t.inicio ? ' ' + esc(t.inicio) + '–' + esc(t.fin) : ''}</span>`).join('');
+  return `<div class="bar"><button data-a="sem-mov" data-n="-7">‹</button><button data-a="sem-hoy">Esta semana</button><button data-a="sem-mov" data-n="7">›</button>
+      <span class="grow"></span>${esJefe() ? '<button data-a="copiar-semana-ant">Copiar turnos de la semana anterior</button>' : ''}
+      <button data-a="copiar-semana">📲 WhatsApp</button><button data-a="imprimir">🖨️</button></div>
+    <h2>Semana del ${esc(fLarga(L))}</h2>
+    ${gs.length ? `<div class="card scroll"><table class="sem"><tr><th>Guía</th>${dias.map(f => `<th class="dh ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}">${esc(fCorta(f))}</th>`).join('')}</tr>${filas}
+      <tr><td><small>Total</small></td>${tot}</tr></table></div>` : '<div class="empty">No hay guías activos.</div>'}
+    <div class="chips">${leyenda}</div>
+    ${esJefe() ? '<p><small>Toca una celda para asignar el turno o el día libre. Toca un día para ver el detalle.</small></p>' : ''}`;
+}
+function modalTurno(gid, f) {
+  const g = guia(gid), tu = turnoDe(gid, f);
+  const tipos = T('TiposTurno');
+  modal(`${g.nombre} · ${fCorta(f)}`, `
+    <div class="chips" style="margin-bottom:12px">${tipos.map(t => `<button data-a="set-turno" data-t="${esc(t.id)}" style="background:${esc(t.color || '#fff')};${tu && tu.tipoId === t.id ? 'outline:3px solid var(--pri)' : ''}">${esc(t.nombre)}${t.inicio ? '<br><small>' + esc(t.inicio) + '–' + esc(t.fin) + '</small>' : ''}</button>`).join('')}</div>
+    <label>Nota (opcional)<input id="tnota" value="${esc(tu ? tu.nota : '')}" placeholder="Ej: cubre recepción, trámite en Coyhaique…"></label>
+    <label><input type="checkbox" id="trep"> Aplicar a toda la semana (lunes a domingo)</label>
+    <small>Para cambiar solo la nota, vuelve a tocar el mismo turno.</small>`,
+    `${tu ? '<button class="del" data-a="set-turno" data-t="">Quitar turno</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button>`);
+  S.mt = { gid, f };
+}
+async function setTurno(tipoId) {
+  const { gid, f } = S.mt; const nota = $('#tnota').value.trim();
+  const dias = $('#trep').checked ? [...Array(7)].map((_, i) => addD(lunes(f), i)) : [f];
+  cerrar();
+  try { S.d.Turnos = await api('guardarTurnos', S.tok, dias.map(d => ({ fecha: d, guiaId: gid, tipoId, nota }))); render(); toast('Turno guardado'); }
+  catch (e) { toast(e.message, true); }
+}
+async function copiarSemanaAnterior() {
+  const L = S.semana, prev = addD(L, -7);
+  const lista = [];
+  guiasActivas().forEach(g => [...Array(7)].forEach((_, i) => {
+    const t = turnoDe(g.id, addD(prev, i));
+    if (t && !turnoDe(g.id, addD(L, i))) lista.push({ fecha: addD(L, i), guiaId: g.id, tipoId: t.tipoId, nota: '' });
+  }));
+  if (!lista.length) return toast('No hay nada que copiar (o la semana ya tiene turnos)');
+  try { S.d.Turnos = await api('guardarTurnos', S.tok, lista); render(); toast(lista.length + ' turnos copiados'); }
+  catch (e) { toast(e.message, true); }
+}
+
+/* ───────────── vista EXCURSIONES ───────────── */
+function vExc() {
+  const F = S.fx;
+  let list = T('Excursiones').filter(e => (!F.desde || e.fecha >= F.desde) && (!F.hasta || e.fecha <= F.hasta));
+  if (F.estado) list = list.filter(e => (e.estado || 'Programada') === F.estado);
+  const gsel = !esJefe() && F.mias ? S.me.guiaId : F.guia;
+  if (gsel) list = list.filter(e => exGuias(e).includes(gsel));
+  if (F.q) { const q = F.q.toLowerCase(); list = list.filter(e => (nomAct(e) + ' ' + J(e.pasajeros, []).map(paxNombre).join(' ') + ' ' + (e.notas || '')).toLowerCase().includes(q)); }
+  list.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
+  let html = '', cur = '';
+  list.forEach(e => { if (e.fecha !== cur) { cur = e.fecha; html += `<div class="list-h">${esc(fLarga(cur))}</div>`; } html += tarjetaEx(e); });
+  return `<div class="bar">
+      <label style="margin:0">Desde<input type="date" value="${esc(F.desde)}" data-fx="desde"></label>
+      <label style="margin:0">Hasta<input type="date" value="${esc(F.hasta)}" data-fx="hasta"></label>
+      ${esJefe() ? `<label style="margin:0">Guía<select data-fx="guia"><option value="">Todos</option>${T('Guias').map(g => `<option value="${esc(g.id)}" ${F.guia === g.id ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select></label>`
+        : `<label style="margin:0">&nbsp;<span class="chk" style="margin:6px 0"><input type="checkbox" data-fx="mias" ${F.mias ? 'checked' : ''}> Solo las mías</span></label>`}
+      <label style="margin:0">Estado<select data-fx="estado"><option value="">Todos</option>${ESTADOS.map(s => `<option ${F.estado === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
+      <label style="margin:0" class="grow">Buscar<input type="search" value="${esc(F.q)}" data-fx="q" placeholder="actividad, pasajero, nota…"></label>
+      <button class="pri" data-a="nueva-ex" style="align-self:flex-end">+ Excursión</button></div>
+    <p><small>${list.length} excursiones · ${list.filter(e => e.estado !== 'Cancelada').reduce((a, e) => a + exPax(e), 0)} pax</small></p>
+    ${html || '<div class="empty">No hay excursiones con estos filtros.</div>'}`;
+}
+
+/* ───────────── modal EXCURSIÓN ───────────── */
+let E = null;
+function nuevaEx(fecha) {
+  abrirEx({ id: '', fecha: fecha || S.fecha, inicio: '09:00', fin: '', actividadId: '', guias: S.me.guiaId || '', recursoId: '', pasajeros: '[]', estado: 'Programada', checklist: '[]', notas: '' });
+}
+function abrirEx(ex) {
+  E = Object.assign({}, ex, { _pax: J(ex.pasajeros, []).map(p => Object.assign({}, p)), _chk: J(ex.checklist, []) });
+  if (!E.fin && E.actividadId) E.fin = finEx(E);
+  const acts = T('Actividades').filter(a => a.activo !== 'no' || a.id === E.actividadId);
+  const cats = [...new Set(acts.map(a => a.categoria || 'Otras'))];
+  modal(E.id ? 'Editar excursión' : 'Nueva excursión', `
+    <label>Actividad<select name="actividadId"><option value="">— Elegir —</option>
+      ${cats.map(c => `<optgroup label="${esc(c)}">${acts.filter(a => (a.categoria || 'Otras') === c).map(a => `<option value="${esc(a.id)}" ${a.id === E.actividadId ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+    <div id="exinfo"></div>
+    <div class="grid3"><label>Fecha<input type="date" name="fecha" value="${esc(E.fecha)}"></label>
+      <label>Inicio<input type="time" name="inicio" value="${esc(E.inicio)}"></label>
+      <label>Término<input type="time" name="fin" value="${esc(E.fin)}"></label></div>
+    <div class="grid2"><label>Estado<select name="estado">${ESTADOS.map(s => `<option ${E.estado === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
+      <label>Vehículo / bote<select name="recursoId"><option value="">Ninguno</option>${T('Recursos').map(r => `<option value="${esc(r.id)}" ${r.id === E.recursoId ? 'selected' : ''}>${esc(r.nombre)}</option>`).join('')}</select></label></div>
+    <label>Guías</label><div id="exguias"></div>
+    <label>Pasajeros</label><div id="expax"></div>
+    <datalist id="dlh">${T('Huespedes').map(h => `<option value="${esc(hLabel(h))}">`).join('')}</datalist>
+    <div id="exchk"></div>
+    <label>Notas / requerimientos<textarea name="notas" placeholder="Punto de encuentro, pedidos a cocina, observaciones…">${esc(E.notas)}</textarea></label>
+    <div id="exalert"></div>
+    ${E.actualizado ? `<small>Última modificación: ${esc(E.actualizado)} por ${esc(E.actualizadoPor)}</small>` : ''}`,
+    `${E.id && esJefe() ? '<button class="del" data-a="borrar" data-t="Excursiones">Eliminar</button>' : ''}
+     ${E.id ? '<button data-a="duplicar-ex">Duplicar</button>' : ''}<span class="grow"></span>
+     <button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-ex">Guardar</button>`);
+  exPartes();
+}
+const hLabel = h => h.nombre + (h.habitacion ? ' · hab. ' + h.habitacion : '');
+function exLeer() {
+  const b = $('#mbox');
+  ['actividadId', 'fecha', 'inicio', 'fin', 'estado', 'recursoId', 'notas'].forEach(k => { const el = b.querySelector(`[name="${k}"]`); if (el) E[k] = el.value; });
+  E.guias = [...b.querySelectorAll('[data-g]:checked')].map(x => x.dataset.g).join(',');
+  b.querySelectorAll('[data-pi]').forEach(el => {
+    const p = E._pax[+el.dataset.pi]; if (!p) return;
+    if (el.dataset.pf === 'pax') p.pax = el.value;
+    else { const h = T('Huespedes').find(x => hLabel(x) === el.value.trim() || x.nombre === el.value.trim()); p.h = h ? h.id : ''; p.nombre = h ? '' : el.value.trim(); }
+  });
+  E._chk = [...b.querySelectorAll('[data-ck]:checked')].map(x => x.dataset.ck);
+  E.pasajeros = JSON.stringify(E._pax); E.checklist = JSON.stringify(E._chk);
+}
+function exPartes() {
+  const a = act(E) || null;
+  $('#exinfo').innerHTML = a ? `<div class="alert info" style="margin:-4px 0 10px">${esc([a.duracion ? a.duracion + ' min' : '', a.dificultad, a.longitud, a.capacidad ? 'máx. ' + a.capacidad + ' pax' : ''].filter(Boolean).join(' · '))}${a.incluye ? '<br>' + esc(a.incluye) : ''}</div>` : '';
+  const sel = exGuias(E);
+  const otras = vivas().filter(o => o.id !== E.id && solapa(o, E));
+  $('#exguias').innerHTML = guiasActivas().concat(T('Guias').filter(g => g.activo === 'no' && sel.includes(g.id))).map(g => {
+    const tu = turnoDe(g.id, E.fecha); const ocup = otras.find(o => exGuias(o).includes(g.id));
+    const bad = !tu || (tu.tipo && tu.tipo.esLibre === 'si') || ocup;
+    return `<label class="gchk ${bad ? 'bad' : ''}"><input type="checkbox" data-g="${esc(g.id)}" ${sel.includes(g.id) ? 'checked' : ''}><span class="dot" style="background:${esc(g.color || '#888')}"></span>${esc(g.nombre)}
+      <small>${ocup ? 'ocupado ' + esc(ocup.inicio) + '–' + esc(finEx(ocup)) : esc(txtTurno(tu))}</small></label>`;
+  }).join('') || '<small>No hay guías.</small>';
+  $('#expax').innerHTML = E._pax.map((p, i) => {
+    const h = p.h && by('Huespedes', p.h);
+    return `<div class="pxrow"><input list="dlh" data-pi="${i}" data-pf="n" value="${esc(h ? hLabel(h) : p.nombre || '')}" placeholder="Nombre del huésped o pasajero">
+      <input type="number" min="1" data-pi="${i}" data-pf="pax" value="${esc(p.pax || 1)}" title="N° de personas">
+      <button class="sm" data-a="px-del" data-i="${i}" title="Quitar">✕</button><div id="pxr-${i}" style="grid-column:1/-1">${pxInfo(p)}</div></div>`;
+  }).join('') + `<div class="row" style="margin-bottom:12px"><button class="sm" data-a="px-add">+ Pasajero</button><button class="sm" data-a="nuevo-hues-ex">+ Crear ficha de huésped</button>
+     <span class="grow"></span><b>${exPax(E)} pax</b>${a && num(a.capacidad) ? `<small>&nbsp;/ máx ${esc(a.capacidad)}</small>` : ''}</div>`;
+  const cl = lines(a && a.checklist);
+  $('#exchk').innerHTML = cl.length ? `<label>Checklist de preparación</label><div class="card" style="padding:8px 12px">${cl.map(x => `<label class="chk"><input type="checkbox" data-ck="${esc(x)}" ${E._chk.includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('')}</div>` : '';
+  const nec = necesidad([E]);
+  const eq = Object.keys(nec).map(k => { const im = by('Implementos', k); return im ? im.nombre + ': ' + nec[k] : ''; }).filter(Boolean);
+  $('#exalert').innerHTML = (eq.length ? `<div class="alert info">🎒 Implementos: ${esc(eq.join(' · '))}</div>` : '') + alertHTML(alertas(E));
+}
+function exCambio(el) {
+  const n = el.getAttribute('name');
+  exLeer();
+  if (el.dataset.pi != null) { // pasajero: solo refresca su fila, sin redibujar (no se pierden foco ni clics)
+    const w = $('#pxr-' + el.dataset.pi); if (w) w.innerHTML = pxInfo(E._pax[+el.dataset.pi]);
+    return refrescarExSinPax();
+  }
+  if (n === 'actividadId' || n === 'inicio') {
+    const a = act(E);
+    if (a && E.inicio) { E.fin = fromM(toM(E.inicio) + (num(a.duracion) || 60)); $('#mbox [name="fin"]').value = E.fin; }
+    if (n === 'actividadId' && a && a.recursoId && !E.recursoId) { E.recursoId = a.recursoId; $('#mbox [name="recursoId"]').value = a.recursoId; }
+  }
+  if (el.dataset.ck != null) return;
+  exPartes();
+}
+function pxInfo(p) {
+  const h = p && p.h && by('Huespedes', p.h);
+  if (!h) return '';
+  const r = [h.restricciones, h.salud].filter(Boolean).join(' · ');
+  return (r ? `<div class="r">⚠️ ${esc(r)}</div>` : '') + (h.tallas ? `<div class="r" style="color:var(--muted)">Tallas: ${esc(h.tallas)}</div>` : '');
+}
+function refrescarExSinPax() { // actualiza alertas sin redibujar los inputs de pasajeros (para no perder el foco)
+  const tot = $('#expax b'); if (tot) tot.textContent = exPax(E) + ' pax';
+  const nec = necesidad([E]);
+  const eq = Object.keys(nec).map(k => { const im = by('Implementos', k); return im ? im.nombre + ': ' + nec[k] : ''; }).filter(Boolean);
+  $('#exalert').innerHTML = (eq.length ? `<div class="alert info">🎒 Implementos: ${esc(eq.join(' · '))}</div>` : '') + alertHTML(alertas(E));
+}
+async function guardarEx() {
+  exLeer();
+  if (!E.actividadId) return toast('Elige una actividad', true);
+  if (!E.fecha || !E.inicio) return toast('Falta la fecha o la hora de inicio', true);
+  E._pax = E._pax.filter(p => p.h || p.nombre); E.pasajeros = JSON.stringify(E._pax);
+  const errs = alertas(E).filter(a => a.t === 'err');
+  const btn = $('#mbox [data-a="guardar-ex"]');
+  if (errs.length && !btn.dataset.ok) { btn.dataset.ok = 1; btn.textContent = 'Guardar igual'; return toast('Hay conflictos (en rojo). Toca de nuevo para guardar igual.', true); }
+  const obj = {}; ['id', 'fecha', 'inicio', 'fin', 'actividadId', 'guias', 'recursoId', 'pasajeros', 'estado', 'checklist', 'notas'].forEach(k => obj[k] = E[k] || '');
+  await guardarObj('Excursiones', obj);
+}
+
+/* ───────────── vista HUÉSPEDES ───────────── */
+function vHues() {
+  const F = S.fh, h0 = hoy();
+  let list = T('Huespedes');
+  if (!F.todos) list = list.filter(h => !h.salida || h.salida >= h0);
+  if (F.q) { const q = F.q.toLowerCase(); list = list.filter(h => [h.nombre, h.habitacion, h.idioma, h.restricciones, h.notas].join(' ').toLowerCase().includes(q)); }
+  list.sort((a, b) => (a.llegada || '').localeCompare(b.llegada || '') || a.nombre.localeCompare(b.nombre));
+  return `<div class="bar"><input type="search" data-fh="q" value="${esc(F.q)}" placeholder="Buscar huésped, habitación…" style="flex:1">
+      <span class="chk" style="margin:0"><input type="checkbox" data-fh="todos" ${F.todos ? 'checked' : ''}> Incluir los que ya se fueron</span>
+      <button class="pri" data-a="nuevo-hues">+ Huésped</button></div>
+    ${list.map(h => {
+      const exs = T('Excursiones').filter(e => e.estado !== 'Cancelada' && J(e.pasajeros, []).some(p => p.h === h.id)).sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
+      const dentro = h.llegada && h.llegada <= h0 && (!h.salida || h.salida >= h0);
+      return `<div class="ex" data-a="editar-hues" data-id="${esc(h.id)}" style="border-left-color:${dentro ? 'var(--ok)' : 'var(--line)'}">
+        <div class="body"><b>${esc(h.nombre)}</b> ${h.habitacion ? `<span class="badge">hab. ${esc(h.habitacion)}</span>` : ''} ${dentro ? '<span class="badge b-Realizada">en el lodge</span>' : ''}
+        <div class="meta">${esc([h.llegada && h.salida ? fCorta(h.llegada) + ' → ' + fCorta(h.salida) : '', (num(h.pax) || 1) + ' pax', h.idioma].filter(Boolean).join(' · '))}</div>
+        ${h.restricciones || h.salud ? `<div class="alert warn">⚠️ ${esc([h.restricciones, h.salud].filter(Boolean).join(' · '))}</div>` : ''}
+        ${exs.length ? `<div class="meta">🗓️ ${esc(exs.map(e => fCorta(e.fecha) + ' ' + e.inicio + ' ' + nomAct(e)).join(' | '))}</div>` : ''}</div></div>`;
+    }).join('') || '<div class="empty">No hay huéspedes. Crea las fichas con “+ Huésped”.</div>'}`;
+}
+function abrirHues(h, desdeEx) {
+  h = h || { id: '', nombre: '', habitacion: '', llegada: S.fecha, salida: addD(S.fecha, 2), pax: 2, idioma: 'Español', telefono: '', restricciones: '', salud: '', tallas: '', notas: '' };
+  S.hdesdeEx = desdeEx ? Object.assign({}, E) : null;
+  E = null;
+  modal(h.id ? 'Ficha de huésped' : 'Nuevo huésped', `<form id="f">
+    <input type="hidden" name="id" value="${esc(h.id)}">
+    <div class="grid2"><label>Nombre (titular / familia)<input name="nombre" value="${esc(h.nombre)}" required></label>
+      <label>Habitación<input name="habitacion" value="${esc(h.habitacion)}"></label></div>
+    <div class="grid3"><label>Llegada<input type="date" name="llegada" value="${esc(h.llegada)}"></label>
+      <label>Salida<input type="date" name="salida" value="${esc(h.salida)}"></label>
+      <label>N° personas<input type="number" min="1" name="pax" value="${esc(h.pax)}"></label></div>
+    <div class="grid2"><label>Idioma<input name="idioma" list="dlidioma" value="${esc(h.idioma)}"></label>
+      <label>Teléfono / WhatsApp<input name="telefono" value="${esc(h.telefono)}"></label></div>
+    <datalist id="dlidioma"><option>Español<option>Inglés<option>Portugués<option>Alemán<option>Francés</datalist>
+    <label>Restricciones alimentarias<input name="restricciones" value="${esc(h.restricciones)}" placeholder="Celíaco, vegano, alergia a nueces…"></label>
+    <label>Salud / movilidad<input name="salud" value="${esc(h.salud)}" placeholder="Rodilla operada, embarazo, no sabe nadar…"></label>
+    <label>Tallas (botas / traje)<input name="tallas" value="${esc(h.tallas)}" placeholder="Botas 42 y 38 · traje M y S"></label>
+    <label>Notas<textarea name="notas">${esc(h.notas)}</textarea></label></form>`,
+    `${h.id && esJefe() ? '<button class="del" data-a="borrar" data-t="Huespedes">Eliminar</button>' : ''}<span class="grow"></span>
+     <button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Huespedes">Guardar</button>`);
+  S.editId = h.id;
+}
+
+/* ───────────── vista ACTIVIDADES (catálogo) ───────────── */
+function vCat() {
+  const acts = T('Actividades'); const cats = [...new Set(acts.map(a => a.categoria || 'Otras'))];
+  return `<div class="bar"><span class="grow"></span>${esJefe() ? '<button class="pri" data-a="nueva-act">+ Actividad</button>' : ''}</div>
+    ${cats.map(c => `<div class="list-h">${esc(c)}</div>` + acts.filter(a => (a.categoria || 'Otras') === c).map(a => {
+      const imp = J(a.implementos, {}); const r = a.recursoId && by('Recursos', a.recursoId);
+      return `<div class="ex ${a.activo === 'no' ? 'cancel' : ''}" data-a="editar-act" data-id="${esc(a.id)}" style="border-left-color:${esc(a.color || '#1f5f55')}"><div class="body">
+        <b>${esc(a.nombre)}</b> ${a.activo === 'no' ? '<span class="badge">inactiva</span>' : ''}
+        <div class="meta">${esc([a.duracion ? a.duracion + ' min' : '', a.dificultad, a.longitud, a.capacidad ? 'máx ' + a.capacidad + ' pax' : '', r ? r.nombre : ''].filter(Boolean).join(' · '))}</div>
+        ${a.incluye ? `<div class="meta">${esc(a.incluye)}</div>` : ''}
+        ${Object.keys(imp).length ? `<div class="meta">🎒 ${esc(Object.keys(imp).map(k => ((by('Implementos', k) || {}).nombre || k) + ' ×' + imp[k]).join(', '))} por pax</div>` : ''}</div></div>`;
+    }).join('')).join('') || '<div class="empty">No hay actividades.</div>'}`;
+}
+function abrirAct(a) {
+  a = a || { id: '', nombre: '', categoria: '', duracion: 60, dificultad: '', longitud: '', capacidad: '', recursoId: '', descripcion: '', incluye: '', implementos: '{}', checklist: '', color: '#1f5f55', activo: 'si' };
+  const imp = J(a.implementos, {}); const ro = !esJefe();
+  modal(a.id ? (ro ? a.nombre : 'Editar actividad') : 'Nueva actividad', `<form id="f" class="${ro ? 'ro' : ''}">
+    <input type="hidden" name="id" value="${esc(a.id)}">
+    <label>Nombre<input name="nombre" value="${esc(a.nombre)}" required></label>
+    <div class="grid3"><label>Categoría<input name="categoria" list="dlcat" value="${esc(a.categoria)}"></label>
+      <label>Duración (min)<input type="number" name="duracion" value="${esc(a.duracion)}"></label>
+      <label>Dificultad<input name="dificultad" list="dldif" value="${esc(a.dificultad)}"></label></div>
+    <datalist id="dlcat">${[...new Set(T('Actividades').map(x => x.categoria).filter(Boolean))].map(c => `<option>${esc(c)}`).join('')}</datalist>
+    <datalist id="dldif"><option>Baja<option>Media<option>Media alta<option>Alta</datalist>
+    <div class="grid3"><label>Longitud<input name="longitud" value="${esc(a.longitud)}"></label>
+      <label>Máx. pax<input type="number" name="capacidad" value="${esc(a.capacidad)}" placeholder="sin límite"></label>
+      <label>Vehículo / bote por defecto<select name="recursoId"><option value="">Ninguno</option>${T('Recursos').map(r => `<option value="${esc(r.id)}" ${r.id === a.recursoId ? 'selected' : ''}>${esc(r.nombre)}</option>`).join('')}</select></label></div>
+    <label>Qué incluye<textarea name="incluye">${esc(a.incluye)}</textarea></label>
+    <label>Descripción<textarea name="descripcion">${esc(a.descripcion)}</textarea></label>
+    <label>Implementos por pasajero <small>(0.5 = uno cada dos personas, por ejemplo un kayak doble)</small></label>
+    <div class="card" style="padding:6px 12px"><table>${T('Implementos').map(im => `<tr><td>${esc(im.nombre)}</td><td style="width:90px"><input type="number" step="0.5" min="0" data-imp="${esc(im.id)}" value="${esc(imp[im.id] || '')}" placeholder="0"></td></tr>`).join('')}</table></div>
+    <label>Checklist de preparación <small>(una tarea por línea)</small><textarea name="checklist" rows="5">${esc(a.checklist)}</textarea></label>
+    <div class="grid2"><label>Color<input type="color" name="color" value="${esc(a.color || '#1f5f55')}" style="height:38px;padding:2px"></label>
+      <label>Estado<select name="activo"><option value="si">Activa</option><option value="no" ${a.activo === 'no' ? 'selected' : ''}>Inactiva (no aparece al crear excursiones)</option></select></label></div></form>`,
+    ro ? '<span class="grow"></span><button data-a="cerrar">Cerrar</button>'
+       : `${a.id ? '<button class="del" data-a="borrar" data-t="Actividades">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Actividades">Guardar</button>`);
+  if (ro) $('#f').querySelectorAll('input,select,textarea').forEach(x => x.disabled = true);
+  S.editId = a.id;
+}
+
+/* ───────────── vista EQUIPO ───────────── */
+function vEquipo() {
+  const f = S.fecha; const vv = exsDe(f).filter(e => e.estado !== 'Cancelada');
+  const peak = {}; vv.forEach(ex => { const n = necesidad(vv.filter(o => o === ex || solapa(o, ex))); Object.keys(n).forEach(k => peak[k] = Math.max(peak[k] || 0, n[k])); });
+  const ed = esJefe();
+  return `<div class="bar"><h2 style="margin:0" class="grow">Implementos</h2>${ed ? '<button class="pri" data-a="nuevo-imp">+ Implemento</button>' : ''}</div>
+    <div class="card scroll"><table><tr><th>Implemento</th><th>Cantidad</th><th>Uso máx. ${esc(fCorta(f))}</th><th>Notas</th></tr>
+      ${T('Implementos').map(im => `<tr ${ed ? `data-a="editar-imp" data-id="${esc(im.id)}" style="cursor:pointer"` : ''}><td><b>${esc(im.nombre)}</b></td><td>${esc(im.cantidad)}</td>
+        <td style="${(peak[im.id] || 0) > num(im.cantidad) ? 'color:var(--err);font-weight:700' : ''}">${peak[im.id] || 0}</td><td><small>${esc(im.notas)}</small></td></tr>`).join('')}</table></div>
+    <div class="bar"><h2 style="margin:0" class="grow">Vehículos y botes</h2>${ed ? '<button class="pri" data-a="nuevo-rec">+ Vehículo / bote</button>' : ''}</div>
+    <div class="card scroll"><table><tr><th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>Uso ${esc(fCorta(f))}</th><th>Notas</th></tr>
+      ${T('Recursos').map(r => `<tr ${ed ? `data-a="editar-rec" data-id="${esc(r.id)}" style="cursor:pointer"` : ''}><td><b>${esc(r.nombre)}</b></td><td>${esc(r.tipo)}</td><td>${esc(r.capacidad || '—')}</td>
+        <td><small>${esc(vv.filter(e => e.recursoId === r.id).map(e => e.inicio + '–' + finEx(e) + ' ' + nomAct(e)).join(' | ') || 'libre')}</small></td><td><small>${esc(r.notas)}</small></td></tr>`).join('')}</table></div>
+    <small>El uso corresponde al día elegido en la pestaña Día (${esc(fLarga(f))}).</small>`;
+}
+function abrirImp(im) {
+  im = im || { id: '', nombre: '', cantidad: 0, notas: '' };
+  modal(im.id ? 'Editar implemento' : 'Nuevo implemento', `<form id="f"><input type="hidden" name="id" value="${esc(im.id)}">
+    <div class="grid2"><label>Nombre<input name="nombre" value="${esc(im.nombre)}" required></label><label>Cantidad disponible<input type="number" min="0" name="cantidad" value="${esc(im.cantidad)}"></label></div>
+    <label>Notas<input name="notas" value="${esc(im.notas)}" placeholder="2 en reparación, tallas…"></label></form>`,
+    `${im.id ? '<button class="del" data-a="borrar" data-t="Implementos">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Implementos">Guardar</button>`);
+  S.editId = im.id;
+}
+function abrirRec(r) {
+  r = r || { id: '', nombre: '', tipo: 'Vehículo', capacidad: '', notas: '' };
+  modal(r.id ? 'Editar vehículo / bote' : 'Nuevo vehículo / bote', `<form id="f"><input type="hidden" name="id" value="${esc(r.id)}">
+    <div class="grid3"><label>Nombre<input name="nombre" value="${esc(r.nombre)}" required></label>
+      <label>Tipo<select name="tipo">${['Vehículo', 'Bote', 'Otro'].map(t => `<option ${r.tipo === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label>Capacidad (pax)<input type="number" name="capacidad" value="${esc(r.capacidad)}" placeholder="sin límite"></label></div>
+    <label>Notas<input name="notas" value="${esc(r.notas)}"></label></form>`,
+    `${r.id ? '<button class="del" data-a="borrar" data-t="Recursos">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Recursos">Guardar</button>`);
+  S.editId = r.id;
+}
+
+/* ───────────── vista GUÍAS (solo jefe) ───────────── */
+function vGuias() {
+  const mes = hoy().slice(0, 7);
+  return `<div class="bar"><h2 style="margin:0" class="grow">Guías</h2><button class="pri" data-a="nuevo-guia">+ Guía</button></div>
+    <div class="card scroll"><table><tr><th>Nombre</th><th>Teléfono</th><th>PIN</th><th>Este mes</th><th>Notas</th></tr>
+    ${T('Guias').map(g => {
+      const tm = T('Turnos').filter(t => t.guiaId === g.id && t.fecha.slice(0, 7) === mes).map(t => Object.assign({}, t, { tipo: by('TiposTurno', t.tipoId) }));
+      const lib = tm.filter(t => t.tipo && t.tipo.esLibre === 'si').length, hrs = tm.reduce((a, t) => a + horasTurno(t), 0);
+      const nex = T('Excursiones').filter(e => e.estado !== 'Cancelada' && e.fecha.slice(0, 7) === mes && exGuias(e).includes(g.id)).length;
+      return `<tr data-a="editar-guia" data-id="${esc(g.id)}" style="cursor:pointer;${g.activo === 'no' ? 'opacity:.5' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>${g.activo === 'no' ? ' <span class="badge">inactivo</span>' : ''}</td>
+        <td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${hrs}h · ${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
+    }).join('')}</table></div>
+    <div class="bar"><h2 style="margin:0" class="grow">Tipos de turno</h2><button class="pri" data-a="nuevo-tipo">+ Tipo de turno</button></div>
+    <div class="card"><div class="chips">${T('TiposTurno').map(t => `<button data-a="editar-tipo" data-id="${esc(t.id)}" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}${t.inicio ? ' · ' + esc(t.inicio) + '–' + esc(t.fin) : ''}${t.esLibre === 'si' ? ' (libre)' : ''}</button>`).join('')}</div></div>
+    <h2>Configuración</h2>
+    <div class="card"><div class="grid2">
+      <label>Nombre del lodge<input id="cfg-lodge" value="${esc(cfg('LODGE'))}"></label>
+      <label>Nuevo PIN del jefe<input id="cfg-pin" type="password" placeholder="mínimo 4 caracteres"></label></div>
+      <button data-a="guardar-cfg">Guardar configuración</button>
+      <p><small>Todos los datos están en la Planilla de Google: puedes respaldarla con Archivo › Hacer una copia.</small></p></div>`;
+}
+function abrirGuia(g) {
+  g = g || { id: '', nombre: '', telefono: '', pin: String(Math.floor(1000 + Math.random() * 9000)), color: '#2e7d6b', activo: 'si', notas: '' };
+  modal(g.id ? 'Editar guía' : 'Nuevo guía', `<form id="f"><input type="hidden" name="id" value="${esc(g.id)}">
+    <div class="grid2"><label>Nombre<input name="nombre" value="${esc(g.nombre)}" required></label><label>Teléfono / WhatsApp<input name="telefono" value="${esc(g.telefono)}"></label></div>
+    <div class="grid3"><label>PIN para entrar<input name="pin" value="${esc(g.pin)}"></label>
+      <label>Color<input type="color" name="color" value="${esc(g.color || '#2e7d6b')}" style="height:38px;padding:2px"></label>
+      <label>Estado<select name="activo"><option value="si">Activo</option><option value="no" ${g.activo === 'no' ? 'selected' : ''}>Inactivo</option></select></label></div>
+    <label>Notas (idiomas, certificaciones, talla…)<textarea name="notas">${esc(g.notas)}</textarea></label></form>`,
+    `${g.id ? '<button class="del" data-a="borrar" data-t="Guias">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Guias">Guardar</button>`);
+  S.editId = g.id;
+}
+function abrirTipo(t) {
+  t = t || { id: '', nombre: '', inicio: '08:00', fin: '17:00', color: '#d7ecff', esLibre: '' };
+  modal(t.id ? 'Editar tipo de turno' : 'Nuevo tipo de turno', `<form id="f"><input type="hidden" name="id" value="${esc(t.id)}">
+    <label>Nombre<input name="nombre" value="${esc(t.nombre)}" required placeholder="Mañana, Tarde, Vacaciones, Licencia…"></label>
+    <div class="grid3"><label>Inicio<input type="time" name="inicio" value="${esc(t.inicio)}"></label><label>Término<input type="time" name="fin" value="${esc(t.fin)}"></label>
+      <label>Color<input type="color" name="color" value="${esc(t.color || '#d7ecff')}" style="height:38px;padding:2px"></label></div>
+    <label>¿Es día libre o ausencia?<select name="esLibre"><option value="">No, es un turno de trabajo</option><option value="si" ${t.esLibre === 'si' ? 'selected' : ''}>Sí (libre, vacaciones, licencia)</option></select></label></form>`,
+    `${t.id ? '<button class="del" data-a="borrar" data-t="TiposTurno">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="TiposTurno">Guardar</button>`);
+  S.editId = t.id;
+}
+
+/* ───────────── guardar / borrar genéricos ───────────── */
+async function guardarObj(tabla, obj) {
+  const btns = $('#mbox').querySelectorAll('.mfoot button'); btns.forEach(b => b.disabled = true);
+  try {
+    const r = await api('guardar', S.tok, tabla, obj);
+    const arr = S.d[tabla]; const i = arr.findIndex(x => x.id === r.id);
+    if (tabla === 'Guias' && !esJefe()) delete r.pin;
+    if (i >= 0) arr[i] = r; else arr.push(r);
+    toast('Guardado');
+    if (tabla === 'Huespedes' && S.hdesdeEx) { // volvemos a la excursión con el huésped agregado
+      const ex = S.hdesdeEx; S.hdesdeEx = null;
+      const pax = ex._pax.filter(p => p.h || p.nombre); pax.push({ h: r.id, pax: r.pax || 1 });
+      ex.pasajeros = JSON.stringify(pax); ex.checklist = JSON.stringify(ex._chk);
+      render(); abrirEx(ex); return;
+    }
+    cerrar(); render();
+  } catch (e) { toast(e.message, true); btns.forEach(b => b.disabled = false); }
+}
+function leerForm() {
+  const o = {}; new FormData($('#f')).forEach((v, k) => o[k] = String(v).trim());
+  const imps = $('#f').querySelectorAll('[data-imp]');
+  if (imps.length) { const m = {}; imps.forEach(x => { if (num(x.value)) m[x.dataset.imp] = num(x.value); }); o.implementos = JSON.stringify(m); }
+  return o;
+}
+async function borrar(tabla, btn) {
+  if (!btn.classList.contains('sure')) { btn.classList.add('sure'); btn.textContent = '¿Seguro? Toca otra vez'; return; }
+  const id = tabla === 'Excursiones' ? E.id : S.editId;
+  try {
+    await api('eliminar', S.tok, tabla, id);
+    S.d[tabla] = S.d[tabla].filter(x => x.id !== id);
+    if (tabla === 'Guias') S.d.Turnos = S.d.Turnos.filter(t => t.guiaId !== id);
+    cerrar(); render(); toast('Eliminado');
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ───────────── textos para WhatsApp ───────────── */
+function textoDia(f) {
+  let t = `*Programa ${fLarga(f)}*\n\n*Turnos*\n`;
+  guiasActivas().forEach(g => { const tu = turnoDe(g.id, f); t += `• ${g.nombre}: ${txtTurno(tu)}${tu && tu.nota ? ' (' + tu.nota + ')' : ''}\n`; });
+  const exs = exsDe(f).filter(e => e.estado !== 'Cancelada');
+  t += `\n*Excursiones* (${exs.length})\n`;
+  exs.forEach(e => {
+    const r = e.recursoId && by('Recursos', e.recursoId);
+    t += `\n▶ ${e.inicio}–${finEx(e)} *${nomAct(e)}*\n   Guía: ${exGuias(e).map(id => (guia(id) || {}).nombre || '?').join(', ') || 'SIN GUÍA'}${r ? ' · ' + r.nombre : ''}\n   ${exPax(e)} pax: ${J(e.pasajeros, []).map(p => paxNombre(p) + (num(p.pax) > 1 ? ' ×' + p.pax : '')).join(', ') || '-'}\n`;
+    restricciones(e).forEach(x => t += `   ⚠️ ${x}\n`);
+    if (e.notas) t += `   📝 ${e.notas}\n`;
+  });
+  if (!exs.length) t += 'Sin excursiones programadas.\n';
+  return t;
+}
+function textoSemana(L) {
+  let t = `*Turnos semana del ${fLarga(L)}*\n`;
+  guiasActivas().forEach(g => {
+    t += `\n*${g.nombre}*\n`;
+    [...Array(7)].forEach((_, i) => { const f = addD(L, i), tu = turnoDe(g.id, f); t += `${fCorta(f)}: ${txtTurno(tu)}${tu && tu.nota ? ' (' + tu.nota + ')' : ''}\n`; });
+  });
+  return t;
+}
+function modalTexto(titulo, txt) {
+  modal(titulo, `<textarea id="wtxt" rows="16" style="font-size:13px">${esc(txt)}</textarea>`,
+    `<a class="grow" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><button>Abrir WhatsApp</button></a>
+     <button data-a="cerrar">Cerrar</button><button class="pri" data-a="copiar-txt">Copiar</button>`);
+}
+function copiarTxt() {
+  const ta = $('#wtxt'); ta.select();
+  const ok = () => toast('Copiado. Pégalo en WhatsApp.');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(ok, () => { document.execCommand('copy'); ok(); });
+  else { document.execCommand('copy'); ok(); }
+}
+
+/* ───────────── modal genérico ───────────── */
+function modal(titulo, cuerpo, pie) {
+  $('#mbox').innerHTML = `<div class="mhead"><h3>${esc(titulo)}</h3><button class="sm" data-a="cerrar">✕</button></div>
+    <div class="mbody">${cuerpo}</div><div class="mfoot">${pie || ''}</div>`;
+  $('#modal').classList.add('on');
+  const first = $('#mbox .mbody input:not([type=hidden]):not([type=checkbox]),#mbox .mbody select');
+  if (first && window.innerWidth > 700) first.focus();
+}
+function cerrar() { $('#modal').classList.remove('on'); $('#mbox').innerHTML = ''; E = null; }
+
+/* ───────────── eventos ───────────── */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  if (el.tagName === 'INPUT' || el.tagName === 'SELECT') return;
+  const a = el.dataset.a, id = el.dataset.id;
+  const acciones = {
+    'vista': () => { S.vista = el.dataset.v; render(); window.scrollTo(0, 0); },
+    'recargar': () => recargar(),
+    'salir': () => { api('salir', S.tok).catch(() => {}); salirLocal(); pantallaLogin(); },
+    'dia-mov': () => { S.fecha = addD(S.fecha, +el.dataset.n); render(); },
+    'dia-hoy': () => { S.fecha = hoy(); render(); },
+    'ir-dia': () => { S.fecha = el.dataset.f; S.vista = 'dia'; render(); },
+    'sem-mov': () => { S.semana = addD(S.semana, +el.dataset.n); render(); },
+    'sem-hoy': () => { S.semana = lunes(hoy()); render(); },
+    'turno': () => modalTurno(el.dataset.g, el.dataset.f),
+    'set-turno': () => setTurno(el.dataset.t),
+    'copiar-semana-ant': () => copiarSemanaAnterior(),
+    'copiar-dia': () => modalTexto('Programa del día', textoDia(S.fecha)),
+    'copiar-semana': () => modalTexto('Turnos de la semana', textoSemana(S.semana)),
+    'copiar-txt': () => copiarTxt(),
+    'imprimir': () => window.print(),
+    'nueva-ex': () => nuevaEx(S.vista === 'dia' ? S.fecha : ''),
+    'editar-ex': () => abrirEx(by('Excursiones', id)),
+    'guardar-ex': () => guardarEx(),
+    'duplicar-ex': () => { exLeer(); const c = Object.assign({}, E, { id: '', estado: 'Programada', checklist: '[]', actualizado: '', actualizadoPor: '' }); abrirEx(c); toast('Copia creada: cambia la fecha o la hora y guarda'); },
+    'px-add': () => { exLeer(); E._pax.push({ h: '', nombre: '', pax: 1 }); exPartes(); const ins = $('#expax').querySelectorAll('[data-pf="n"]'); ins[ins.length - 1].focus(); },
+    'px-del': () => { exLeer(); E._pax.splice(+el.dataset.i, 1); exPartes(); },
+    'nuevo-hues-ex': () => { exLeer(); abrirHues(null, true); },
+    'nuevo-hues': () => abrirHues(),
+    'editar-hues': () => abrirHues(by('Huespedes', id)),
+    'nueva-act': () => abrirAct(),
+    'editar-act': () => abrirAct(by('Actividades', id)),
+    'nuevo-imp': () => abrirImp(), 'editar-imp': () => abrirImp(by('Implementos', id)),
+    'nuevo-rec': () => abrirRec(), 'editar-rec': () => abrirRec(by('Recursos', id)),
+    'nuevo-guia': () => abrirGuia(), 'editar-guia': () => abrirGuia(by('Guias', id)),
+    'nuevo-tipo': () => abrirTipo(), 'editar-tipo': () => abrirTipo(by('TiposTurno', id)),
+    'guardar-form': () => {
+      const f = $('#f'); if (!f.reportValidity()) return;
+      guardarObj(el.dataset.t, leerForm());
+    },
+    'borrar': () => borrar(el.dataset.t, el),
+    'guardar-cfg': async () => {
+      try {
+        await api('guardarConfig', S.tok, 'LODGE', $('#cfg-lodge').value);
+        const c = T('Config').find(x => x.id === 'LODGE'); if (c) c.valor = $('#cfg-lodge').value.trim(); else S.d.Config.push({ id: 'LODGE', valor: $('#cfg-lodge').value.trim() });
+        if ($('#cfg-pin').value) await api('guardarConfig', S.tok, 'PIN_JEFE', $('#cfg-pin').value);
+        render(); toast('Configuración guardada');
+      } catch (err) { toast(err.message, true); }
+    },
+    'cerrar': () => cerrar()
+  };
+  if (acciones[a]) { e.preventDefault(); acciones[a](); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.a === 'dia-fecha' && el.value) { S.fecha = el.value; render(); return; }
+  if (el.dataset.fx) { S.fx[el.dataset.fx] = el.type === 'checkbox' ? el.checked : el.value; render(); return; }
+  if (el.dataset.fh === 'todos') { S.fh.todos = el.checked; render(); return; }
+  if (E && $('#exinfo') && el.closest('#mbox')) exCambio(el);
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset.fx === 'q' || el.dataset.fh === 'q') {
+    clearTimeout(S._q); S._q = setTimeout(() => {
+      if (el.dataset.fx) S.fx.q = el.value; else S.fh.q = el.value;
+      render(); const n = document.querySelector(el.dataset.fx ? '[data-fx="q"]' : '[data-fh="q"]'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+    }, 250);
+  }
+  if (E && $('#exinfo') && el.dataset.pf === 'pax') { exLeer(); refrescarExSinPax(); }
+});
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') cerrar(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal').classList.contains('on')) cerrar(); });
+// trae cambios de los demás cada 5 minutos (si no estás editando)
+setInterval(() => { if (S.tok && S.d && !$('#modal').classList.contains('on') && !document.hidden) recargar(true); }, 5 * 60 * 1000);
+
+boot();
+</script>
+</body>
+</html>
