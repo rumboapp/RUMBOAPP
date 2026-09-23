@@ -395,14 +395,14 @@ async function pantallaLogin() {
 
 /* ───────────── layout ───────────── */
 function vistas() {
-  const v = [['dia', 'Día'], ['semana', 'Turnos'], ['exc', 'Excursiones'], ['hues', 'Huéspedes'], ['cat', 'Actividades'], ['equipo', 'Equipo']];
-  if (esJefe()) v.push(['inf', 'Informes'], ['guias', 'Guías']);
+  if (!esJefe()) return [['dia', 'Día'], ['semana', 'Turnos'], ['exc', 'Excursiones'], ['cat', 'Actividades']];
+  return [['dia', 'Día'], ['semana', 'Turnos'], ['exc', 'Excursiones'], ['hues', 'Huéspedes'], ['cat', 'Actividades'], ['equipo', 'Equipo'], ['inf', 'Informes'], ['guias', 'Guías']];
   return v;
 }
 function render() {
   if (!S.d) return;
   const V = { dia: vDia, semana: vTurnos, exc: vExc, hues: vHues, cat: vCat, equipo: vEquipo, inf: vInformes, guias: vGuias };
-  if (!V[S.vista] || ((S.vista === 'guias' || S.vista === 'inf') && !esJefe())) S.vista = 'dia';
+  if (!V[S.vista] || !vistas().some(([k]) => k === S.vista)) S.vista = 'dia';
   const y = window.scrollY;
   $('#app').innerHTML = `<header><h1>${esc(cfg('LODGE') || 'Puyuhuapi Lodge & Spa')} <span>· Animaciones</span></h1>
       <small>${esc(S.me.nombre)}</small>
@@ -454,7 +454,7 @@ function vDia() {
   const pend = vv.reduce((a, e) => { const cl = lines((act(e) || {}).checklist); return a + cl.filter(x => !J(e.checklist, []).includes(x)).length; }, 0);
   return `<div class="bar"><button data-a="dia-mov" data-n="-1">‹</button><input type="date" value="${f}" data-a="dia-fecha"><button data-a="dia-mov" data-n="1">›</button>
       <button data-a="dia-hoy">Hoy</button><span class="grow"></span>
-      <button data-a="copiar-dia">📲 WhatsApp</button><button data-a="imprimir">🖨️</button><button class="pri" data-a="nueva-ex">+ Excursión</button></div>
+      ${esJefe() ? '<button data-a="copiar-dia">📲 WhatsApp</button><button data-a="imprimir">🖨️</button>' : ''}<button class="pri" data-a="nueva-ex">+ Excursión</button></div>
     <h2>${esc(fLarga(f))}${f === hoy() ? ' · hoy' : ''}</h2>
     <div class="cols"><div>
       <div class="stats">
@@ -504,15 +504,13 @@ function vSemana(seg) {
         ${exs.map(e => `<div class="mini ${malas.includes(e) ? 'x' : ''}">${esc(e.inicio)} ${esc(nomAct(e))}</div>`).join('')}</td>`;
     }).join('');
     return `<tr class="${S.me.guiaId === g.id ? 'yo' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>
-      <div class="mini">${r.horas}h · ${r.libres} libre${r.libres === 1 ? '' : 's'} · ${r.exc} exc.${r.sin ? ` · <span style="color:var(--warn)">${r.sin} sin asignar</span>` : ''}</div></td>${celdas}</tr>`;
+      <div class="mini">${r.libres} libre${r.libres === 1 ? '' : 's'} · ${r.exc} exc.${r.sin ? ` · <span style="color:var(--warn)">${r.sin} sin asignar</span>` : ''}</div></td>${celdas}</tr>`;
   }).join('');
-  const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada'); return `<td class="c ${f === h ? 'hoy' : ''}"><small>${v.length} exc · ${v.reduce((a, e) => a + exPax(e), 0)} pax</small></td>`; }).join('');
   return `<div class="bar">${seg}<button data-a="sem-mov" data-n="-7">‹</button><button data-a="sem-hoy">Esta semana</button><button data-a="sem-mov" data-n="7">›</button>
       <span class="grow"></span>${botonesSel()}${esJefe() ? '<button data-a="copiar-semana-ant">Copiar semana anterior</button>' : ''}
-      <button data-a="copiar-semana">📲 WhatsApp</button><button data-a="pdf-turnos">📄 PDF</button></div>
+      ${esJefe() ? '<button data-a="copiar-semana">📲 WhatsApp</button><button data-a="pdf-turnos">📄 PDF</button>' : ''}</div>
     <h2>Semana del ${esc(fLarga(L))}</h2>
-    ${gs.length ? `<div class="card scroll"><table class="sem sticky1"><tr><th>Guía</th>${dias.map(f => `<th class="dh ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}">${esc(fCorta(f))}</th>`).join('')}</tr>${filas}
-      <tr><td><small>Total</small></td>${tot}</tr></table></div>` : '<div class="empty">No hay guías activos.</div>'}
+    ${gs.length ? `<div class="card scroll"><table class="sem sticky1"><tr><th>Guía</th>${dias.map(f => `<th class="dh ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}">${esc(fCorta(f))}</th>`).join('')}</tr>${filas}</table></div>` : '<div class="empty">No hay guías activos.</div>'}
     ${leyendaTurnos()}`;
 }
 function leyendaTurnos() {
@@ -597,7 +595,7 @@ async function pdfTurnos(btn) {
           const ex = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).map(e => e.inicio + ' ' + nomAct(e));
           return { t: tu ? [tu.tipo ? tu.tipo.nombre : '?', tu.tipo && tu.tipo.inicio ? tu.tipo.inicio + '–' + tu.tipo.fin : '', tu.nota].concat(ex).filter(Boolean).join('\n') : (ex.join('\n') || '—'),
             bg: tu && tu.tipo ? tu.tipo.color : '#ffffff', b: false }; }))
-          .concat([{ t: r.trab + ' días · ' + r.horas + ' h\n' + r.libres + ' libres' }]); }) };
+          .concat([{ t: r.trab + ' días\n' + r.libres + ' libres' }]); }) };
   } else {
     const M = S.mes || hoy().slice(0, 7), [y, m] = M.split('-').map(Number), n = new Date(y, m, 0).getDate();
     dias = [...Array(n)].map((_, i) => M + '-' + pad(i + 1));
@@ -608,7 +606,7 @@ async function pdfTurnos(btn) {
         return [{ t: g.nombre, b: true }].concat(dias.map(f => { const tu = turnoDe(g.id, f);
           if (tu && tu.nota) notas.push(g.nombre + ' · ' + fCorta(f) + ': ' + tu.nota);
           return { t: tu ? abrev(tu.tipo) + (tu.nota ? '*' : '') : '', bg: tu && tu.tipo ? tu.tipo.color : ([0, 6].includes(pd(f).getDay()) ? '#f4f4ef' : '#ffffff'), b: true }; }))
-          .concat([{ t: r.trab + ' días · ' + r.horas + ' h\n' + r.libres + ' libres' }]); }) };
+          .concat([{ t: r.trab + ' días\n' + r.libres + ' libres' }]); }) };
   }
   d.titulo = (cfg('LODGE') || 'Puyuhuapi Lodge & Spa') + ' · ' + titulo;
   d.subtitulo = 'Generado el ' + fCorta(hoy());
@@ -631,7 +629,7 @@ function vMes(seg) {
   const filas = gs.map(g => {
     const r = resumenGuia(g, dias);
     return `<tr class="${S.me.guiaId === g.id ? 'yo' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>
-      <div class="mini">${r.trab} días · ${r.horas}h · ${r.libres} libres · ${r.exc} exc.</div></td>` +
+      <div class="mini">${r.trab} días · ${r.libres} libres · ${r.exc} exc.</div></td>` +
       dias.map(f => {
         const tu = turnoDe(g.id, f), wd = pd(f).getDay();
         const ne = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).length;
@@ -640,14 +638,11 @@ function vMes(seg) {
           ${tu ? `<span class="t" style="background:${esc((tu.tipo && tu.tipo.color) || '#eee')}">${esc(abrev(tu.tipo))}${tu.nota ? '*' : ''}</span>` : '<span class="n">·</span>'}${ne ? `<span class="n">${ne} exc</span>` : ''}</td>`;
       }).join('') + '</tr>';
   }).join('');
-  const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada').length; const wd = pd(f).getDay();
-    return `<td class="c ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}"><span class="n">${v || ''}</span></td>`; }).join('');
   return `<div class="bar">${seg}<button data-a="mes-mov" data-n="-1">‹</button><button data-a="mes-hoy">Este mes</button><button data-a="mes-mov" data-n="1">›</button>
-      <span class="grow"></span>${botonesSel()}<button data-a="copiar-mes">📲 WhatsApp</button><button data-a="pdf-turnos">📄 PDF</button></div>
+      <span class="grow"></span>${botonesSel()}${esJefe() ? '<button data-a="copiar-mes">📲 WhatsApp</button><button data-a="pdf-turnos">📄 PDF</button>' : ''}</div>
     <h2>${MESES[m - 1]} ${y}</h2>
     ${gs.length ? `<div class="card scroll"><table class="mes sticky1"><tr><th style="text-align:left">Guía</th>${dias.map(f => { const d = pd(f), wd = d.getDay();
-      return `<th class="dh ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}" style="cursor:pointer">${DIAS[wd][0]}<br><b>${d.getDate()}</b></th>`; }).join('')}</tr>${filas}
-      <tr><td><small>Excursiones</small></td>${tot}</tr></table></div>` : '<div class="empty">No hay guías activos.</div>'}
+      return `<th class="dh ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}" style="cursor:pointer">${DIAS[wd][0]}<br><b>${d.getDate()}</b></th>`; }).join('')}</tr>${filas}</table></div>` : '<div class="empty">No hay guías activos.</div>'}
     ${leyendaTurnos()}`;
 }
 function textoMes(M) {
@@ -1058,7 +1053,7 @@ function vGuias() {
       const lib = tm.filter(t => t.tipo && t.tipo.esLibre === 'si').length, hrs = tm.reduce((a, t) => a + horasTurno(t), 0);
       const nex = T('Excursiones').filter(e => e.estado !== 'Cancelada' && e.fecha.slice(0, 7) === mes && exGuias(e).includes(g.id)).length;
       return `<tr data-a="editar-guia" data-id="${esc(g.id)}" style="cursor:pointer;${g.activo === 'no' ? 'opacity:.5' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>${g.activo === 'no' ? ' <span class="badge">inactivo</span>' : ''}</td>
-        <td><small>${g.rol === 'jefe' ? 'Completo' : 'Guía'}</small></td><td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${hrs}h · ${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
+        <td><small>${g.rol === 'jefe' ? 'Completo' : 'Guía'}</small></td><td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
     }).join('')}</table></div>
     <div class="bar"><h2 style="margin:0" class="grow">Tipos de turno</h2><button class="pri" data-a="nuevo-tipo">+ Tipo de turno</button></div>
     <div class="card"><div class="chips">${T('TiposTurno').map(t => `<button data-a="editar-tipo" data-id="${esc(t.id)}" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}${t.inicio ? ' · ' + esc(t.inicio) + '–' + esc(t.fin) : ''}${t.esLibre === 'si' ? ' (libre)' : ''}</button>`).join('')}</div></div>

@@ -43,7 +43,7 @@ Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla
 | Pestaña | Para qué |
 |---|---|
 | **Día** | Programa del día: turno de cada guía, excursiones, alertas, implementos en uso y huéspedes que llegan o salen. Botón para mandarlo por WhatsApp. |
-| **Turnos** | Vista **Semana** o **Mes**. Toca una celda para asignar un turno, o **arrastra** sobre varias celdas (⌘/Ctrl + clic suma celdas sueltas; en el celular, "Seleccionar varios") y elige el turno para todas de una vez. **📄 PDF** genera una hoja horizontal con colores, leyenda y totales, lista para imprimir. |
+| **Turnos** | Vista **Semana** o **Mes**. Toca una celda para asignar un turno, o **arrastra** sobre varias celdas (⌘/Ctrl + clic suma celdas sueltas; en el celular, "Seleccionar varios") y elige el turno para todas de una vez. **📄 PDF** genera una hoja horizontal con colores, leyenda y totales, lista para imprimir (sin horas trabajadas: muestra días trabajados y libres). |
 | **Excursiones** | Calendario **Día** o **Semana** con horas: cada actividad es una burbuja del largo de su duración, y las simultáneas quedan lado a lado. Toca un espacio vacío para crear una excursión a esa hora. También hay una vista **Lista** con filtros. |
 | **Huéspedes** | Buscador de los huéspedes que han tomado actividades. Se llena solo: al escribir un pasajero nuevo en una excursión, se crea su ficha. Filtra por nombre, habitación, fechas o actividad; cada ficha muestra su historial, restricciones y tallas. |
 | **Actividades** | Catálogo editable: duración, dificultad, capacidad, vehículo por defecto, implementos por pasajero y checklist de preparación. |
@@ -60,8 +60,8 @@ Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla
 
 **Permisos:**
 - Quien tiene acceso **Completo** puede editar y eliminar todo, y ver informes. Se asigna en la pestaña Guías.
-- Los guías ven todo, y pueden crear y editar excursiones y fichas de huéspedes: marcar el checklist, cambiar el estado, agregar notas.
-- Los guías no pueden eliminar, ni tocar turnos, guías, catálogo o equipo.
+- Los guías ven las pestañas Día, Turnos, Excursiones y Actividades. Pueden crear y editar excursiones (con sus pasajeros): marcar el checklist, cambiar el estado, agregar notas.
+- Los guías no ven Huéspedes, Equipo, Informes ni Guías, ni los botones de WhatsApp, imprimir o PDF. No pueden eliminar ni tocar turnos.
 
 **Primeros ajustes recomendados:**
 - En **Equipo**, pon las cantidades reales de implementos: las que trae son de referencia.
