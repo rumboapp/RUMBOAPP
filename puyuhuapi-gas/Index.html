@@ -4,7 +4,7 @@
 <base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rumbo · Puyuhuapi Lodge</title>
+<title>Puyuhuapi Lodge · Animaciones</title>
 <style>
 :root{
   --bg:#f3f5f2; --card:#fff; --ink:#1c2a27; --muted:#63726e; --line:#dde3df;
@@ -40,7 +40,7 @@ header button{background:transparent;color:#fff;border-color:rgba(255,255,255,.4
 nav{display:flex;gap:4px;overflow-x:auto;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:46px;z-index:4}
 nav button{border:0;white-space:nowrap;border-radius:20px;padding:6px 14px}
 nav button.on{background:var(--pri2);color:var(--pri);font-weight:600}
-main{padding:14px 16px 60px;max-width:1150px;margin:0 auto}
+main{padding:16px 24px 60px}
 .bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
 .bar input[type=date]{width:auto}
 .bar select,.bar input[type=search]{width:auto;min-width:130px}
@@ -80,7 +80,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 .mini{font-size:11px;color:var(--muted);text-align:left;margin-top:3px;line-height:1.3}
 .mini.x{color:var(--err)}
 .row{display:flex;gap:8px;align-items:center}
-.pxrow{display:grid;grid-template-columns:1fr 70px 32px;gap:6px;margin-bottom:6px;align-items:center}
+.pxrow{display:grid;grid-template-columns:1fr 74px 64px 32px;gap:6px;margin-bottom:6px;align-items:center}
 .pxrow .r{grid-column:1/-1;font-size:12px;color:var(--err);margin-top:-3px}
 .gchk{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:14px;color:var(--ink)}
 .gchk small{margin-left:auto}
@@ -105,10 +105,48 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 .kv{font-size:13px;margin:2px 0}
 .kv b{color:var(--muted);font-weight:600}
 .ro input,.ro select,.ro textarea{background:#f7f8f7}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.side{display:grid;gap:12px;position:sticky;top:104px}
+.side .card{margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:8px 12px;align-items:start}
+.cards .ex{margin:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.seg button{border:0;border-radius:0;padding:7px 14px}
+.seg button.on{background:var(--pri);color:#fff}
+.sticky1 td:first-child,.sticky1 th:first-child{position:sticky;left:0;background:var(--card);z-index:1;min-width:150px}
+.mes td.c{min-width:40px;padding:3px 2px;text-align:center;border-left:1px solid var(--line)}
+.mes td.c.ed{cursor:pointer}
+.mes td.c.ed:hover{outline:2px solid var(--pri);outline-offset:-2px}
+.mes th{padding:4px 2px;text-align:center;font-size:11px;line-height:1.2}
+.mes th.fs,.mes td.fs{background:#f7f5ef}
+.mes th.hoy,.mes td.hoy{background:#e6f3ef}
+.mes .t{display:block;border-radius:5px;padding:5px 0;font-size:12px;font-weight:700}
+.mes .n{display:block;font-size:10px;color:var(--muted)}
+.tbl tr[data-a]{cursor:pointer}
+.tbl tr[data-a]:hover td{background:#f5faf8}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
+.stat b{display:block;font-size:26px;font-variant-numeric:tabular-nums;color:var(--pri)}
+.stat small{font-size:12px}
+.barra{height:8px;border-radius:4px;background:var(--pri);opacity:.7;min-width:2px}
+.filtros{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0 12px;align-items:end}
+.checks{display:flex;flex-wrap:wrap;gap:4px 16px;margin:4px 0 12px}
+.checks .chk{margin:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.rep h3{margin:18px 0 8px;font-size:16px}
+.rep h1{font-size:20px;margin:0 0 4px;color:var(--pri)}
+.sub2{color:var(--muted);margin:0 0 12px}
+.rep .stats{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.rep table{margin-bottom:6px}
+@media (max-width:1000px){.cols{grid-template-columns:1fr}.side{position:static}}
 @media (max-width:640px){
+  .cards{grid-template-columns:1fr}
   .grid2,.grid3{grid-template-columns:1fr}
   main{padding:12px 12px 60px}
   header h1 span{display:none}
+  .stat b{font-size:21px}
+  .bar .grow{flex-basis:100%;height:0}
+  .sticky1 td:first-child,.sticky1 th:first-child{min-width:110px}
 }
 @media print{
   header,nav,.bar,button{display:none!important}
@@ -143,6 +181,7 @@ const J = (s, def) => { if (s && typeof s === 'object') return s; try { return s
 const lines = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
 const num = v => Number(String(v || '').replace(',', '.')) || 0;
 const ESTADOS = ['Programada', 'Confirmada', 'Realizada', 'Cancelada'];
+const normal = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 
 function api(fn, ...args) {
   return new Promise((res, rej) => {
@@ -163,9 +202,9 @@ const store = {
 };
 
 /* ───────────── estado ───────────── */
-const S = { tok: store.get('rumbo_tk'), me: null, d: null, vista: 'dia', fecha: hoy(), semana: lunes(hoy()),
+const S = { fh: { q: '', desde: '', hasta: '', act: '', todos: false }, tok: store.get('anim_tk'), me: null, d: null, vista: 'dia', fecha: hoy(), semana: lunes(hoy()),
   fx: { desde: hoy(), hasta: addD(hoy(), 14), guia: '', estado: '', q: '', mias: true },
-  fh: { q: '', todos: false } };
+};
 const esJefe = () => S.me && S.me.rol === 'jefe';
 
 const T = n => S.d[n] || [];
@@ -273,7 +312,7 @@ function restricciones(ex) {
 const alertHTML = list => list.map(a => `<div class="alert ${a.t}">${a.t === 'err' ? '⛔' : a.t === 'warn' ? '⚠️' : 'ℹ️'} ${esc(a.m)}</div>`).join('');
 
 /* ───────────── arranque y login ───────────── */
-function salirLocal() { S.tok = null; S.me = null; S.d = null; store.set('rumbo_tk', null); }
+function salirLocal() { S.tok = null; S.me = null; S.d = null; store.set('anim_tk', null); }
 
 async function boot() {
   if (!S.tok) return pantallaLogin();
@@ -294,17 +333,17 @@ async function pantallaLogin() {
   let info = { lodge: 'Puyuhuapi Lodge & Spa', guias: [] };
   try { info = await api('listaAcceso'); } catch (e) { toast(e.message, true); }
   $('#app').innerHTML = `<div id="login"><div class="card">
-    <div class="logo">Rumbo</div><div class="sub">${esc(info.lodge)}</div>
-    <label>¿Quién eres?<select id="lq"><option value="jefe">Jefe de excursiones</option>
-      ${info.guias.map(g => `<option value="${esc(g.id)}">${esc(g.nombre)}</option>`).join('')}</select></label>
+    <div class="logo">${esc(info.lodge)}</div><div class="sub">Animaciones y excursiones</div>
+    <label>¿Quién eres?<select id="lq">
+      ${info.guias.map(g => `<option value="${esc(g.id)}">${esc(g.nombre)}${g.rol === 'jefe' ? ' (jefe)' : ''}</option>`).join('')}</select></label>
     <label>PIN<input id="lp" type="password" inputmode="numeric" autocomplete="current-password"></label>
     <button class="pri" style="width:100%" id="lb">Entrar</button></div></div>`;
-  const last = store.get('rumbo_quien'); if (last && [...$('#lq').options].some(o => o.value === last)) $('#lq').value = last;
+  const last = store.get('anim_quien'); if (last && [...$('#lq').options].some(o => o.value === last)) $('#lq').value = last;
   const go = async () => {
     $('#lb').disabled = true; $('#lb').textContent = 'Entrando…';
     try {
       const r = await api('login', $('#lq').value, $('#lp').value);
-      S.tok = r.token; store.set('rumbo_tk', r.token); store.set('rumbo_quien', $('#lq').value);
+      S.tok = r.token; store.set('anim_tk', r.token); store.set('anim_quien', $('#lq').value);
       S.vista = 'dia'; boot();
     } catch (e) { toast(e.message, true); $('#lb').disabled = false; $('#lb').textContent = 'Entrar'; }
   };
@@ -314,22 +353,24 @@ async function pantallaLogin() {
 
 /* ───────────── layout ───────────── */
 function vistas() {
-  const v = [['dia', 'Día'], ['semana', 'Semana y turnos'], ['exc', 'Excursiones'], ['hues', 'Huéspedes'], ['cat', 'Actividades'], ['equipo', 'Equipo']];
-  if (esJefe()) v.push(['guias', 'Guías']);
+  const v = [['dia', 'Día'], ['semana', 'Turnos'], ['exc', 'Excursiones'], ['hues', 'Huéspedes'], ['cat', 'Actividades'], ['equipo', 'Equipo']];
+  if (esJefe()) v.push(['inf', 'Informes'], ['guias', 'Guías']);
   return v;
 }
 function render() {
   if (!S.d) return;
-  const V = { dia: vDia, semana: vSemana, exc: vExc, hues: vHues, cat: vCat, equipo: vEquipo, guias: vGuias };
-  if (!V[S.vista] || (S.vista === 'guias' && !esJefe())) S.vista = 'dia';
+  const V = { dia: vDia, semana: vTurnos, exc: vExc, hues: vHues, cat: vCat, equipo: vEquipo, inf: vInformes, guias: vGuias };
+  if (!V[S.vista] || ((S.vista === 'guias' || S.vista === 'inf') && !esJefe())) S.vista = 'dia';
   const y = window.scrollY;
-  $('#app').innerHTML = `<header><h1>Rumbo <span>· ${esc(cfg('LODGE') || 'Puyuhuapi Lodge')}</span></h1>
+  $('#app').innerHTML = `<header><h1>${esc(cfg('LODGE') || 'Puyuhuapi Lodge & Spa')} <span>· Animaciones</span></h1>
       <small>${esc(S.me.nombre)}</small>
       <button class="sm" data-a="recargar" title="Traer cambios de los demás">↻</button>
       <button class="sm" data-a="salir">Salir</button></header>
     <nav>${vistas().map(([k, n]) => `<button class="${S.vista === k ? 'on' : ''}" data-a="vista" data-v="${k}">${n}</button>`).join('')}</nav>
     <main>${V[S.vista]()}</main>`;
   window.scrollTo(0, y);
+  const th = document.querySelector('.mes th.hoy'); // en el mes, muestra hoy a la vista
+  if (th) { const sc = th.closest('.scroll'); sc.scrollLeft = Math.max(0, th.offsetLeft - sc.clientWidth / 2); }
 }
 
 /* ───────────── vista DÍA ───────────── */
@@ -351,39 +392,38 @@ function tarjetaEx(ex, conFecha) {
 }
 function vDia() {
   const f = S.fecha, exs = exsDe(f);
+  const vv = exs.filter(e => e.estado !== 'Cancelada');
   const chips = guiasActivas().map(g => {
-    const tu = turnoDe(g.id, f); const n = exs.filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).length;
-    return `<span class="chip" style="background:${esc((tu && tu.tipo && tu.tipo.color) || '#fff')}"><span class="dot" style="background:${esc(g.color || '#888')}"></span><b>${esc(g.nombre)}</b> ${esc(txtTurno(tu))}${n ? ` · ${n} exc.` : ''}</span>`;
+    const tu = turnoDe(g.id, f); const n = vv.filter(e => exGuias(e).includes(g.id)).length;
+    return `<div class="chip" style="background:${esc((tu && tu.tipo && tu.tipo.color) || '#fff')};border-radius:10px;width:100%"><span class="dot" style="background:${esc(g.color || '#888')}"></span><b>${esc(g.nombre)}</b><span class="grow"></span>${esc(txtTurno(tu))}${n ? ` · <b>${n}</b> exc.` : ''}</div>`;
   }).join('') || '<small>No hay guías. Agrégalos en la pestaña Guías.</small>';
   // uso de implementos (peor momento del día)
-  const vv = exs.filter(e => e.estado !== 'Cancelada');
   const peak = {};
   vv.forEach(ex => { const n = necesidad(vv.filter(o => o === ex || solapa(o, ex))); Object.keys(n).forEach(k => peak[k] = Math.max(peak[k] || 0, n[k])); });
   const eq = Object.keys(peak).map(k => { const im = by('Implementos', k); if (!im) return ''; const ok = peak[k] <= num(im.cantidad);
     return `<span class="chip" style="${ok ? '' : 'background:var(--errbg);color:var(--err)'}">${esc(im.nombre)}: <b>${peak[k]}</b>/${esc(im.cantidad || 0)}</span>`; }).join('');
-  const llegan = T('Huespedes').filter(h => h.llegada === f), salen = T('Huespedes').filter(h => h.salida === f);
-  const enCasa = T('Huespedes').filter(h => h.llegada && h.llegada <= f && (!h.salida || h.salida >= f));
   const paxDia = vv.reduce((a, e) => a + exPax(e), 0);
   const nAl = vv.reduce((a, e) => a + alertas(e).filter(x => x.t === 'err').length, 0);
+  const rs = [...new Set(vv.flatMap(restricciones))];
+  const pend = vv.reduce((a, e) => { const cl = lines((act(e) || {}).checklist); return a + cl.filter(x => !J(e.checklist, []).includes(x)).length; }, 0);
   return `<div class="bar"><button data-a="dia-mov" data-n="-1">‹</button><input type="date" value="${f}" data-a="dia-fecha"><button data-a="dia-mov" data-n="1">›</button>
       <button data-a="dia-hoy">Hoy</button><span class="grow"></span>
       <button data-a="copiar-dia">📲 WhatsApp</button><button data-a="imprimir">🖨️</button><button class="pri" data-a="nueva-ex">+ Excursión</button></div>
     <h2>${esc(fLarga(f))}${f === hoy() ? ' · hoy' : ''}</h2>
-    <div class="card"><h3>Guías</h3><div class="chips">${chips}</div></div>
-    ${nAl ? `<div class="alert err" style="margin-bottom:10px">⛔ Hay ${nAl} conflicto(s) en este día. Revisa las excursiones marcadas.</div>` : ''}
-    <h3>Excursiones <small>(${vv.length} · ${paxDia} pax)</small></h3>
-    ${exs.map(e => tarjetaEx(e)).join('') || '<div class="empty">No hay excursiones este día.</div>'}
-    ${eq ? `<div class="card" style="margin-top:12px"><h3>Implementos en uso (momento de mayor uso)</h3><div class="chips">${eq}</div></div>` : ''}
-    <div class="card"><h3>Huéspedes</h3>
-      <div class="kv"><b>En el lodge:</b> ${enCasa.length} fichas · ${enCasa.reduce((a, h) => a + (num(h.pax) || 1), 0)} personas</div>
-      ${llegan.length ? `<div class="kv"><b>Llegan:</b> ${esc(llegan.map(h => h.nombre).join(', '))}</div>` : ''}
-      ${salen.length ? `<div class="kv"><b>Salen:</b> ${esc(salen.map(h => h.nombre).join(', '))}</div>` : ''}
-      ${sinExc(f, enCasa)}</div>`;
-}
-function sinExc(f, enCasa) {
-  const con = new Set(); T('Excursiones').filter(e => e.estado !== 'Cancelada' && e.fecha >= f).forEach(e => J(e.pasajeros, []).forEach(p => p.h && con.add(p.h)));
-  const libres = enCasa.filter(h => !con.has(h.id));
-  return libres.length ? `<div class="kv"><b>Sin excursiones reservadas:</b> ${esc(libres.map(h => h.nombre + (h.habitacion ? ' (' + h.habitacion + ')' : '')).join(', '))}</div>` : '';
+    <div class="cols"><div>
+      <div class="stats">
+        <div class="stat"><b>${vv.length}</b><small>excursiones</small></div>
+        <div class="stat"><b>${paxDia}</b><small>pasajeros</small></div>
+        <div class="stat"><b style="${pend ? 'color:var(--warn)' : ''}">${pend}</b><small>tareas de checklist pendientes</small></div>
+        <div class="stat"><b style="${nAl ? 'color:var(--err)' : ''}">${nAl}</b><small>conflictos</small></div>
+      </div>
+      ${exs.map(e => tarjetaEx(e)).join('') || '<div class="empty">No hay excursiones este día.<br><br><button class="pri" data-a="nueva-ex">+ Agregar excursión</button></div>'}
+    </div>
+    <aside class="side">
+      <div class="card"><h3>Turnos del día</h3><div class="chips">${chips}</div></div>
+      ${rs.length ? `<div class="card"><h3>Restricciones de pasajeros</h3>${rs.map(x => `<div class="alert warn">⚠️ ${esc(x)}</div>`).join('')}</div>` : ''}
+      ${eq ? `<div class="card"><h3>Implementos en uso</h3><small>Momento de mayor uso / disponibles</small><div class="chips" style="margin-top:6px">${eq}</div></div>` : ''}
+    </aside></div>`;
 }
 
 /* ───────────── vista SEMANA / TURNOS ───────────── */
@@ -391,14 +431,25 @@ function horasTurno(tu) {
   if (!tu || !tu.tipo || tu.tipo.esLibre === 'si' || !tu.tipo.inicio || !tu.tipo.fin) return 0;
   let s = toM(tu.tipo.inicio), e = toM(tu.tipo.fin); if (e <= s) e += 1440; return (e - s) / 60;
 }
-function vSemana() {
+function vTurnos() {
+  const modo = S.tmodo || 'semana';
+  const seg = `<div class="seg"><button class="${modo === 'semana' ? 'on' : ''}" data-a="tmodo" data-m="semana">Semana</button><button class="${modo === 'mes' ? 'on' : ''}" data-a="tmodo" data-m="mes">Mes</button></div>`;
+  return modo === 'mes' ? vMes(seg) : vSemana(seg);
+}
+function resumenGuia(g, dias) {
+  let horas = 0, libres = 0, sin = 0, trab = 0;
+  dias.forEach(f => { const tu = turnoDe(g.id, f); horas += horasTurno(tu);
+    if (!tu) sin++; else if (tu.tipo && tu.tipo.esLibre === 'si') libres++; else trab++; });
+  const exc = T('Excursiones').filter(e => e.estado !== 'Cancelada' && dias.includes(e.fecha) && exGuias(e).includes(g.id)).length;
+  return { horas, libres, sin, trab, exc };
+}
+function vSemana(seg) {
   const L = S.semana, dias = [...Array(7)].map((_, i) => addD(L, i)), h = hoy();
   const gs = guiasActivas();
   const filas = gs.map(g => {
-    let horas = 0, libres = 0, sin = 0;
+    const r = resumenGuia(g, dias);
     const celdas = dias.map(f => {
-      const tu = turnoDe(g.id, f); horas += horasTurno(tu);
-      if (tu && tu.tipo && tu.tipo.esLibre === 'si') libres++; if (!tu) sin++;
+      const tu = turnoDe(g.id, f);
       const exs = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id));
       const malas = exs.filter(e => alertas(e).some(a => a.t === 'err'));
       return `<td class="c ${esJefe() ? 'ed' : ''} ${f === h ? 'hoy' : ''}" ${esJefe() ? `data-a="turno" data-g="${esc(g.id)}" data-f="${f}"` : ''}>
@@ -407,18 +458,59 @@ function vSemana() {
         ${exs.map(e => `<div class="mini ${malas.includes(e) ? 'x' : ''}">${esc(e.inicio)} ${esc(nomAct(e))}</div>`).join('')}</td>`;
     }).join('');
     return `<tr class="${S.me.guiaId === g.id ? 'yo' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>
-      <div class="mini">${horas}h · ${libres} libre${libres === 1 ? '' : 's'}${sin ? ` · <span style="color:var(--warn)">${sin} sin asignar</span>` : ''}</div></td>${celdas}</tr>`;
+      <div class="mini">${r.horas}h · ${r.libres} libre${r.libres === 1 ? '' : 's'} · ${r.exc} exc.${r.sin ? ` · <span style="color:var(--warn)">${r.sin} sin asignar</span>` : ''}</div></td>${celdas}</tr>`;
   }).join('');
   const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada'); return `<td class="c ${f === h ? 'hoy' : ''}"><small>${v.length} exc · ${v.reduce((a, e) => a + exPax(e), 0)} pax</small></td>`; }).join('');
-  const leyenda = T('TiposTurno').map(t => `<span class="chip" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}${t.inicio ? ' ' + esc(t.inicio) + '–' + esc(t.fin) : ''}</span>`).join('');
-  return `<div class="bar"><button data-a="sem-mov" data-n="-7">‹</button><button data-a="sem-hoy">Esta semana</button><button data-a="sem-mov" data-n="7">›</button>
+  return `<div class="bar">${seg}<button data-a="sem-mov" data-n="-7">‹</button><button data-a="sem-hoy">Esta semana</button><button data-a="sem-mov" data-n="7">›</button>
       <span class="grow"></span>${esJefe() ? '<button data-a="copiar-semana-ant">Copiar turnos de la semana anterior</button>' : ''}
       <button data-a="copiar-semana">📲 WhatsApp</button><button data-a="imprimir">🖨️</button></div>
     <h2>Semana del ${esc(fLarga(L))}</h2>
-    ${gs.length ? `<div class="card scroll"><table class="sem"><tr><th>Guía</th>${dias.map(f => `<th class="dh ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}">${esc(fCorta(f))}</th>`).join('')}</tr>${filas}
+    ${gs.length ? `<div class="card scroll"><table class="sem sticky1"><tr><th>Guía</th>${dias.map(f => `<th class="dh ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}">${esc(fCorta(f))}</th>`).join('')}</tr>${filas}
       <tr><td><small>Total</small></td>${tot}</tr></table></div>` : '<div class="empty">No hay guías activos.</div>'}
-    <div class="chips">${leyenda}</div>
-    ${esJefe() ? '<p><small>Toca una celda para asignar el turno o el día libre. Toca un día para ver el detalle.</small></p>' : ''}`;
+    ${leyendaTurnos()}`;
+}
+function leyendaTurnos() {
+  return `<div class="chips">${T('TiposTurno').map(t => `<span class="chip" style="background:${esc(t.color || '#fff')}"><b>${esc(abrev(t))}</b> ${esc(t.nombre)}${t.inicio ? ' ' + esc(t.inicio) + '–' + esc(t.fin) : ''}</span>`).join('')}</div>
+    ${esJefe() ? '<p><small>Toca una celda para asignar el turno o el día libre. Toca un día para ver su detalle.</small></p>' : ''}`;
+}
+const abrev = t => { if (!t) return '?'; const w = t.nombre.trim().split(/[\s-]+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[1][0] : t.nombre.slice(0, 2)).toUpperCase(); };
+function vMes(seg) {
+  const M = S.mes || hoy().slice(0, 7), [y, m] = M.split('-').map(Number);
+  const n = new Date(y, m, 0).getDate(), h = hoy();
+  const dias = [...Array(n)].map((_, i) => M + '-' + pad(i + 1));
+  const gs = guiasActivas();
+  const filas = gs.map(g => {
+    const r = resumenGuia(g, dias);
+    return `<tr class="${S.me.guiaId === g.id ? 'yo' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>
+      <div class="mini">${r.trab} días · ${r.horas}h · ${r.libres} libres · ${r.exc} exc.</div></td>` +
+      dias.map(f => {
+        const tu = turnoDe(g.id, f), wd = pd(f).getDay();
+        const ne = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).length;
+        const tit = txtTurno(tu) + (tu && tu.nota ? ' · ' + tu.nota : '') + (ne ? ' · ' + ne + ' exc.' : '');
+        return `<td class="c ${esJefe() ? 'ed' : ''} ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}" title="${esc(fCorta(f) + ': ' + tit)}" ${esJefe() ? `data-a="turno" data-g="${esc(g.id)}" data-f="${f}"` : ''}>
+          ${tu ? `<span class="t" style="background:${esc((tu.tipo && tu.tipo.color) || '#eee')}">${esc(abrev(tu.tipo))}${tu.nota ? '*' : ''}</span>` : '<span class="n">·</span>'}${ne ? `<span class="n">${ne} exc</span>` : ''}</td>`;
+      }).join('') + '</tr>';
+  }).join('');
+  const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada').length; const wd = pd(f).getDay();
+    return `<td class="c ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}"><span class="n">${v || ''}</span></td>`; }).join('');
+  return `<div class="bar">${seg}<button data-a="mes-mov" data-n="-1">‹</button><button data-a="mes-hoy">Este mes</button><button data-a="mes-mov" data-n="1">›</button>
+      <span class="grow"></span><button data-a="copiar-mes">📲 WhatsApp</button><button data-a="imprimir">🖨️</button></div>
+    <h2>${MESES[m - 1]} ${y}</h2>
+    ${gs.length ? `<div class="card scroll"><table class="mes sticky1"><tr><th style="text-align:left">Guía</th>${dias.map(f => { const d = pd(f), wd = d.getDay();
+      return `<th class="dh ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}" style="cursor:pointer">${DIAS[wd][0]}<br><b>${d.getDate()}</b></th>`; }).join('')}</tr>${filas}
+      <tr><td><small>Excursiones</small></td>${tot}</tr></table></div>` : '<div class="empty">No hay guías activos.</div>'}
+    ${leyendaTurnos()}`;
+}
+function textoMes(M) {
+  const [y, m] = M.split('-').map(Number), n = new Date(y, m, 0).getDate();
+  const dias = [...Array(n)].map((_, i) => M + '-' + pad(i + 1));
+  let t = `*Turnos ${MESES[m - 1]} ${y}*\n`;
+  guiasActivas().forEach(g => {
+    const r = resumenGuia(g, dias);
+    const lib = dias.filter(f => { const tu = turnoDe(g.id, f); return tu && tu.tipo && tu.tipo.esLibre === 'si'; });
+    t += `\n*${g.nombre}* — ${r.trab} días de trabajo\nLibres: ${lib.map(f => fCorta(f)).join(', ') || '—'}\n`;
+  });
+  return t;
 }
 function modalTurno(gid, f) {
   const g = guia(gid), tu = turnoDe(gid, f);
@@ -459,8 +551,8 @@ function vExc() {
   if (gsel) list = list.filter(e => exGuias(e).includes(gsel));
   if (F.q) { const q = F.q.toLowerCase(); list = list.filter(e => (nomAct(e) + ' ' + J(e.pasajeros, []).map(paxNombre).join(' ') + ' ' + (e.notas || '')).toLowerCase().includes(q)); }
   list.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
-  let html = '', cur = '';
-  list.forEach(e => { if (e.fecha !== cur) { cur = e.fecha; html += `<div class="list-h">${esc(fLarga(cur))}</div>`; } html += tarjetaEx(e); });
+  const fechas = [...new Set(list.map(e => e.fecha))];
+  const html = fechas.map(f => `<div class="list-h">${esc(fLarga(f))}</div><div class="cards">${list.filter(e => e.fecha === f).map(e => tarjetaEx(e)).join('')}</div>`).join('');
   return `<div class="bar">
       <label style="margin:0">Desde<input type="date" value="${esc(F.desde)}" data-fx="desde"></label>
       <label style="margin:0">Hasta<input type="date" value="${esc(F.hasta)}" data-fx="hasta"></label>
@@ -512,7 +604,9 @@ function exLeer() {
   b.querySelectorAll('[data-pi]').forEach(el => {
     const p = E._pax[+el.dataset.pi]; if (!p) return;
     if (el.dataset.pf === 'pax') p.pax = el.value;
-    else { const h = T('Huespedes').find(x => hLabel(x) === el.value.trim() || x.nombre === el.value.trim()); p.h = h ? h.id : ''; p.nombre = h ? '' : el.value.trim(); }
+    else if (el.dataset.pf === 'hab') { if (!p.h) p.hab = el.value.trim(); }
+    else { const v = el.value.trim(); const h = T('Huespedes').find(x => hLabel(x) === v) || T('Huespedes').find(x => normal(x.nombre) === normal(v));
+      p.h = h ? h.id : ''; p.nombre = h ? '' : v; if (h) p.hab = ''; }
   });
   E._chk = [...b.querySelectorAll('[data-ck]:checked')].map(x => x.dataset.ck);
   E.pasajeros = JSON.stringify(E._pax); E.checklist = JSON.stringify(E._chk);
@@ -530,10 +624,11 @@ function exPartes() {
   }).join('') || '<small>No hay guías.</small>';
   $('#expax').innerHTML = E._pax.map((p, i) => {
     const h = p.h && by('Huespedes', p.h);
-    return `<div class="pxrow"><input list="dlh" data-pi="${i}" data-pf="n" value="${esc(h ? hLabel(h) : p.nombre || '')}" placeholder="Nombre del huésped o pasajero">
+    return `<div class="pxrow"><input list="dlh" data-pi="${i}" data-pf="n" value="${esc(h ? hLabel(h) : p.nombre || '')}" placeholder="Nombre del huésped">
+      <input data-pi="${i}" data-pf="hab" value="${esc(h ? h.habitacion : p.hab || '')}" placeholder="Hab." title="Habitación" ${h ? 'disabled' : ''}>
       <input type="number" min="1" data-pi="${i}" data-pf="pax" value="${esc(p.pax || 1)}" title="N° de personas">
       <button class="sm" data-a="px-del" data-i="${i}" title="Quitar">✕</button><div id="pxr-${i}" style="grid-column:1/-1">${pxInfo(p)}</div></div>`;
-  }).join('') + `<div class="row" style="margin-bottom:12px"><button class="sm" data-a="px-add">+ Pasajero</button><button class="sm" data-a="nuevo-hues-ex">+ Crear ficha de huésped</button>
+  }).join('') + `<div class="row" style="margin-bottom:12px"><button class="sm" data-a="px-add">+ Pasajero</button><small>&nbsp;Escribe el nombre: si es nuevo, se guarda solo en Huéspedes.</small>
      <span class="grow"></span><b>${exPax(E)} pax</b>${a && num(a.capacidad) ? `<small>&nbsp;/ máx ${esc(a.capacidad)}</small>` : ''}</div>`;
   const cl = lines(a && a.checklist);
   $('#exchk').innerHTML = cl.length ? `<label>Checklist de preparación</label><div class="card" style="padding:8px 12px">${cl.map(x => `<label class="chk"><input type="checkbox" data-ck="${esc(x)}" ${E._chk.includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('')}</div>` : '';
@@ -545,7 +640,10 @@ function exCambio(el) {
   const n = el.getAttribute('name');
   exLeer();
   if (el.dataset.pi != null) { // pasajero: solo refresca su fila, sin redibujar (no se pierden foco ni clics)
-    const w = $('#pxr-' + el.dataset.pi); if (w) w.innerHTML = pxInfo(E._pax[+el.dataset.pi]);
+    const p = E._pax[+el.dataset.pi];
+    const w = $('#pxr-' + el.dataset.pi); if (w) w.innerHTML = pxInfo(p);
+    const hi = $(`#expax [data-pi="${el.dataset.pi}"][data-pf="hab"]`); const h = p && p.h && by('Huespedes', p.h);
+    if (hi && el.dataset.pf === 'n') { hi.disabled = !!h; if (h) hi.value = h.habitacion || ''; }
     return refrescarExSinPax();
   }
   if (n === 'actividadId' || n === 'inicio') {
@@ -581,45 +679,72 @@ async function guardarEx() {
 }
 
 /* ───────────── vista HUÉSPEDES ───────────── */
-function vHues() {
-  const F = S.fh, h0 = hoy();
-  let list = T('Huespedes');
-  if (!F.todos) list = list.filter(h => !h.salida || h.salida >= h0);
-  if (F.q) { const q = F.q.toLowerCase(); list = list.filter(h => [h.nombre, h.habitacion, h.idioma, h.restricciones, h.notas].join(' ').toLowerCase().includes(q)); }
-  list.sort((a, b) => (a.llegada || '').localeCompare(b.llegada || '') || a.nombre.localeCompare(b.nombre));
-  return `<div class="bar"><input type="search" data-fh="q" value="${esc(F.q)}" placeholder="Buscar huésped, habitación…" style="flex:1">
-      <span class="chk" style="margin:0"><input type="checkbox" data-fh="todos" ${F.todos ? 'checked' : ''}> Incluir los que ya se fueron</span>
-      <button class="pri" data-a="nuevo-hues">+ Huésped</button></div>
-    ${list.map(h => {
-      const exs = T('Excursiones').filter(e => e.estado !== 'Cancelada' && J(e.pasajeros, []).some(p => p.h === h.id)).sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
-      const dentro = h.llegada && h.llegada <= h0 && (!h.salida || h.salida >= h0);
-      return `<div class="ex" data-a="editar-hues" data-id="${esc(h.id)}" style="border-left-color:${dentro ? 'var(--ok)' : 'var(--line)'}">
-        <div class="body"><b>${esc(h.nombre)}</b> ${h.habitacion ? `<span class="badge">hab. ${esc(h.habitacion)}</span>` : ''} ${dentro ? '<span class="badge b-Realizada">en el lodge</span>' : ''}
-        <div class="meta">${esc([h.llegada && h.salida ? fCorta(h.llegada) + ' → ' + fCorta(h.salida) : '', (num(h.pax) || 1) + ' pax', h.idioma].filter(Boolean).join(' · '))}</div>
-        ${h.restricciones || h.salud ? `<div class="alert warn">⚠️ ${esc([h.restricciones, h.salud].filter(Boolean).join(' · '))}</div>` : ''}
-        ${exs.length ? `<div class="meta">🗓️ ${esc(exs.map(e => fCorta(e.fecha) + ' ' + e.inicio + ' ' + nomAct(e)).join(' | '))}</div>` : ''}</div></div>`;
-    }).join('') || '<div class="empty">No hay huéspedes. Crea las fichas con “+ Huésped”.</div>'}`;
+function histHues() {
+  const m = {};
+  T('Excursiones').forEach(e => J(e.pasajeros, []).forEach(p => { if (p.h) (m[p.h] = m[p.h] || []).push({ e, pax: num(p.pax) || 1 }); }));
+  Object.values(m).forEach(l => l.sort((a, b) => (b.e.fecha + b.e.inicio).localeCompare(a.e.fecha + a.e.inicio)));
+  return m;
 }
-function abrirHues(h, desdeEx) {
-  h = h || { id: '', nombre: '', habitacion: '', llegada: S.fecha, salida: addD(S.fecha, 2), pax: 2, idioma: 'Español', telefono: '', restricciones: '', salud: '', tallas: '', notas: '' };
-  S.hdesdeEx = desdeEx ? Object.assign({}, E) : null;
-  E = null;
-  modal(h.id ? 'Ficha de huésped' : 'Nuevo huésped', `<form id="f">
+function vHues() {
+  const F = S.fh, H = histHues(), q = normal(F.q);
+  let rows = T('Huespedes').map(h => {
+    let l = H[h.id] || [];
+    if (F.desde) l = l.filter(x => x.e.fecha >= F.desde);
+    if (F.hasta) l = l.filter(x => x.e.fecha <= F.hasta);
+    if (F.act) l = l.filter(x => x.e.actividadId === F.act);
+    return { h, l };
+  }).filter(r => r.l.length || (F.todos && !F.desde && !F.hasta && !F.act));
+  if (q) rows = rows.filter(r => normal([r.h.nombre, r.h.habitacion, r.h.idioma, r.h.telefono, r.h.restricciones, r.h.salud, r.h.notas].concat(r.l.map(x => nomAct(x.e))).join(' ')).includes(q));
+  rows.sort((a, b) => (b.l[0] ? b.l[0].e.fecha : '').localeCompare(a.l[0] ? a.l[0].e.fecha : '') || a.h.nombre.localeCompare(b.h.nombre));
+  const vivasR = rows.flatMap(r => r.l.filter(x => x.e.estado !== 'Cancelada'));
+  const acts = T('Actividades');
+  return `<div class="filtros">
+      <label style="grid-column:span 2">Buscar<input type="search" data-fh="q" value="${esc(F.q)}" placeholder="Nombre, habitación, actividad, restricción…"></label>
+      <label>Desde<input type="date" data-fh="desde" value="${esc(F.desde)}"></label>
+      <label>Hasta<input type="date" data-fh="hasta" value="${esc(F.hasta)}"></label>
+      <label>Actividad<select data-fh="act"><option value="">Todas</option>${acts.map(a => `<option value="${esc(a.id)}" ${F.act === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></label>
+      <label><span class="chk" style="margin:8px 0"><input type="checkbox" data-fh="todos" ${F.todos ? 'checked' : ''}> Incluir fichas sin actividades</span></label>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${rows.length}</b><small>huéspedes</small></div>
+      <div class="stat"><b>${vivasR.length}</b><small>actividades tomadas</small></div>
+      <div class="stat"><b>${vivasR.reduce((a, x) => a + x.pax, 0)}</b><small>pasajeros en total</small></div>
+      <div class="stat"><b>${rows.filter(r => r.l.filter(x => x.e.estado !== 'Cancelada').length > 1).length}</b><small>repiten actividades</small></div>
+    </div>
+    ${rows.length ? `<div class="card scroll"><table class="tbl sticky1"><tr><th>Huésped</th><th>Hab.</th><th class="num">Actividades</th><th>Última actividad</th><th>Actividades tomadas</th><th>Restricciones / salud</th></tr>
+      ${rows.map(({ h, l }) => { const v = l.filter(x => x.e.estado !== 'Cancelada'); const u = l[0];
+        return `<tr data-a="editar-hues" data-id="${esc(h.id)}"><td><b>${esc(h.nombre)}</b>${h.idioma ? `<div class="mini">${esc(h.idioma)}</div>` : ''}</td><td>${esc(h.habitacion)}</td>
+          <td class="num"><b>${v.length}</b></td><td>${u ? `${esc(fCorta(u.e.fecha))}<div class="mini">${esc(nomAct(u.e))}</div>` : '—'}</td>
+          <td><small>${esc([...new Set(v.map(x => nomAct(x.e)))].join(', '))}</small></td>
+          <td>${h.restricciones || h.salud ? `<small style="color:var(--err)">${esc([h.restricciones, h.salud].filter(Boolean).join(' · '))}</small>` : ''}</td></tr>`; }).join('')}
+      </table></div>` : `<div class="empty">${T('Huespedes').length ? 'No hay huéspedes con estos filtros.' : 'Aún no hay huéspedes. Aparecen aquí automáticamente cuando los agregas como pasajeros en una excursión.'}</div>`}`;
+}
+function abrirHues(h) {
+  const l = histHues()[h.id] || [];
+  const v = l.filter(x => x.e.estado !== 'Cancelada');
+  modal(h.nombre, `<form id="f">
     <input type="hidden" name="id" value="${esc(h.id)}">
-    <div class="grid2"><label>Nombre (titular / familia)<input name="nombre" value="${esc(h.nombre)}" required></label>
+    <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><b>${v.length}</b><small>actividades</small></div>
+      <div class="stat"><b>${v.reduce((a, x) => a + x.pax, 0)}</b><small>pasajeros</small></div>
+      <div class="stat"><b>${new Set(v.map(x => x.e.actividadId)).size}</b><small>actividades distintas</small></div></div>
+    ${l.length ? `<label>Historial de actividades</label><div class="card scroll" style="padding:4px 8px"><table class="tbl"><tr><th>Fecha</th><th>Actividad</th><th>Guía</th><th class="num">Pax</th><th>Estado</th></tr>
+      ${l.map(x => `<tr data-a="ver-ex" data-id="${esc(x.e.id)}"><td>${esc(fCorta(x.e.fecha))} <small>${esc(x.e.inicio)}</small></td><td>${esc(nomAct(x.e))}</td>
+        <td><small>${esc(exGuias(x.e).map(id => (guia(id) || {}).nombre || '?').join(', '))}</small></td><td class="num">${x.pax}</td><td><span class="badge b-${esc(x.e.estado)}">${esc(x.e.estado || 'Programada')}</span></td></tr>`).join('')}</table></div>` : ''}
+    <div class="grid2"><label>Nombre<input name="nombre" value="${esc(h.nombre)}" required></label>
       <label>Habitación<input name="habitacion" value="${esc(h.habitacion)}"></label></div>
-    <div class="grid3"><label>Llegada<input type="date" name="llegada" value="${esc(h.llegada)}"></label>
-      <label>Salida<input type="date" name="salida" value="${esc(h.salida)}"></label>
+    <div class="grid3"><label>Idioma<input name="idioma" list="dlidioma" value="${esc(h.idioma)}"></label>
+      <label>Teléfono / WhatsApp<input name="telefono" value="${esc(h.telefono)}"></label>
       <label>N° personas<input type="number" min="1" name="pax" value="${esc(h.pax)}"></label></div>
-    <div class="grid2"><label>Idioma<input name="idioma" list="dlidioma" value="${esc(h.idioma)}"></label>
-      <label>Teléfono / WhatsApp<input name="telefono" value="${esc(h.telefono)}"></label></div>
     <datalist id="dlidioma"><option>Español<option>Inglés<option>Portugués<option>Alemán<option>Francés</datalist>
     <label>Restricciones alimentarias<input name="restricciones" value="${esc(h.restricciones)}" placeholder="Celíaco, vegano, alergia a nueces…"></label>
     <label>Salud / movilidad<input name="salud" value="${esc(h.salud)}" placeholder="Rodilla operada, embarazo, no sabe nadar…"></label>
     <label>Tallas (botas / traje)<input name="tallas" value="${esc(h.tallas)}" placeholder="Botas 42 y 38 · traje M y S"></label>
+    <div class="grid2"><label>Llegada (opcional)<input type="date" name="llegada" value="${esc(h.llegada)}"></label>
+      <label>Salida (opcional)<input type="date" name="salida" value="${esc(h.salida)}"></label></div>
     <label>Notas<textarea name="notas">${esc(h.notas)}</textarea></label></form>`,
-    `${h.id && esJefe() ? '<button class="del" data-a="borrar" data-t="Huespedes">Eliminar</button>' : ''}<span class="grow"></span>
-     <button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Huespedes">Guardar</button>`);
+    `${esJefe() && !l.length ? '<button class="del" data-a="borrar" data-t="Huespedes">Eliminar</button>' : ''}<span class="grow"></span>
+     <button data-a="cerrar">Cerrar</button><button class="pri" data-a="guardar-form" data-t="Huespedes">Guardar cambios</button>`);
   S.editId = h.id;
 }
 
@@ -627,14 +752,14 @@ function abrirHues(h, desdeEx) {
 function vCat() {
   const acts = T('Actividades'); const cats = [...new Set(acts.map(a => a.categoria || 'Otras'))];
   return `<div class="bar"><span class="grow"></span>${esJefe() ? '<button class="pri" data-a="nueva-act">+ Actividad</button>' : ''}</div>
-    ${cats.map(c => `<div class="list-h">${esc(c)}</div>` + acts.filter(a => (a.categoria || 'Otras') === c).map(a => {
+    ${cats.map(c => `<div class="list-h">${esc(c)}</div><div class="cards">` + acts.filter(a => (a.categoria || 'Otras') === c).map(a => {
       const imp = J(a.implementos, {}); const r = a.recursoId && by('Recursos', a.recursoId);
       return `<div class="ex ${a.activo === 'no' ? 'cancel' : ''}" data-a="editar-act" data-id="${esc(a.id)}" style="border-left-color:${esc(a.color || '#1f5f55')}"><div class="body">
         <b>${esc(a.nombre)}</b> ${a.activo === 'no' ? '<span class="badge">inactiva</span>' : ''}
         <div class="meta">${esc([a.duracion ? a.duracion + ' min' : '', a.dificultad, a.longitud, a.capacidad ? 'máx ' + a.capacidad + ' pax' : '', r ? r.nombre : ''].filter(Boolean).join(' · '))}</div>
         ${a.incluye ? `<div class="meta">${esc(a.incluye)}</div>` : ''}
         ${Object.keys(imp).length ? `<div class="meta">🎒 ${esc(Object.keys(imp).map(k => ((by('Implementos', k) || {}).nombre || k) + ' ×' + imp[k]).join(', '))} por pax</div>` : ''}</div></div>`;
-    }).join('')).join('') || '<div class="empty">No hay actividades.</div>'}`;
+    }).join('') + '</div>').join('') || '<div class="empty">No hay actividades.</div>'}`;
 }
 function abrirAct(a) {
   a = a || { id: '', nombre: '', categoria: '', duracion: 60, dificultad: '', longitud: '', capacidad: '', recursoId: '', descripcion: '', incluye: '', implementos: '{}', checklist: '', color: '#1f5f55', activo: 'si' };
@@ -701,32 +826,33 @@ function abrirRec(r) {
 function vGuias() {
   const mes = hoy().slice(0, 7);
   return `<div class="bar"><h2 style="margin:0" class="grow">Guías</h2><button class="pri" data-a="nuevo-guia">+ Guía</button></div>
-    <div class="card scroll"><table><tr><th>Nombre</th><th>Teléfono</th><th>PIN</th><th>Este mes</th><th>Notas</th></tr>
+    <div class="card scroll"><table class="tbl"><tr><th>Nombre</th><th>Rol</th><th>Teléfono</th><th>PIN</th><th>Este mes</th><th>Notas</th></tr>
     ${T('Guias').map(g => {
       const tm = T('Turnos').filter(t => t.guiaId === g.id && t.fecha.slice(0, 7) === mes).map(t => Object.assign({}, t, { tipo: by('TiposTurno', t.tipoId) }));
       const lib = tm.filter(t => t.tipo && t.tipo.esLibre === 'si').length, hrs = tm.reduce((a, t) => a + horasTurno(t), 0);
       const nex = T('Excursiones').filter(e => e.estado !== 'Cancelada' && e.fecha.slice(0, 7) === mes && exGuias(e).includes(g.id)).length;
       return `<tr data-a="editar-guia" data-id="${esc(g.id)}" style="cursor:pointer;${g.activo === 'no' ? 'opacity:.5' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>${g.activo === 'no' ? ' <span class="badge">inactivo</span>' : ''}</td>
-        <td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${hrs}h · ${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
+        <td>${g.rol === 'jefe' ? '<span class="badge b-Confirmada">Jefe</span>' : '<small>Guía</small>'}</td><td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${hrs}h · ${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
     }).join('')}</table></div>
     <div class="bar"><h2 style="margin:0" class="grow">Tipos de turno</h2><button class="pri" data-a="nuevo-tipo">+ Tipo de turno</button></div>
     <div class="card"><div class="chips">${T('TiposTurno').map(t => `<button data-a="editar-tipo" data-id="${esc(t.id)}" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}${t.inicio ? ' · ' + esc(t.inicio) + '–' + esc(t.fin) : ''}${t.esLibre === 'si' ? ' (libre)' : ''}</button>`).join('')}</div></div>
     <h2>Configuración</h2>
     <div class="card"><div class="grid2">
       <label>Nombre del lodge<input id="cfg-lodge" value="${esc(cfg('LODGE'))}"></label>
-      <label>Nuevo PIN del jefe<input id="cfg-pin" type="password" placeholder="mínimo 4 caracteres"></label></div>
+      <div></div></div>
       <button data-a="guardar-cfg">Guardar configuración</button>
-      <p><small>Todos los datos están en la Planilla de Google: puedes respaldarla con Archivo › Hacer una copia.</small></p></div>`;
+      <p><small>Tu PIN se cambia en tu fila de la tabla de guías. Todos los datos están en la Planilla de Google: puedes respaldarla con Archivo › Hacer una copia.</small></p></div>`;
 }
 function abrirGuia(g) {
-  g = g || { id: '', nombre: '', telefono: '', pin: String(Math.floor(1000 + Math.random() * 9000)), color: '#2e7d6b', activo: 'si', notas: '' };
+  g = g || { id: '', nombre: '', telefono: '', pin: String(Math.floor(1000 + Math.random() * 9000)), color: '#2e7d6b', activo: 'si', notas: '', rol: '' };
   modal(g.id ? 'Editar guía' : 'Nuevo guía', `<form id="f"><input type="hidden" name="id" value="${esc(g.id)}">
     <div class="grid2"><label>Nombre<input name="nombre" value="${esc(g.nombre)}" required></label><label>Teléfono / WhatsApp<input name="telefono" value="${esc(g.telefono)}"></label></div>
     <div class="grid3"><label>PIN para entrar<input name="pin" value="${esc(g.pin)}"></label>
       <label>Color<input type="color" name="color" value="${esc(g.color || '#2e7d6b')}" style="height:38px;padding:2px"></label>
       <label>Estado<select name="activo"><option value="si">Activo</option><option value="no" ${g.activo === 'no' ? 'selected' : ''}>Inactivo</option></select></label></div>
+    <label>Rol<select name="rol"><option value="">Guía (ve todo, edita excursiones y huéspedes)</option><option value="jefe" ${g.rol === 'jefe' ? 'selected' : ''}>Jefe (edita todo: turnos, guías, catálogo, informes)</option></select></label>
     <label>Notas (idiomas, certificaciones, talla…)<textarea name="notas">${esc(g.notas)}</textarea></label></form>`,
-    `${g.id ? '<button class="del" data-a="borrar" data-t="Guias">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Guias">Guardar</button>`);
+    `${g.id && g.id !== S.me.guiaId ? '<button class="del" data-a="borrar" data-t="Guias">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Guias">Guardar</button>`);
   S.editId = g.id;
 }
 function abrirTipo(t) {
@@ -740,6 +866,138 @@ function abrirTipo(t) {
   S.editId = t.id;
 }
 
+/* ───────────── INFORMES (solo jefe) ───────────── */
+const SECCIONES = [['resumen', 'Resumen'], ['act', 'Por actividad'], ['guia', 'Por guía'], ['cat', 'Por categoría'], ['tiempo', 'Por fecha'],
+  ['franja', 'Por horario y día de semana'], ['hues', 'Huéspedes frecuentes'], ['detalle', 'Detalle de excursiones']];
+function fiDefault() {
+  const h = hoy();
+  const d = pd(h);
+  return { desde: h.slice(0, 8) + '01', hasta: iso(new Date(d.getFullYear(), d.getMonth() + 1, 0)), hd: '', hh: '', guia: '', act: '', canc: false,
+    sec: { resumen: true, act: true, guia: true, cat: true, tiempo: true, franja: true, hues: true, detalle: false } };
+}
+function presetInforme(k) {
+  const h = hoy(), F = S.fi, d = pd(h);
+  if (k === 'mes') { F.desde = h.slice(0, 8) + '01'; F.hasta = iso(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  if (k === 'mesant') { F.desde = iso(new Date(d.getFullYear(), d.getMonth() - 1, 1)); F.hasta = iso(new Date(d.getFullYear(), d.getMonth(), 0)); }
+  if (k === 'semana') { F.desde = lunes(h); F.hasta = addD(lunes(h), 6); }
+  if (k === '30') { F.desde = addD(h, -29); F.hasta = h; }
+  if (k === 'anio') { F.desde = h.slice(0, 4) + '-01-01'; F.hasta = h.slice(0, 4) + '-12-31'; }
+}
+const durMin = e => { const r = rango(e); return r ? r[1] - r[0] : 0; };
+const hrs = m => (Math.round(m / 6) / 10).toLocaleString('es-CL');
+const fRango = (a, b) => { const x = pd(a), y = pd(b); return x.getDate() + ' ' + MESES[x.getMonth()].slice(0, 3) + (x.getFullYear() !== y.getFullYear() ? ' ' + x.getFullYear() : '') + ' – ' + y.getDate() + ' ' + MESES[y.getMonth()].slice(0, 3) + ' ' + y.getFullYear(); };
+function barra(v, max) { return `<div class="barra" style="width:${max ? Math.round(v / max * 100) : 0}%"></div>`; }
+function tablaInf(cab, filas, conBarra) {
+  return `<table><tr>${cab.map((c, i) => `<th class="${i ? 'num' : ''}">${esc(c)}</th>`).join('')}${conBarra ? '<th style="width:28%"></th>' : ''}</tr>${filas.join('')}</table>`;
+}
+function informe() {
+  const F = S.fi;
+  if (!F.desde || !F.hasta || F.desde > F.hasta) return { titulo: 'Informe', html: '<div class="empty">Elige un rango de fechas válido.</div>', n: 0 };
+  const todas = T('Excursiones').filter(e => e.fecha >= F.desde && e.fecha <= F.hasta && (!F.hd || (e.inicio || '') >= F.hd) && (!F.hh || (e.inicio || '') <= F.hh)
+    && (!F.guia || exGuias(e).includes(F.guia)) && (!F.act || e.actividadId === F.act)).sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
+  const ok = todas.filter(e => e.estado !== 'Cancelada'), canc = todas.length - ok.length;
+  const L = F.canc ? todas : ok;
+  const pax = ok.reduce((a, e) => a + exPax(e), 0), min = ok.reduce((a, e) => a + durMin(e), 0);
+  const hs = new Set(); ok.forEach(e => J(e.pasajeros, []).forEach(p => p.h && hs.add(p.h)));
+  const dias = []; for (let f = F.desde; f <= F.hasta && dias.length < 800; f = addD(f, 1)) dias.push(f);
+  const filtros = [F.hd || F.hh ? 'horario ' + (F.hd || '00:00') + '–' + (F.hh || '23:59') : '', F.guia ? 'guía: ' + ((guia(F.guia) || {}).nombre || '') : '',
+    F.act ? 'actividad: ' + ((by('Actividades', F.act) || {}).nombre || '') : ''].filter(Boolean).join(' · ');
+  const titulo = 'Informe de actividades ' + fRango(F.desde, F.hasta);
+  let h = `<h1>${esc(cfg('LODGE') || 'Puyuhuapi Lodge & Spa')} · Informe de actividades</h1>
+    <p class="sub2">${esc(fRango(F.desde, F.hasta))}${filtros ? ' · ' + esc(filtros) : ''} · generado el ${esc(fCorta(hoy()))} por ${esc(S.me.nombre)}</p>`;
+  const S2 = F.sec;
+  if (S2.resumen) {
+    const real = ok.filter(e => e.estado === 'Realizada').length;
+    h += `<h3>Resumen</h3><div class="stats">
+      <div class="stat"><b>${ok.length}</b><small>excursiones</small></div><div class="stat"><b>${real}</b><small>realizadas</small></div>
+      <div class="stat"><b>${ok.length - real}</b><small>programadas / confirmadas</small></div><div class="stat"><b>${canc}</b><small>canceladas</small></div>
+      <div class="stat"><b>${pax}</b><small>pasajeros</small></div><div class="stat"><b>${hs.size}</b><small>huéspedes distintos</small></div>
+      <div class="stat"><b>${ok.length ? (Math.round(pax / ok.length * 10) / 10).toLocaleString('es-CL') : 0}</b><small>pax por excursión</small></div>
+      <div class="stat"><b>${hrs(min)}</b><small>horas de actividad</small></div></div>`;
+  }
+  const grupo = (key) => { const m = {}; L.forEach(e => { const k = key(e); const g = m[k] = m[k] || { n: 0, pax: 0, min: 0, canc: 0 };
+    if (e.estado === 'Cancelada') g.canc++; else { g.n++; g.pax += exPax(e); g.min += durMin(e); } }); return m; };
+  if (S2.act) {
+    const m = grupo(e => nomAct(e)); const ks = Object.keys(m).sort((a, b) => m[b].n - m[a].n); const mx = Math.max(0, ...ks.map(k => m[k].n));
+    h += `<h3>Por actividad</h3>` + (ks.length ? tablaInf(['Actividad', 'Excursiones', 'Pasajeros', 'Horas', '% del total'].concat(F.canc ? ['Canceladas'] : []),
+      ks.map(k => `<tr><td>${esc(k)}</td><td class="num"><b>${m[k].n}</b></td><td class="num">${m[k].pax}</td><td class="num">${hrs(m[k].min)}</td><td class="num">${ok.length ? Math.round(m[k].n / ok.length * 100) : 0}%</td>${F.canc ? `<td class="num">${m[k].canc}</td>` : ''}<td>${barra(m[k].n, mx)}</td></tr>`), true) : '<p>Sin datos.</p>');
+  }
+  if (S2.guia) {
+    const gs = T('Guias').filter(g => (!F.guia || g.id === F.guia) && (g.activo !== 'no' || ok.some(e => exGuias(e).includes(g.id))));
+    const rows = gs.map(g => { const mis = ok.filter(e => exGuias(e).includes(g.id)); const r = resumenGuia(g, dias);
+      return { g, n: mis.length, pax: mis.reduce((a, e) => a + exPax(e), 0), min: mis.reduce((a, e) => a + durMin(e), 0), r }; }).sort((a, b) => b.n - a.n);
+    const mx = Math.max(0, ...rows.map(x => x.n));
+    h += `<h3>Por guía</h3>` + tablaInf(['Guía', 'Excursiones', 'Pasajeros', 'Horas en actividad', 'Días trabajados', 'Días libres', 'Horas de turno'],
+      rows.map(x => `<tr><td>${esc(x.g.nombre)}</td><td class="num"><b>${x.n}</b></td><td class="num">${x.pax}</td><td class="num">${hrs(x.min)}</td><td class="num">${x.r.trab}</td><td class="num">${x.r.libres}</td><td class="num">${x.r.horas}</td><td>${barra(x.n, mx)}</td></tr>`), true);
+  }
+  if (S2.cat) {
+    const m = grupo(e => (act(e) || {}).categoria || 'Otras'); const ks = Object.keys(m).sort((a, b) => m[b].n - m[a].n); const mx = Math.max(0, ...ks.map(k => m[k].n));
+    h += `<h3>Por categoría</h3>` + (ks.length ? tablaInf(['Categoría', 'Excursiones', 'Pasajeros', 'Horas'], ks.map(k => `<tr><td>${esc(k)}</td><td class="num"><b>${m[k].n}</b></td><td class="num">${m[k].pax}</td><td class="num">${hrs(m[k].min)}</td><td>${barra(m[k].n, mx)}</td></tr>`), true) : '<p>Sin datos.</p>');
+  }
+  if (S2.tiempo) {
+    const porMes = dias.length > 45;
+    const m = grupo(e => porMes ? e.fecha.slice(0, 7) : e.fecha); const ks = Object.keys(m).sort(); const mx = Math.max(0, ...ks.map(k => m[k].n));
+    const lab = k => porMes ? MESES[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4) : fCorta(k);
+    h += `<h3>${porMes ? 'Por mes' : 'Por día'}</h3>` + (ks.length ? tablaInf([porMes ? 'Mes' : 'Día', 'Excursiones', 'Pasajeros', 'Horas'], ks.map(k => `<tr><td>${esc(lab(k))}</td><td class="num"><b>${m[k].n}</b></td><td class="num">${m[k].pax}</td><td class="num">${hrs(m[k].min)}</td><td>${barra(m[k].n, mx)}</td></tr>`), true) : '<p>Sin datos.</p>');
+  }
+  if (S2.franja) {
+    const fr = e => { const t = toM(e.inicio); return t == null ? 'Sin hora' : t < 720 ? 'Mañana (antes de 12:00)' : t < 1080 ? 'Tarde (12:00–18:00)' : 'Noche (desde 18:00)'; };
+    const m = grupo(fr); const ks = ['Mañana (antes de 12:00)', 'Tarde (12:00–18:00)', 'Noche (desde 18:00)', 'Sin hora'].filter(k => m[k]); const mx = Math.max(0, ...ks.map(k => m[k].n));
+    const w = grupo(e => (pd(e.fecha).getDay() + 6) % 7); const wd = [0, 1, 2, 3, 4, 5, 6].filter(k => w[k]); const mw = Math.max(0, ...wd.map(k => w[k].n));
+    const DL = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    h += `<h3>Por horario</h3>` + (ks.length ? tablaInf(['Horario de inicio', 'Excursiones', 'Pasajeros'], ks.map(k => `<tr><td>${esc(k)}</td><td class="num"><b>${m[k].n}</b></td><td class="num">${m[k].pax}</td><td>${barra(m[k].n, mx)}</td></tr>`), true) : '<p>Sin datos.</p>')
+      + `<h3>Por día de la semana</h3>` + (wd.length ? tablaInf(['Día', 'Excursiones', 'Pasajeros'], wd.map(k => `<tr><td>${DL[k]}</td><td class="num"><b>${w[k].n}</b></td><td class="num">${w[k].pax}</td><td>${barra(w[k].n, mw)}</td></tr>`), true) : '<p>Sin datos.</p>');
+  }
+  if (S2.hues) {
+    const m = {}; ok.forEach(e => J(e.pasajeros, []).forEach(p => { if (!p.h) return; const x = m[p.h] = m[p.h] || { n: 0, acts: new Set() }; x.n++; x.acts.add(nomAct(e)); }));
+    const ks = Object.keys(m).sort((a, b) => m[b].n - m[a].n).slice(0, 20);
+    h += `<h3>Huéspedes frecuentes</h3>` + (ks.length ? tablaInf(['Huésped', 'Hab.', 'Actividades', 'Cuáles'], ks.map(k => { const hu = by('Huespedes', k) || {};
+      return `<tr><td>${esc(hu.nombre || '?')}</td><td class="num">${esc(hu.habitacion || '')}</td><td class="num"><b>${m[k].n}</b></td><td class="num" style="text-align:left"><small>${esc([...m[k].acts].join(', '))}</small></td></tr>`; })) : '<p>Sin datos.</p>');
+  }
+  if (S2.detalle) {
+    h += `<h3>Detalle de excursiones (${L.length})</h3>` + (L.length ? tablaInf(['Fecha', 'Hora', 'Actividad', 'Guías', 'Pax', 'Estado', 'Pasajeros'], L.map(e => `<tr><td>${esc(fCorta(e.fecha))}</td><td class="num">${esc(e.inicio)}–${esc(finEx(e))}</td>
+      <td class="num" style="text-align:left">${esc(nomAct(e))}</td><td class="num" style="text-align:left"><small>${esc(exGuias(e).map(id => (guia(id) || {}).nombre || '?').join(', '))}</small></td><td class="num">${exPax(e)}</td><td class="num">${esc(e.estado || 'Programada')}</td>
+      <td class="num" style="text-align:left"><small>${esc(J(e.pasajeros, []).map(paxNombre).join(', '))}</small></td></tr>`)) : '<p>Sin datos.</p>');
+  }
+  return { titulo, html: h, n: todas.length };
+}
+function vInformes() {
+  const F = S.fi = S.fi || fiDefault();
+  const r = informe();
+  return `<div class="cols"><div class="card rep" id="repo">${r.html}</div>
+    <aside class="side"><div class="card"><h3>Qué incluir</h3>
+      <div class="chips" style="margin-bottom:10px">${[['semana', 'Esta semana'], ['mes', 'Este mes'], ['mesant', 'Mes anterior'], ['30', 'Últimos 30 días'], ['anio', 'Este año']].map(([k, n]) => `<button class="sm" data-a="inf-preset" data-k="${k}">${n}</button>`).join('')}</div>
+      <div class="grid2"><label>Desde<input type="date" data-fi="desde" value="${esc(F.desde)}"></label><label>Hasta<input type="date" data-fi="hasta" value="${esc(F.hasta)}"></label></div>
+      <div class="grid2"><label>Hora de inicio desde<input type="time" data-fi="hd" value="${esc(F.hd)}"></label><label>hasta<input type="time" data-fi="hh" value="${esc(F.hh)}"></label></div>
+      <label>Guía<select data-fi="guia"><option value="">Todos</option>${T('Guias').map(g => `<option value="${esc(g.id)}" ${F.guia === g.id ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select></label>
+      <label>Actividad<select data-fi="act"><option value="">Todas</option>${T('Actividades').map(a => `<option value="${esc(a.id)}" ${F.act === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></label>
+      <label>Secciones</label><div class="checks" style="display:grid">${SECCIONES.map(([k, n]) => `<label class="chk"><input type="checkbox" data-fs="${k}" ${F.sec[k] ? 'checked' : ''}> ${n}</label>`).join('')}
+        <label class="chk"><input type="checkbox" data-fi="canc" ${F.canc ? 'checked' : ''}> Mostrar canceladas en las tablas</label></div>
+      <button class="pri" style="width:100%" data-a="inf-pdf">📄 Generar PDF</button>
+      <p><small>El PDF queda guardado en tu Google Drive, en la carpeta “Informes Puyuhuapi Lodge”.</small></p></div></aside></div>`;
+}
+const PDF_CSS = `body{font-family:Arial,Helvetica,sans-serif;color:#1c2a27;font-size:11px;margin:24px}
+  h1{font-size:18px;color:#1f5f55;margin:0 0 4px}.sub2{color:#63726e;margin:0 0 14px}
+  h3{font-size:13px;color:#1f5f55;border-bottom:2px solid #1f5f55;padding-bottom:3px;margin:18px 0 6px}
+  table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #dde3df;padding:4px 6px;text-align:left;vertical-align:top}
+  th{font-size:10px;color:#63726e}.num{text-align:right}
+  .stats{width:100%}.stat{display:inline-block;width:23%;margin:0 1% 8px 0;border:1px solid #dde3df;padding:6px 8px;vertical-align:top}
+  .stat b{display:block;font-size:18px;color:#1f5f55}.stat small{color:#63726e}
+  .barra{height:8px;background:#1f5f55}small{color:#63726e}`;
+async function generarPdf(btn) {
+  const r = informe();
+  if (!r.n) return toast('No hay excursiones en ese rango', true);
+  btn.disabled = true; btn.textContent = 'Generando…';
+  try {
+    const html = `<html><head><meta charset="utf-8"><style>${PDF_CSS}</style></head><body>${r.html}</body></html>`;
+    const res = await api('generarPdf', S.tok, r.titulo, html);
+    modal('Informe listo', `<p>Se guardó <b>${esc(res.nombre)}</b> en tu Google Drive (carpeta “Informes Puyuhuapi Lodge”).</p>`,
+      `<span class="grow"></span><a href="data:application/pdf;base64,${res.b64}" download="${esc(res.nombre)}"><button>Descargar</button></a>
+       <a href="${esc(res.url)}" target="_blank" rel="noopener"><button class="pri">Abrir PDF</button></a>`);
+  } catch (e) { toast(e.message, true); }
+  btn.disabled = false; btn.textContent = '📄 Generar PDF';
+}
+
 /* ───────────── guardar / borrar genéricos ───────────── */
 async function guardarObj(tabla, obj) {
   const btns = $('#mbox').querySelectorAll('.mfoot button'); btns.forEach(b => b.disabled = true);
@@ -749,12 +1007,8 @@ async function guardarObj(tabla, obj) {
     if (tabla === 'Guias' && !esJefe()) delete r.pin;
     if (i >= 0) arr[i] = r; else arr.push(r);
     toast('Guardado');
-    if (tabla === 'Huespedes' && S.hdesdeEx) { // volvemos a la excursión con el huésped agregado
-      const ex = S.hdesdeEx; S.hdesdeEx = null;
-      const pax = ex._pax.filter(p => p.h || p.nombre); pax.push({ h: r.id, pax: r.pax || 1 });
-      ex.pasajeros = JSON.stringify(pax); ex.checklist = JSON.stringify(ex._chk);
-      render(); abrirEx(ex); return;
-    }
+    if (tabla === 'Guias' && r.id === S.me.guiaId) { S.me.nombre = r.nombre; S.me.rol = r.rol === 'jefe' ? 'jefe' : 'guia'; }
+    if (r._nuevosHuespedes) { r._nuevosHuespedes.forEach(h => S.d.Huespedes.push(h)); delete r._nuevosHuespedes; }
     cerrar(); render();
   } catch (e) { toast(e.message, true); btns.forEach(b => b.disabled = false); }
 }
@@ -847,8 +1101,7 @@ document.addEventListener('click', e => {
     'duplicar-ex': () => { exLeer(); const c = Object.assign({}, E, { id: '', estado: 'Programada', checklist: '[]', actualizado: '', actualizadoPor: '' }); abrirEx(c); toast('Copia creada: cambia la fecha o la hora y guarda'); },
     'px-add': () => { exLeer(); E._pax.push({ h: '', nombre: '', pax: 1 }); exPartes(); const ins = $('#expax').querySelectorAll('[data-pf="n"]'); ins[ins.length - 1].focus(); },
     'px-del': () => { exLeer(); E._pax.splice(+el.dataset.i, 1); exPartes(); },
-    'nuevo-hues-ex': () => { exLeer(); abrirHues(null, true); },
-    'nuevo-hues': () => abrirHues(),
+    'ver-ex': () => { const ex = by('Excursiones', id); cerrar(); if (ex) abrirEx(ex); },
     'editar-hues': () => abrirHues(by('Huespedes', id)),
     'nueva-act': () => abrirAct(),
     'editar-act': () => abrirAct(by('Actividades', id)),
@@ -865,10 +1118,15 @@ document.addEventListener('click', e => {
       try {
         await api('guardarConfig', S.tok, 'LODGE', $('#cfg-lodge').value);
         const c = T('Config').find(x => x.id === 'LODGE'); if (c) c.valor = $('#cfg-lodge').value.trim(); else S.d.Config.push({ id: 'LODGE', valor: $('#cfg-lodge').value.trim() });
-        if ($('#cfg-pin').value) await api('guardarConfig', S.tok, 'PIN_JEFE', $('#cfg-pin').value);
         render(); toast('Configuración guardada');
       } catch (err) { toast(err.message, true); }
     },
+    'inf-preset': () => { presetInforme(el.dataset.k); render(); },
+    'inf-pdf': () => generarPdf(el),
+    'tmodo': () => { S.tmodo = el.dataset.m; if (el.dataset.m === 'mes' && !S.mes) S.mes = S.semana.slice(0, 7); render(); },
+    'mes-mov': () => { const [y, m] = (S.mes || hoy().slice(0, 7)).split('-').map(Number); const d = new Date(y, m - 1 + +el.dataset.n, 1); S.mes = iso(d).slice(0, 7); render(); },
+    'mes-hoy': () => { S.mes = hoy().slice(0, 7); render(); },
+    'copiar-mes': () => modalTexto('Turnos del mes', textoMes(S.mes || hoy().slice(0, 7))),
     'cerrar': () => cerrar()
   };
   if (acciones[a]) { e.preventDefault(); acciones[a](); }
@@ -876,8 +1134,10 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset.a === 'dia-fecha' && el.value) { S.fecha = el.value; render(); return; }
+  if (el.dataset.fi) { S.fi[el.dataset.fi] = el.type === 'checkbox' ? el.checked : el.value; render(); return; }
+  if (el.dataset.fs) { S.fi.sec[el.dataset.fs] = el.checked; render(); return; }
   if (el.dataset.fx) { S.fx[el.dataset.fx] = el.type === 'checkbox' ? el.checked : el.value; render(); return; }
-  if (el.dataset.fh === 'todos') { S.fh.todos = el.checked; render(); return; }
+  if (el.dataset.fh && el.dataset.fh !== 'q') { S.fh[el.dataset.fh] = el.type === 'checkbox' ? el.checked : el.value; render(); return; }
   if (E && $('#exinfo') && el.closest('#mbox')) exCambio(el);
 });
 document.addEventListener('input', e => {

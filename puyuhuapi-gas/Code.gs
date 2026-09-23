@@ -1,6 +1,6 @@
 /**
- * RUMBO · Puyuhuapi Lodge & Spa
- * Excursiones, guías, turnos, huéspedes, implementos y vehículos.
+ * Puyuhuapi Lodge & Spa · Animaciones
+ * Excursiones, guías, turnos, huéspedes, implementos, vehículos e informes.
  *
  * Instalación: ver LEEME.md (se pega en Extensiones > Apps Script de una Planilla de Google).
  * Los datos quedan en las hojas de la Planilla: se pueden ver, respaldar o exportar desde ahí.
@@ -9,7 +9,7 @@
 // Columnas de cada hoja. Se pueden agregar columnas nuevas al final sin romper nada.
 const TABLAS = {
   Config:      ['id', 'valor'],
-  Guias:       ['id', 'nombre', 'telefono', 'pin', 'color', 'activo', 'notas'],
+  Guias:       ['id', 'nombre', 'telefono', 'pin', 'color', 'activo', 'notas', 'rol'],
   TiposTurno:  ['id', 'nombre', 'inicio', 'fin', 'color', 'esLibre'],
   Turnos:      ['id', 'fecha', 'guiaId', 'tipoId', 'nota'],
   Actividades: ['id', 'nombre', 'categoria', 'duracion', 'dificultad', 'longitud', 'capacidad', 'recursoId',
@@ -25,18 +25,19 @@ const TABLAS = {
 // Hojas que un guía puede editar (el jefe puede editar todo).
 const EDITABLE_GUIA = ['Excursiones', 'Huespedes'];
 const SESION_DIAS = 30;
-const HISTORIAL_DIAS = 90; // cuántos días hacia atrás se cargan en la app
+const HISTORIAL_DIAS = 730; // cuántos días hacia atrás se cargan en la app (historial e informes)
+const CARPETA_INFORMES = 'Informes Puyuhuapi Lodge';
 
 /* ───────────────────────── Web app y menú ───────────────────────── */
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Rumbo · Puyuhuapi Lodge')
+    .setTitle(config_('LODGE') || 'Puyuhuapi Lodge & Spa')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('Rumbo')
+  SpreadsheetApp.getUi().createMenu('Animaciones')
     .addItem('Configurar / reparar hojas', 'configurar')
     .addItem('Ver enlace de la app', 'mostrarEnlace')
     .addToUi();
@@ -46,12 +47,13 @@ function configurar() {
   const ss = planilla_();
   Object.keys(TABLAS).forEach(hoja_);
   if (!leer_('Config').length) sembrar_();
+  migrar_();
   ['Hoja 1', 'Hoja1', 'Sheet1'].forEach(function (n) {
     const h = ss.getSheetByName(n);
     if (h && h.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(h);
   });
   aviso_('Listo ✅\n\nLos datos se guardan en la Planilla:\n' + ss.getUrl() +
-    '\n\nPIN del jefe: ' + config_('PIN_JEFE') +
+    '\n\nPIN de ' + jefe_().nombre + ': ' + jefe_().pin +
     '\nPIN de ejemplo de los guías: 1111 y 2222.\nCámbialos dentro de la app (pestaña Guías).\n' +
     'Ahora ve a Implementar > Nueva implementación > App web.');
 }
@@ -59,7 +61,7 @@ function configurar() {
 /**
  * Planilla donde viven los datos. Funciona tanto si el script se creó desde una Planilla
  * (Extensiones > Apps Script) como si se creó suelto en script.google.com: en ese caso
- * crea la Planilla "Rumbo Puyuhuapi - Datos" en tu Drive la primera vez y la recuerda.
+ * crea la Planilla "Puyuhuapi Lodge - Datos" en tu Drive la primera vez y la recuerda.
  */
 function planilla_() {
   if (planilla_.cache) return planilla_.cache;
@@ -68,7 +70,7 @@ function planilla_() {
   let ss = null;
   if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
   if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss) ss = SpreadsheetApp.create('Rumbo Puyuhuapi - Datos');
+  if (!ss) ss = SpreadsheetApp.create('Puyuhuapi Lodge - Datos');
   if (ss.getId() !== id) props.setProperty('PLANILLA_ID', ss.getId());
   planilla_.cache = ss;
   return ss;
@@ -87,22 +89,36 @@ function aviso_(msg) {
 /* ───────────────────────── API usada por la app ───────────────────────── */
 
 function listaAcceso() {
+  migrar_();
   return {
     lodge: config_('LODGE') || 'Puyuhuapi Lodge & Spa',
     guias: leer_('Guias').filter(function (g) { return g.activo !== 'no'; })
-      .map(function (g) { return { id: g.id, nombre: g.nombre }; })
+      .sort(function (a, b) { return (b.rol === 'jefe') - (a.rol === 'jefe'); })
+      .map(function (g) { return { id: g.id, nombre: g.nombre, rol: g.rol }; })
   };
 }
 
 function login(quien, pin) {
   pin = String(pin || '').trim();
-  if (quien === 'jefe') {
-    if (!pin || pin !== config_('PIN_JEFE')) throw new Error('PIN incorrecto');
-    return crearSesion_({ rol: 'jefe', guiaId: '', nombre: 'Jefe de excursiones' });
-  }
+  migrar_();
+  if (quien === 'jefe') quien = jefe_().id; // compatibilidad con la versión anterior
   const g = leer_('Guias').filter(function (x) { return x.id === quien && x.activo !== 'no'; })[0];
   if (!g || !g.pin || g.pin !== pin) throw new Error('PIN incorrecto');
-  return crearSesion_({ rol: 'guia', guiaId: g.id, nombre: g.nombre });
+  return crearSesion_({ guiaId: g.id });
+}
+
+/** El jefe es un guía más, con rol "jefe". Si no existe (instalaciones antiguas), se crea. */
+function migrar_() {
+  const gs = leer_('Guias');
+  if (gs.some(function (g) { return g.rol === 'jefe'; })) return;
+  conLock_(function () {
+    escribir_('Guias', { id: 'jefe', nombre: 'Matias Abarca', telefono: '', pin: config_('PIN_JEFE') || '1234',
+      color: '#1f5f55', activo: 'si', notas: 'Jefe de animaciones', rol: 'jefe' });
+  });
+}
+
+function jefe_() {
+  return leer_('Guias').filter(function (g) { return g.rol === 'jefe'; })[0] || {};
 }
 
 function salir(token) {
@@ -130,13 +146,66 @@ function guardar(token, tabla, obj) {
     obj.actualizadoPor = s.nombre;
     obj.actualizado = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
   }
-  return conLock_(function () { return escribir_(tabla, obj); });
+  if (tabla === 'Guias') {
+    const otrosJefes = leer_('Guias').filter(function (g) { return g.rol === 'jefe' && g.activo !== 'no' && g.id !== obj.id; });
+    if (!otrosJefes.length && (obj.rol !== 'jefe' || obj.activo === 'no')) throw new Error('Debe quedar al menos un jefe activo');
+  }
+  return conLock_(function () {
+    const nuevos = tabla === 'Excursiones' ? resolverPasajeros_(obj) : [];
+    const res = escribir_(tabla, obj);
+    if (nuevos.length) res._nuevosHuespedes = nuevos;
+    return res;
+  });
+}
+
+/**
+ * Cada pasajero escrito en una excursión queda en la base de Huéspedes: si ya existe
+ * (mismo nombre y habitación) se enlaza; si no, se crea su ficha.
+ */
+function resolverPasajeros_(obj) {
+  let pax = [];
+  try { pax = typeof obj.pasajeros === 'string' ? JSON.parse(obj.pasajeros || '[]') : (obj.pasajeros || []); } catch (e) { pax = []; }
+  const nuevos = [];
+  let hs = null;
+  pax.forEach(function (p) {
+    const hab = String(p.hab || '').trim();
+    if (p.h || !p.nombre) { delete p.hab; return; }
+    hs = hs || leer_('Huespedes');
+    const n = normal_(p.nombre);
+    let h = hs.filter(function (x) { return normal_(x.nombre) === n && (!hab || !x.habitacion || x.habitacion === hab); })[0];
+    if (!h) {
+      h = escribir_('Huespedes', { id: '', nombre: String(p.nombre).trim(), habitacion: hab, pax: p.pax || 1 });
+      hs.push(h); nuevos.push(h);
+    } else if (hab && !h.habitacion) {
+      h = escribir_('Huespedes', { id: h.id, habitacion: hab });
+    }
+    p.h = h.id; delete p.nombre; delete p.hab;
+  });
+  obj.pasajeros = JSON.stringify(pax);
+  return nuevos;
+}
+
+function normal_(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/** Convierte el informe (HTML) en PDF, lo guarda en Drive y lo devuelve para descargar. */
+function generarPdf(token, titulo, html) {
+  const s = sesion_(token);
+  if (s.rol !== 'jefe') throw new Error('Solo el jefe puede generar informes');
+  const nombre = String(titulo || 'Informe').replace(/[\\/:*?"<>|]/g, '-') + '.pdf';
+  const pdf = Utilities.newBlob(html, 'text/html', 'informe.html').getAs('application/pdf').setName(nombre);
+  const it = DriveApp.getFoldersByName(CARPETA_INFORMES);
+  const carpeta = it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA_INFORMES);
+  const f = carpeta.createFile(pdf);
+  return { url: f.getUrl(), nombre: nombre, b64: Utilities.base64Encode(pdf.getBytes()) };
 }
 
 function eliminar(token, tabla, id) {
   const s = sesion_(token);
   if (s.rol !== 'jefe') throw new Error('Solo el jefe puede eliminar');
   if (!TABLAS[tabla] || tabla === 'Config') throw new Error('Tabla no válida');
+  if (tabla === 'Guias' && id === s.guiaId) throw new Error('No puedes eliminar tu propio perfil');
   conLock_(function () {
     const sh = hoja_(tabla);
     const r = filaDe_(sh, id);
@@ -194,22 +263,22 @@ function crearSesion_(datos) {
     }
   });
   const token = Utilities.getUuid().replace(/-/g, '');
-  datos.exp = ahora + SESION_DIAS * 864e5;
-  props.setProperty('tk_' + token, JSON.stringify(datos));
-  return { token: token, rol: datos.rol, guiaId: datos.guiaId, nombre: datos.nombre };
+  props.setProperty('tk_' + token, JSON.stringify({ guiaId: datos.guiaId, exp: ahora + SESION_DIAS * 864e5 }));
+  const s = sesion_(token);
+  s.token = token;
+  return s;
 }
 
+/** Rol y nombre se leen siempre desde la hoja Guias, así los cambios aplican de inmediato. */
 function sesion_(token) {
   const raw = token && PropertiesService.getScriptProperties().getProperty('tk_' + token);
   if (!raw) throw new Error('SESION');
   const s = JSON.parse(raw);
   if (s.exp < Date.now()) throw new Error('SESION');
-  if (s.rol === 'guia') {
-    const g = leer_('Guias').filter(function (x) { return x.id === s.guiaId; })[0];
-    if (!g || g.activo === 'no') throw new Error('SESION');
-    s.nombre = g.nombre;
-  }
-  return { rol: s.rol, guiaId: s.guiaId, nombre: s.nombre };
+  const gid = s.guiaId || (s.rol === 'jefe' ? jefe_().id : '');
+  const g = leer_('Guias').filter(function (x) { return x.id === gid; })[0];
+  if (!g || g.activo === 'no') throw new Error('SESION');
+  return { rol: g.rol === 'jefe' ? 'jefe' : 'guia', guiaId: g.id, nombre: g.nombre };
 }
 
 /* ───────────────────────── Acceso a hojas ───────────────────────── */
@@ -313,8 +382,10 @@ function sembrar_() {
   escribir_('Config', { id: 'PIN_JEFE', valor: '1234' });
   escribir_('Config', { id: 'LODGE', valor: 'Puyuhuapi Lodge & Spa' });
 
+  escribir_('Guias', { id: 'jefe', nombre: 'Matias Abarca', telefono: '', pin: '1234', color: '#1f5f55', activo: 'si',
+    notas: 'Jefe de animaciones', rol: 'jefe' });
   [['g1', 'Guía 1', '1111', '#2e7d6b'], ['g2', 'Guía 2', '2222', '#c2703d']].forEach(function (g) {
-    escribir_('Guias', { id: g[0], nombre: g[1], telefono: '', pin: g[2], color: g[3], activo: 'si', notas: '' });
+    escribir_('Guias', { id: g[0], nombre: g[1], telefono: '', pin: g[2], color: g[3], activo: 'si', notas: '', rol: '' });
   });
 
   [['tm', 'Mañana', '08:00', '16:00', '#d7ecff', ''],

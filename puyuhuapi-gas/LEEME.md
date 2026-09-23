@@ -1,13 +1,13 @@
-# Rumbo · Puyuhuapi Lodge (Google Apps Script)
+# Puyuhuapi Lodge · Animaciones (Google Apps Script)
 
-Herramienta para organizar las excursiones, los guías, los turnos y días libres, los huéspedes, los implementos y los vehículos.
+Herramienta para organizar las excursiones, los guías, los turnos y días libres, los huéspedes, los implementos, los vehículos y los informes.
 Los datos se guardan en una Planilla de Google. La app se abre desde el Mac o el celular con un enlace.
 
 ## Instalación (una sola vez, ~5 minutos)
 
-> Si prefieres crear el proyecto directamente en script.google.com, también funciona: al ejecutar `configurar` se crea sola la Planilla **"Rumbo Puyuhuapi - Datos"** en tu Drive. El enlace aparece en el Registro de ejecución.
+> Si prefieres crear el proyecto directamente en script.google.com, también funciona: al ejecutar `configurar` se crea sola la Planilla **"Puyuhuapi Lodge - Datos"** en tu Drive. El enlace aparece en el Registro de ejecución.
 
-1. Entra a https://sheets.new para crear una Planilla nueva. Ponle un nombre, por ejemplo "Rumbo Puyuhuapi".
+1. Entra a https://sheets.new para crear una Planilla nueva. Ponle un nombre, por ejemplo "Puyuhuapi Animaciones".
 2. En la Planilla, abre el menú **Extensiones › Apps Script**.
 3. Pega el archivo **Code.gs**:
    borra todo lo que hay en `Código.gs` y pega el contenido completo de `Code.gs`.
@@ -26,12 +26,14 @@ Los datos se guardan en una Planilla de Google. La app se abre desde el Mac o el
 8. Abre esa URL. Guárdala en favoritos del Mac y en la pantalla de inicio del celular
    (Safari › Compartir › Agregar a inicio). Mándasela a los guías.
 
-**PIN iniciales:** jefe `1234` · Guía 1 `1111` · Guía 2 `2222`.
-Cámbialos en la pestaña **Guías** y pon los nombres reales.
+**PIN iniciales:** Matias Abarca (jefe) `1234` · Guía 1 `1111` · Guía 2 `2222`.
+Cámbialos en la pestaña **Guías** y pon los nombres reales. El jefe también es guía: aparece en los turnos y se le pueden asignar excursiones.
 
 > Nadie entra sin PIN: la app pide nombre y PIN antes de mostrar cualquier dato.
 
 ## Cuando cambies el código más adelante
+
+Si el código nuevo pide permisos nuevos (por ejemplo Google Drive para los PDF), primero ejecuta `configurar` una vez en el editor y acepta los permisos.
 
 Pega el código nuevo y luego ve a **Implementar › Gestionar implementaciones › ✏️ editar › Versión: Nueva versión › Implementar**.
 Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla, no en el código.
@@ -41,11 +43,12 @@ Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla
 | Pestaña | Para qué |
 |---|---|
 | **Día** | Programa del día: turno de cada guía, excursiones, alertas, implementos en uso y huéspedes que llegan o salen. Botón para mandarlo por WhatsApp. |
-| **Semana y turnos** | Grilla de guías por día. Toca una celda para asignar el turno o el día libre (o toda la semana de una vez). Muestra horas y libres por guía, e incluye "Copiar turnos de la semana anterior". |
+| **Turnos** | Vista **Semana** o **Mes**. Toca una celda para asignar el turno o el día libre (o toda la semana de una vez). Muestra días, horas y libres por guía, e incluye "Copiar turnos de la semana anterior". |
 | **Excursiones** | Lista filtrable por fechas, guía, estado o texto. |
-| **Huéspedes** | Ficha de cada huésped: habitación, fechas, pax, idioma, restricciones alimentarias, salud y tallas. |
+| **Huéspedes** | Buscador de los huéspedes que han tomado actividades. Se llena solo: al escribir un pasajero nuevo en una excursión, se crea su ficha. Filtra por nombre, habitación, fechas o actividad; cada ficha muestra su historial, restricciones y tallas. |
 | **Actividades** | Catálogo editable: duración, dificultad, capacidad, vehículo por defecto, implementos por pasajero y checklist de preparación. |
 | **Equipo** | Stock de implementos y vehículos o botes, con el uso del día. |
+| **Informes** (solo jefe) | Elige un rango de fechas (y, si quieres, de horario, guía o actividad) y las secciones: resumen, por actividad, por guía, por categoría, por fecha, por horario, huéspedes frecuentes y detalle. **Generar PDF** lo guarda en Drive (carpeta "Informes Puyuhuapi Lodge") y permite descargarlo. |
 | **Guías** (solo jefe) | Guías, PIN, tipos de turno (Mañana, Tarde, Libre, Vacaciones…) y configuración. |
 
 **Alertas automáticas al programar una excursión:**
@@ -56,7 +59,7 @@ Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla
 - huésped que no está alojado en esa fecha.
 
 **Permisos:**
-- El jefe puede editar y eliminar todo.
+- El jefe puede editar y eliminar todo, y ver informes. Se puede dar rol de jefe a otro guía desde la pestaña Guías.
 - Los guías ven todo, y pueden crear y editar excursiones y fichas de huéspedes: marcar el checklist, cambiar el estado, agregar notas.
 - Los guías no pueden eliminar, ni tocar turnos, guías, catálogo o equipo.
 
