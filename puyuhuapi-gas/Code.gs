@@ -273,15 +273,9 @@ function eliminar(token, tabla, id) {
   if (!TABLAS[tabla] || tabla === 'Config') throw new Error('Tabla no válida');
   if (tabla === 'Guias' && id === s.guiaId) throw new Error('No puedes eliminar tu propio perfil');
   conLock_(function () {
-    const sh = hoja_(tabla);
-    const r = filaDe_(sh, id);
-    if (r > 0) sh.deleteRow(r);
+    borrarFila_(tabla, id);
     if (tabla === 'Guias') { // borra también sus turnos
-      const t = hoja_('Turnos');
-      leer_('Turnos').filter(function (x) { return x.guiaId === id; }).forEach(function (x) {
-        const rr = filaDe_(t, x.id);
-        if (rr > 0) t.deleteRow(rr);
-      });
+      leer_('Turnos').filter(function (x) { return x.guiaId === id; }).forEach(function (x) { borrarFila_('Turnos', x.id); });
     }
   });
   return true;
@@ -292,12 +286,11 @@ function guardarTurnos(token, lista) {
   const s = sesion_(token);
   if (s.rol !== 'jefe') throw new Error('No tienes permiso para hacer esto');
   return conLock_(function () {
-    const sh = hoja_('Turnos');
     const existentes = leer_('Turnos');
     lista.forEach(function (it) {
       const prev = existentes.filter(function (x) { return x.fecha === it.fecha && x.guiaId === it.guiaId; })[0];
       if (!it.tipoId) {
-        if (prev) { const r = filaDe_(sh, prev.id); if (r > 0) sh.deleteRow(r); }
+        if (prev) borrarFila_('Turnos', prev.id);
       } else {
         const o = escribir_('Turnos', { id: prev ? prev.id : '', fecha: it.fecha, guiaId: it.guiaId, tipoId: it.tipoId, nota: it.nota || '' });
         if (!prev) existentes.push(o);
@@ -349,7 +342,17 @@ function sesion_(token) {
 
 /* ───────────────────────── Acceso a hojas ───────────────────────── */
 
+// Caché por ejecución: cada llamada desde la app lee cada hoja una sola vez.
+const CACHE_ = { hojas: {}, head: {}, datos: {} };
+
 function hoja_(nombre) {
+  if (CACHE_.hojas[nombre]) return CACHE_.hojas[nombre];
+  const sh = hojaSinCache_(nombre);
+  CACHE_.hojas[nombre] = sh;
+  return sh;
+}
+
+function hojaSinCache_(nombre) {
   const ss = planilla_();
   const cols = TABLAS[nombre];
   let sh = ss.getSheetByName(nombre);
@@ -365,28 +368,42 @@ function hoja_(nombre) {
   if (faltan.length) {
     sh.getRange(1, head.length + 1, 1, faltan.length).setValues([faltan])
       .setFontWeight('bold').setBackground('#1f5f55').setFontColor('#ffffff');
+    delete CACHE_.head[nombre];
   }
   return sh;
 }
 
 function encabezados_(sh) {
+  const k = sh.getName ? sh.getName() : '';
+  if (k && CACHE_.head[k]) return CACHE_.head[k];
   const n = sh.getLastColumn();
-  if (!n) return [];
-  return sh.getRange(1, 1, 1, n).getDisplayValues()[0];
+  const head = n ? sh.getRange(1, 1, 1, n).getDisplayValues()[0] : [];
+  if (k) CACHE_.head[k] = head;
+  return head;
 }
 
 function leer_(nombre) {
+  if (!CACHE_.datos[nombre]) {
+    const sh = hoja_(nombre);
+    const n = sh.getLastRow() - 1;
+    const head = encabezados_(sh);
+    CACHE_.datos[nombre] = n < 1 ? [] : sh.getRange(2, 1, n, head.length).getDisplayValues()
+      .filter(function (r) { return r[0] !== ''; })
+      .map(function (r) {
+        const o = {};
+        head.forEach(function (c, i) { if (c) o[c] = r[i]; });
+        return o;
+      });
+  }
+  // copias, para que quien las modifique no altere la caché
+  return CACHE_.datos[nombre].map(function (o) { return Object.assign({}, o); });
+}
+
+function borrarFila_(nombre, id) {
   const sh = hoja_(nombre);
-  const n = sh.getLastRow() - 1;
-  if (n < 1) return [];
-  const head = encabezados_(sh);
-  return sh.getRange(2, 1, n, head.length).getDisplayValues()
-    .filter(function (r) { return r[0] !== ''; })
-    .map(function (r) {
-      const o = {};
-      head.forEach(function (c, i) { if (c) o[c] = r[i]; });
-      return o;
-    });
+  const r = filaDe_(sh, id);
+  if (r > 0) sh.deleteRow(r);
+  delete CACHE_.datos[nombre];
 }
 
 function filaDe_(sh, id) {
@@ -420,6 +437,7 @@ function escribir_(nombre, obj) {
   });
   // Formato texto antes de escribir: así Sheets no convierte fechas u horas.
   sh.getRange(r, 1, 1, head.length).setNumberFormat('@').setValues([fila]);
+  delete CACHE_.datos[nombre];
   return res;
 }
 

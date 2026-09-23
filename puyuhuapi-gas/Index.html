@@ -135,7 +135,7 @@ table.sem,table.mes{user-select:none;-webkit-user-select:none}
 #login .card{padding:22px}
 .logo{font-size:26px;font-weight:700;color:var(--pri);text-align:center}
 .sub{text-align:center;color:var(--muted);margin-bottom:18px}
-.loading{text-align:center;padding:60px;color:var(--muted)}
+.loading{text-align:center;padding:80px 20px;color:var(--muted)}
 .list-h{font-weight:700;margin:16px 0 6px}
 .kv{font-size:13px;margin:2px 0}
 .kv b{color:var(--muted);font-weight:600}
@@ -173,6 +173,59 @@ table.sem,table.mes{user-select:none;-webkit-user-select:none}
 .sub2{color:var(--muted);margin:0 0 12px}
 .rep .stats{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
 .rep table{margin-bottom:6px}
+/* ── movimiento ── */
+:root{--ease:cubic-bezier(.2,.7,.2,1)}
+button,.chip,.ex,.stat,.gchk,.card,input,select,textarea,nav button,.tbl td,.turno,.mes .t{transition:background-color .18s var(--ease),border-color .18s var(--ease),box-shadow .2s var(--ease),transform .18s var(--ease),color .18s var(--ease),opacity .18s}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.6;cursor:default}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(31,95,85,.14)}
+nav button:not(.on):hover{background:#eef4f2}
+.ex:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(20,40,35,.09);border-color:#cbd8d3}
+.stat:hover{border-color:#c6d5cf}
+.gchk:hover{background:#f5faf8;border-color:#c6d5cf}
+.tbl tr[data-a] td{transition:background-color .15s}
+main.entra{animation:entra .26s var(--ease)}
+main.entra .ex,main.entra .stat,main.entra .card{animation:aparece .32s var(--ease) both}
+main.entra .burb{animation:pop .3s var(--ease) both}
+@keyframes entra{from{opacity:.001;transform:translateY(6px)}}
+@keyframes aparece{from{opacity:0;transform:translateY(5px)}}
+@keyframes pop{from{opacity:0;transform:scale(.96)}}
+#modal{transition:background-color .2s}
+#modal.on{animation:velo .2s ease-out}
+#modal.on .mbox{animation:subir .24s var(--ease)}
+#modal.sale{animation:velo .16s ease-in reverse both}
+#modal.sale .mbox{animation:subir .16s ease-in reverse both}
+@keyframes velo{from{background:rgba(20,30,28,0)}}
+@keyframes subir{from{opacity:0;transform:translateY(14px) scale(.985)}}
+#toast{transform:translate(-50%,10px);transition:opacity .25s,transform .25s var(--ease)}
+#toast.on{transform:translate(-50%,0)}
+#selbar.on{animation:subirBarra .22s var(--ease)}
+@keyframes subirBarra{from{opacity:0;transform:translate(-50%,12px)}}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gira .7s linear infinite;vertical-align:-3px;margin-right:8px;opacity:.7}
+.spin.sm{width:12px;height:12px;margin-right:6px}
+.loading .spin{width:22px;height:22px;color:var(--pri);display:block;margin:0 auto 12px}
+.gira{animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+/* calendario: marcar día y hora bajo el cursor */
+.cal .col.hov{background-color:rgba(31,95,85,.035)}
+.cal-head .dh.hov{background:#eef5f3}
+.cal-head .dh.hoy.hov{background:#d9ebe6}
+.cal-body .gut span{transition:color .12s,font-weight .12s}
+.cal-body .gut span.hov{color:var(--pri);font-weight:700}
+.fantasma{position:absolute;left:3px;right:3px;border:1.5px dashed rgba(31,95,85,.45);border-radius:8px;background:rgba(31,95,85,.06);
+  color:var(--pri);font-size:11px;font-weight:600;padding:2px 7px;pointer-events:none;transition:top .08s linear;z-index:1}
+.burb{transition:transform .16s var(--ease),box-shadow .2s var(--ease),filter .16s}
+.burb:hover{transform:translateY(-1px);filter:saturate(1.25)}
+/* turnos: marcar guía y día de la celda bajo el cursor */
+table.sem th.hov,table.mes th.hov{background:#e3efec;color:var(--pri)}
+table.sem td.hov,table.mes td.hov{color:var(--pri)}
+table.sem td.hov b,table.mes td.hov b{text-decoration:underline;text-decoration-color:rgba(31,95,85,.35);text-underline-offset:3px}
+.sem td.c.ed:hover .turno,.mes td.c.ed:hover .t{box-shadow:0 2px 8px rgba(20,40,35,.16);filter:saturate(1.3)}
+.sem td.c.ed:hover{outline:none;box-shadow:inset 0 0 0 2px var(--pri)}
+.mes td.c.ed:hover{outline:none;box-shadow:inset 0 0 0 2px var(--pri)}
+td.c.sel{transition:background-color .12s,box-shadow .12s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (max-width:1000px){.cols{grid-template-columns:1fr}.side{position:static}}
 @media (max-width:640px){
   .cards{grid-template-columns:1fr}
@@ -197,7 +250,7 @@ table.sem,table.mes{user-select:none;-webkit-user-select:none}
 </style>
 </head>
 <body>
-<div id="app"><div class="loading">Cargando…</div></div>
+<div id="app"><div class="loading"><span class="spin"></span>Cargando…</div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <div id="toast"></div>
 <div id="selbar"></div>
@@ -276,7 +329,8 @@ function solapa(a, b) {
   return !!(x && y && x[0] < y[1] && y[0] < x[1]);
 }
 function turnoDe(gid, fecha) {
-  const t = T('Turnos').find(x => x.guiaId === gid && x.fecha === fecha);
+  if (!MEMO.turnos) { MEMO.turnos = new Map(); T('Turnos').forEach(x => MEMO.turnos.set(x.guiaId + '|' + x.fecha, x)); }
+  const t = MEMO.turnos.get(gid + '|' + fecha);
   if (!t) return null;
   return Object.assign({}, t, { tipo: by('TiposTurno', t.tipoId) });
 }
@@ -295,10 +349,26 @@ function necesidad(list) {
   });
   return out;
 }
-const vivas = () => T('Excursiones').filter(e => e.estado !== 'Cancelada');
-const exsDe = f => T('Excursiones').filter(e => e.fecha === f).sort((a, b) => (a.inicio || '').localeCompare(b.inicio || ''));
+// Memoria de cálculos: se vacía en cada render (los datos solo cambian antes de un render).
+let MEMO = null;
+function resetMemo() { MEMO = { fecha: null, al: new WeakMap(), vivas: null, turnos: null }; }
+resetMemo();
+const vivas = () => MEMO.vivas || (MEMO.vivas = T('Excursiones').filter(e => e.estado !== 'Cancelada'));
+function exsDe(f) {
+  if (!MEMO.fecha) {
+    MEMO.fecha = new Map();
+    T('Excursiones').forEach(e => { if (!MEMO.fecha.has(e.fecha)) MEMO.fecha.set(e.fecha, []); MEMO.fecha.get(e.fecha).push(e); });
+    MEMO.fecha.forEach(l => l.sort((a, b) => (a.inicio || '').localeCompare(b.inicio || '')));
+  }
+  return (MEMO.fecha.get(f) || []).slice();
+}
 
 function alertas(ex) {
+  if (ex === E) return calcAlertas(ex); // la excursión en edición cambia a cada tecla
+  if (!MEMO.al.has(ex)) MEMO.al.set(ex, calcAlertas(ex));
+  return MEMO.al.get(ex);
+}
+function calcAlertas(ex) {
   const out = [];
   if (ex.estado === 'Cancelada' || !ex.fecha) return out;
   const a = act(ex);
@@ -366,12 +436,13 @@ async function boot() {
   } catch (e) { toast(e.message, true); pantallaLogin(); }
 }
 async function recargar(silencioso) {
-  try { const r = await api('cargar', S.tok); S.me = r.me; S.d = r.datos; render(); if (!silencioso) toast('Actualizado'); }
-  catch (e) { toast(e.message, true); if (!S.tok) pantallaLogin(); }
+  const b = document.querySelector('[data-a="recargar"]'); S.cargando = true; if (b) b.classList.add('gira');
+  try { const r = await api('cargar', S.tok); S.me = r.me; S.d = r.datos; S.cargando = false; render(); if (!silencioso) toast('Actualizado'); }
+  catch (e) { S.cargando = false; if (b) b.classList.remove('gira'); toast(e.message, true); if (!S.tok) pantallaLogin(); }
 }
 
 async function pantallaLogin() {
-  $('#app').innerHTML = '<div class="loading">Cargando…</div>';
+  $('#app').innerHTML = '<div class="loading"><span class="spin"></span>Cargando…</div>';
   let info = { lodge: 'Puyuhuapi Lodge & Spa', guias: [] };
   try { info = await api('listaAcceso'); } catch (e) { toast(e.message, true); }
   $('#app').innerHTML = `<div id="login"><div class="card">
@@ -403,13 +474,16 @@ function render() {
   if (!S.d) return;
   const V = { dia: vDia, semana: vTurnos, exc: vExc, hues: vHues, cat: vCat, equipo: vEquipo, inf: vInformes, guias: vGuias };
   if (!V[S.vista] || !vistas().some(([k]) => k === S.vista)) S.vista = 'dia';
+  resetMemo();
   const y = window.scrollY;
+  const clave = [S.vista, S.fecha, S.semana, S.mes, S.cf, S.tmodo, S.xmodo].join('|');
+  const entra = clave !== S._clave; S._clave = clave;
   $('#app').innerHTML = `<header><h1>${esc(cfg('LODGE') || 'Puyuhuapi Lodge & Spa')} <span>· Animaciones</span></h1>
       <small>${esc(S.me.nombre)}</small>
-      <button class="sm" data-a="recargar" title="Traer cambios de los demás">↻</button>
+      <button class="sm ${S.cargando ? 'gira' : ''}" data-a="recargar" title="Traer cambios de los demás">↻</button>
       <button class="sm" data-a="salir">Salir</button></header>
     <nav>${vistas().map(([k, n]) => `<button class="${S.vista === k ? 'on' : ''}" data-a="vista" data-v="${k}">${n}</button>`).join('')}</nav>
-    <main>${V[S.vista]()}</main>`;
+    <main class="${entra ? 'entra' : ''}">${V[S.vista]()}</main>`;
   window.scrollTo(0, y);
   barraSel();
   if (S.vista === 'exc' && S._vistaAnt !== 'exc') calScroll(true);
@@ -1222,6 +1296,7 @@ async function generarPdf(btn) {
 /* ───────────── guardar / borrar genéricos ───────────── */
 async function guardarObj(tabla, obj) {
   const btns = $('#mbox').querySelectorAll('.mfoot button'); btns.forEach(b => b.disabled = true);
+  const bp = $('#mbox .mfoot button.pri'); if (bp) { bp.dataset.txt = bp.textContent; bp.innerHTML = '<span class="spin sm"></span>Guardando…'; }
   try {
     const r = await api('guardar', S.tok, tabla, obj);
     const arr = S.d[tabla]; const i = arr.findIndex(x => x.id === r.id);
@@ -1231,7 +1306,7 @@ async function guardarObj(tabla, obj) {
     if (tabla === 'Guias' && r.id === S.me.guiaId) { S.me.nombre = r.nombre; S.me.rol = r.rol === 'jefe' ? 'jefe' : 'guia'; }
     if (r._nuevosHuespedes) { r._nuevosHuespedes.forEach(h => S.d.Huespedes.push(h)); delete r._nuevosHuespedes; }
     cerrar(); render();
-  } catch (e) { toast(e.message, true); btns.forEach(b => b.disabled = false); }
+  } catch (e) { toast(e.message, true); btns.forEach(b => b.disabled = false); if (bp) bp.textContent = bp.dataset.txt; }
 }
 function leerForm() {
   const o = {}; new FormData($('#f')).forEach((v, k) => o[k] = String(v).trim());
@@ -1287,13 +1362,22 @@ function copiarTxt() {
 
 /* ───────────── modal genérico ───────────── */
 function modal(titulo, cuerpo, pie) {
+  clearTimeout($('#modal')._t);
   $('#mbox').innerHTML = `<div class="mhead"><h3>${esc(titulo)}</h3><button class="sm" data-a="cerrar">✕</button></div>
     <div class="mbody">${cuerpo}</div><div class="mfoot">${pie || ''}</div>`;
-  $('#modal').classList.add('on');
+  $('#modal').classList.remove('sale'); $('#modal').classList.add('on');
   const first = $('#mbox .mbody input:not([type=hidden]):not([type=checkbox]),#mbox .mbody select');
   if (first && window.innerWidth > 700) first.focus();
 }
-function cerrar() { $('#modal').classList.remove('on'); $('#mbox').innerHTML = ''; E = null; }
+function cerrar() {
+  const m = $('#modal'); if (!m.classList.contains('on')) return;
+  E = null;
+  if (sinMovimiento()) { m.classList.remove('on'); $('#mbox').innerHTML = ''; return; }
+  m.classList.add('sale');
+  clearTimeout(m._t);
+  m._t = setTimeout(() => { m.classList.remove('on', 'sale'); $('#mbox').innerHTML = ''; }, 160);
+}
+const sinMovimiento = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ───────────── eventos ───────────── */
 document.addEventListener('click', e => {
@@ -1385,6 +1469,52 @@ document.addEventListener('input', e => {
   if (E && $('#exinfo') && el.dataset.pf === 'pax') { exLeer(); refrescarExSinPax(); }
 });
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') cerrar(); });
+
+/* Calendario: al mover el cursor se marca el día, la hora y aparece "+ hh:mm" donde se crearía la excursión */
+let rafCal = 0, ultimoMov = null;
+document.addEventListener('mousemove', e => {
+  ultimoMov = e; if (rafCal) return;
+  rafCal = requestAnimationFrame(() => { rafCal = 0; hoverCal(ultimoMov); });
+});
+function hoverCal(e) {
+  const cal = $('#cal'); if (!cal) return;
+  const col = e.target.closest && e.target.closest('#cal .col');
+  const sobreBurb = e.target.closest && e.target.closest('.burb');
+  cal.querySelectorAll('.hov').forEach(x => x.classList.remove('hov'));
+  let g = cal.querySelector('.fantasma');
+  if (!col) { if (g) g.remove(); return; }
+  const cols = [...cal.querySelectorAll('.col')], i = cols.indexOf(col);
+  const dh = cal.querySelectorAll('.cal-head .dh')[i]; if (dh) dh.classList.add('hov');
+  col.classList.add('hov');
+  const y = e.clientY - col.getBoundingClientRect().top, h0 = +col.dataset.h0;
+  const m = Math.floor((h0 + y / PPH * 60) / 30) * 30;
+  const hr = cal.querySelectorAll('.cal-body .gut span')[Math.floor((m - h0) / 60)]; if (hr) hr.classList.add('hov');
+  if (sobreBurb) { if (g) g.remove(); return; }
+  if (!g || g.parentElement !== col) { if (g) g.remove(); g = document.createElement('div'); g.className = 'fantasma'; col.appendChild(g); }
+  g.style.top = ((m - h0) / 60 * PPH) + 'px'; g.style.height = (PPH / 2) + 'px';
+  g.textContent = '+ ' + fromM(m);
+}
+document.addEventListener('mouseleave', () => { const g = document.querySelector('.fantasma'); if (g) g.remove(); });
+
+/* Turnos: al pasar sobre una celda se marcan su guía (fila) y su día (columna) */
+document.addEventListener('mouseover', e => {
+  const td = e.target.closest && e.target.closest('table.sem td.c, table.mes td.c');
+  document.querySelectorAll('table .hov').forEach(x => x.classList.remove('hov'));
+  if (!td) return;
+  const tr = td.parentElement, i = [...tr.children].indexOf(td);
+  const th = td.closest('table').rows[0].children[i]; if (th) th.classList.add('hov');
+  if (tr.firstElementChild) tr.firstElementChild.classList.add('hov');
+});
+
+/* Atajos: ← → cambian de día/semana/mes cuando no estás escribiendo */
+document.addEventListener('keydown', e => {
+  if ($('#modal').classList.contains('on') || /INPUT|SELECT|TEXTAREA/.test((document.activeElement || {}).tagName || '')) return;
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const d = e.key === 'ArrowLeft' ? -1 : 1;
+  const b = S.vista === 'dia' ? `[data-a="dia-mov"][data-n="${d}"]` : S.vista === 'semana' ? ((S.tmodo || 'semana') === 'mes' ? `[data-a="mes-mov"][data-n="${d}"]` : `[data-a="sem-mov"][data-n="${d * 7}"]`)
+    : S.vista === 'exc' ? `[data-a="cal-mov"][data-n="${d * (document.querySelector('.cal.dia') ? 1 : 7)}"]` : null;
+  const el = b && document.querySelector(b); if (el) { e.preventDefault(); el.click(); }
+});
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal').classList.contains('on')) cerrar(); });
 // trae cambios de los demás cada 5 minutos (si no estás editando)
 setInterval(() => { if (S.tok && S.d && !$('#modal').classList.contains('on') && !document.hidden) recargar(true); }, 5 * 60 * 1000);
