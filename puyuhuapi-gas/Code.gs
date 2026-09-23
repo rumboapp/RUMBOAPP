@@ -93,8 +93,8 @@ function listaAcceso() {
   return {
     lodge: config_('LODGE') || 'Puyuhuapi Lodge & Spa',
     guias: leer_('Guias').filter(function (g) { return g.activo !== 'no'; })
-      .sort(function (a, b) { return (b.rol === 'jefe') - (a.rol === 'jefe'); })
-      .map(function (g) { return { id: g.id, nombre: g.nombre, rol: g.rol }; })
+      .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); })
+      .map(function (g) { return { id: g.id, nombre: g.nombre }; })
   };
 }
 
@@ -110,10 +110,12 @@ function login(quien, pin) {
 /** El jefe es un guía más, con rol "jefe". Si no existe (instalaciones antiguas), se crea. */
 function migrar_() {
   const gs = leer_('Guias');
+  const viejo = gs.filter(function (g) { return g.notas === 'Jefe de animaciones'; })[0];
+  if (viejo) escribir_('Guias', { id: viejo.id, notas: '' });
   if (gs.some(function (g) { return g.rol === 'jefe'; })) return;
   conLock_(function () {
     escribir_('Guias', { id: 'jefe', nombre: 'Matias Abarca', telefono: '', pin: config_('PIN_JEFE') || '1234',
-      color: '#1f5f55', activo: 'si', notas: 'Jefe de animaciones', rol: 'jefe' });
+      color: '#1f5f55', activo: 'si', notas: '', rol: 'jefe' });
   });
 }
 
@@ -141,14 +143,14 @@ function cargar(token) {
 function guardar(token, tabla, obj) {
   const s = sesion_(token);
   if (!TABLAS[tabla] || tabla === 'Config') throw new Error('Tabla no válida');
-  if (s.rol !== 'jefe' && EDITABLE_GUIA.indexOf(tabla) < 0) throw new Error('Solo el jefe puede editar esto');
+  if (s.rol !== 'jefe' && EDITABLE_GUIA.indexOf(tabla) < 0) throw new Error('No tienes permiso para hacer esto');
   if (tabla === 'Excursiones') {
     obj.actualizadoPor = s.nombre;
     obj.actualizado = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
   }
   if (tabla === 'Guias') {
     const otrosJefes = leer_('Guias').filter(function (g) { return g.rol === 'jefe' && g.activo !== 'no' && g.id !== obj.id; });
-    if (!otrosJefes.length && (obj.rol !== 'jefe' || obj.activo === 'no')) throw new Error('Debe quedar al menos un jefe activo');
+    if (!otrosJefes.length && (obj.rol !== 'jefe' || obj.activo === 'no')) throw new Error('Debe quedar al menos una persona con permiso de administrador');
   }
   return conLock_(function () {
     const nuevos = tabla === 'Excursiones' ? resolverPasajeros_(obj) : [];
@@ -189,21 +191,85 @@ function normal_(t) {
   return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-/** Convierte el informe (HTML) en PDF, lo guarda en Drive y lo devuelve para descargar. */
-function generarPdf(token, titulo, html) {
-  const s = sesion_(token);
-  if (s.rol !== 'jefe') throw new Error('Solo el jefe puede generar informes');
-  const nombre = String(titulo || 'Informe').replace(/[\\/:*?"<>|]/g, '-') + '.pdf';
-  const pdf = Utilities.newBlob(html, 'text/html', 'informe.html').getAs('application/pdf').setName(nombre);
+/**
+ * PDF de turnos en una hoja horizontal: arma una planilla temporal con colores,
+ * la exporta ajustada al ancho de la página y la borra.
+ * d = {titulo, subtitulo, cab: [texto | {t, bg}], filas: [[{t, bg, b}]], anchos: [..], alto, pie: [{t, bg, ancho}]}
+ * En el pie, cada item va en su propia fila; con ancho=true ocupa todo el ancho.
+ */
+function pdfTurnos(token, d) {
+  sesion_(token);
+  const tmp = SpreadsheetApp.create('tmp-turnos');
+  try {
+    const sh = tmp.getSheets()[0];
+    const nc = d.cab.length;
+    const valores = [], fondos = [], negritas = [];
+    const push = function (fila) {
+      const v = [], f = [], b = [];
+      for (let i = 0; i < nc; i++) {
+        const c = fila[i] || {};
+        v.push(String(c.t == null ? '' : c.t)); f.push(c.bg || '#ffffff'); b.push(c.b ? 'bold' : 'normal');
+      }
+      valores.push(v); fondos.push(f); negritas.push(b);
+    };
+    push([{ t: d.titulo, b: true }]);
+    push([{ t: d.subtitulo }]);
+    push(d.cab.map(function (c) { return typeof c === 'string' ? { t: c, bg: '#1f5f55', b: true } : { t: c.t, bg: c.bg || '#1f5f55', b: true }; }));
+    d.filas.forEach(push);
+    push([]);
+    const pie = d.pie || [];
+    pie.forEach(function (x) { push([{ t: x.t, bg: x.bg, b: x.b }]); });
+    const n = valores.length;
+    const rg = sh.getRange(1, 1, n, nc);
+    rg.setNumberFormat('@').setValues(valores).setBackgrounds(fondos).setFontWeights(negritas)
+      .setFontFamily('Arial').setFontSize(9).setVerticalAlignment('middle').setHorizontalAlignment('center').setWrap(true);
+    sh.getRange(1, 1, 1, nc).merge().setFontSize(15).setFontColor('#1f5f55').setHorizontalAlignment('left');
+    sh.getRange(2, 1, 1, nc).merge().setFontColor('#63726e').setHorizontalAlignment('left');
+    sh.getRange(3, 1, 1, nc).setFontColor('#ffffff');
+    sh.getRange(3, 1, d.filas.length + 1, nc).setBorder(true, true, true, true, true, true, '#c9d3cf', SpreadsheetApp.BorderStyle.SOLID);
+    sh.getRange(4, 1, d.filas.length, 1).setHorizontalAlignment('left');
+    pie.forEach(function (x, i) {
+      const r = 5 + d.filas.length + i;
+      const c = sh.getRange(r, 1, 1, x.ancho ? nc : 1);
+      if (x.ancho) c.merge();
+      c.setHorizontalAlignment('left').setWrap(false);
+    });
+    (d.anchos || []).forEach(function (w, i) { sh.setColumnWidth(i + 1, w); });
+    sh.setRowHeight(1, 30);
+    for (let r = 4; r < 4 + d.filas.length; r++) sh.setRowHeight(r, d.alto || 34);
+    if (sh.getMaxColumns() > nc) sh.deleteColumns(nc + 1, sh.getMaxColumns() - nc);
+    if (sh.getMaxRows() > n) sh.deleteRows(n + 1, sh.getMaxRows() - n);
+    SpreadsheetApp.flush();
+    const url = 'https://docs.google.com/spreadsheets/d/' + tmp.getId() + '/export?format=pdf&size=letter&portrait=false' +
+      '&fitw=true&gridlines=false&printtitle=false&sheetnames=false&pagenum=UNDEFINED&fzr=false' +
+      '&top_margin=0.3&bottom_margin=0.3&left_margin=0.3&right_margin=0.3&horizontal_alignment=CENTER&gid=' + sh.getSheetId();
+    const nombre = String(d.titulo).replace(/[\\/:*?"<>|]/g, '-') + '.pdf';
+    const pdf = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getBlob().setName(nombre);
+    return guardarPdf_(pdf, nombre);
+  } finally {
+    DriveApp.getFileById(tmp.getId()).setTrashed(true);
+  }
+}
+
+function guardarPdf_(pdf, nombre) {
   const it = DriveApp.getFoldersByName(CARPETA_INFORMES);
   const carpeta = it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA_INFORMES);
   const f = carpeta.createFile(pdf);
   return { url: f.getUrl(), nombre: nombre, b64: Utilities.base64Encode(pdf.getBytes()) };
 }
 
+/** Convierte el informe (HTML) en PDF, lo guarda en Drive y lo devuelve para descargar. */
+function generarPdf(token, titulo, html) {
+  const s = sesion_(token);
+  if (s.rol !== 'jefe') throw new Error('No tienes permiso para hacer esto');
+  const nombre = String(titulo || 'Informe').replace(/[\\/:*?"<>|]/g, '-') + '.pdf';
+  const pdf = Utilities.newBlob(html, 'text/html', 'informe.html').getAs('application/pdf').setName(nombre);
+  return guardarPdf_(pdf, nombre);
+}
+
 function eliminar(token, tabla, id) {
   const s = sesion_(token);
-  if (s.rol !== 'jefe') throw new Error('Solo el jefe puede eliminar');
+  if (s.rol !== 'jefe') throw new Error('No tienes permiso para hacer esto');
   if (!TABLAS[tabla] || tabla === 'Config') throw new Error('Tabla no válida');
   if (tabla === 'Guias' && id === s.guiaId) throw new Error('No puedes eliminar tu propio perfil');
   conLock_(function () {
@@ -224,7 +290,7 @@ function eliminar(token, tabla, id) {
 /** Guarda varios turnos de una vez. Cada item: {fecha, guiaId, tipoId, nota}. tipoId vacío = borrar. */
 function guardarTurnos(token, lista) {
   const s = sesion_(token);
-  if (s.rol !== 'jefe') throw new Error('Solo el jefe puede editar turnos');
+  if (s.rol !== 'jefe') throw new Error('No tienes permiso para hacer esto');
   return conLock_(function () {
     const sh = hoja_('Turnos');
     const existentes = leer_('Turnos');
@@ -244,7 +310,7 @@ function guardarTurnos(token, lista) {
 
 function guardarConfig(token, clave, valor) {
   const s = sesion_(token);
-  if (s.rol !== 'jefe') throw new Error('Solo el jefe puede cambiar la configuración');
+  if (s.rol !== 'jefe') throw new Error('No tienes permiso para hacer esto');
   valor = String(valor || '').trim();
   if (clave === 'PIN_JEFE' && valor.length < 4) throw new Error('El PIN debe tener al menos 4 caracteres');
   conLock_(function () { escribir_('Config', { id: clave, valor: valor }); });
@@ -383,7 +449,7 @@ function sembrar_() {
   escribir_('Config', { id: 'LODGE', valor: 'Puyuhuapi Lodge & Spa' });
 
   escribir_('Guias', { id: 'jefe', nombre: 'Matias Abarca', telefono: '', pin: '1234', color: '#1f5f55', activo: 'si',
-    notas: 'Jefe de animaciones', rol: 'jefe' });
+    notas: '', rol: 'jefe' });
   [['g1', 'Guía 1', '1111', '#2e7d6b'], ['g2', 'Guía 2', '2222', '#c2703d']].forEach(function (g) {
     escribir_('Guias', { id: g[0], nombre: g[1], telefono: '', pin: g[2], color: g[3], activo: 'si', notas: '', rol: '' });
   });

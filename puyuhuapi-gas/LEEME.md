@@ -26,14 +26,14 @@ Los datos se guardan en una Planilla de Google. La app se abre desde el Mac o el
 8. Abre esa URL. Guárdala en favoritos del Mac y en la pantalla de inicio del celular
    (Safari › Compartir › Agregar a inicio). Mándasela a los guías.
 
-**PIN iniciales:** Matias Abarca (jefe) `1234` · Guía 1 `1111` · Guía 2 `2222`.
-Cámbialos en la pestaña **Guías** y pon los nombres reales. El jefe también es guía: aparece en los turnos y se le pueden asignar excursiones.
+**PIN iniciales:** Matias Abarca `1234` (acceso completo) · Guía 1 `1111` · Guía 2 `2222`.
+Cámbialos en la pestaña **Guías** y pon los nombres reales. Todos aparecen igual en la app; el acceso completo solo se nota en que esa persona ve las pestañas Informes y Guías.
 
 > Nadie entra sin PIN: la app pide nombre y PIN antes de mostrar cualquier dato.
 
 ## Cuando cambies el código más adelante
 
-Si el código nuevo pide permisos nuevos (por ejemplo Google Drive para los PDF), primero ejecuta `configurar` una vez en el editor y acepta los permisos.
+Si el código nuevo pide permisos nuevos (por ejemplo Google Drive o "conectarse a un servicio externo", que se usan para los PDF), primero ejecuta `configurar` una vez en el editor y acepta los permisos.
 
 Pega el código nuevo y luego ve a **Implementar › Gestionar implementaciones › ✏️ editar › Versión: Nueva versión › Implementar**.
 Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla, no en el código.
@@ -43,8 +43,8 @@ Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla
 | Pestaña | Para qué |
 |---|---|
 | **Día** | Programa del día: turno de cada guía, excursiones, alertas, implementos en uso y huéspedes que llegan o salen. Botón para mandarlo por WhatsApp. |
-| **Turnos** | Vista **Semana** o **Mes**. Toca una celda para asignar el turno o el día libre (o toda la semana de una vez). Muestra días, horas y libres por guía, e incluye "Copiar turnos de la semana anterior". |
-| **Excursiones** | Lista filtrable por fechas, guía, estado o texto. |
+| **Turnos** | Vista **Semana** o **Mes**. Toca una celda para asignar un turno, o **arrastra** sobre varias celdas (⌘/Ctrl + clic suma celdas sueltas; en el celular, "Seleccionar varios") y elige el turno para todas de una vez. **📄 PDF** genera una hoja horizontal con colores, leyenda y totales, lista para imprimir. |
+| **Excursiones** | Calendario **Día** o **Semana** con horas: cada actividad es una burbuja del largo de su duración, y las simultáneas quedan lado a lado. Toca un espacio vacío para crear una excursión a esa hora. También hay una vista **Lista** con filtros. |
 | **Huéspedes** | Buscador de los huéspedes que han tomado actividades. Se llena solo: al escribir un pasajero nuevo en una excursión, se crea su ficha. Filtra por nombre, habitación, fechas o actividad; cada ficha muestra su historial, restricciones y tallas. |
 | **Actividades** | Catálogo editable: duración, dificultad, capacidad, vehículo por defecto, implementos por pasajero y checklist de preparación. |
 | **Equipo** | Stock de implementos y vehículos o botes, con el uso del día. |
@@ -59,7 +59,7 @@ Así la URL sigue siendo la misma. Tus datos no se pierden: viven en la Planilla
 - huésped que no está alojado en esa fecha.
 
 **Permisos:**
-- El jefe puede editar y eliminar todo, y ver informes. Se puede dar rol de jefe a otro guía desde la pestaña Guías.
+- Quien tiene acceso **Completo** puede editar y eliminar todo, y ver informes. Se asigna en la pestaña Guías.
 - Los guías ven todo, y pueden crear y editar excursiones y fichas de huéspedes: marcar el checklist, cambiar el estado, agregar notas.
 - Los guías no pueden eliminar, ni tocar turnos, guías, catálogo o equipo.
 

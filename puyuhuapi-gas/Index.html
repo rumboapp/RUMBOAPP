@@ -77,6 +77,41 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 .sem tr.yo td{background:#fffbef}
 .turno{display:block;border-radius:6px;padding:3px 4px;font-size:13px;font-weight:600}
 .turno small{display:block;font-weight:400;color:#445}
+.sem td.c.sel,.mes td.c.sel{background:#cfe6df!important;box-shadow:inset 0 0 0 2px var(--pri)}
+.sel-modo td.c.ed{cursor:cell}
+table.sem,table.mes{user-select:none;-webkit-user-select:none}
+#selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:15;background:#fff;border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.2);padding:10px 12px;display:none;max-width:calc(100% - 24px);width:max-content}
+#selbar.on{display:block}
+#selbar .row{flex-wrap:wrap;gap:6px}
+#selbar b{margin-right:4px}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:auto;max-height:calc(100vh - 230px);min-height:420px}
+.cal-head,.cal-body{display:grid}
+.cal-head{position:sticky;top:0;z-index:3;background:var(--card);border-bottom:1px solid var(--line)}
+.cal-head .dh{padding:8px 6px;text-align:center;border-left:1px solid var(--line);line-height:1.2}
+.cal-head .dh[data-a]{cursor:pointer}
+.cal-head .dh[data-a]:hover{background:var(--pri2)}
+.cal-head .dh b{display:block;font-size:13px}
+.cal-head .dh small{font-size:11px}
+.cal-head .dh.hoy{background:var(--pri2);color:var(--pri)}
+.cal-head .gut{position:sticky;left:0;background:var(--card);z-index:4}
+.cal-body{position:relative}
+.cal-body .gut{position:sticky;left:0;z-index:2;background:var(--card);border-right:1px solid var(--line)}
+.cal-body .gut span{position:absolute;right:6px;transform:translateY(-50%);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cal-body .gut span:first-child{transform:none}
+.cal .col{position:relative;border-left:1px solid var(--line);cursor:copy;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--pph)/2 - 1px),#f1f4f2 calc(var(--pph)/2 - 1px),#f1f4f2 calc(var(--pph)/2),transparent calc(var(--pph)/2),transparent calc(var(--pph) - 1px),var(--line) calc(var(--pph) - 1px),var(--line) var(--pph))}
+.cal .col.hoy{background-color:#f7fbfa}
+.burb{position:absolute;border-left:4px solid var(--pri);border-radius:8px;padding:4px 7px;font-size:12px;line-height:1.3;overflow:hidden;cursor:pointer;
+  box-shadow:0 1px 3px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:1px;background-clip:padding-box;outline:1px solid rgba(255,255,255,.9)}
+.burb:hover{z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.burb b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.burb span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#34443f}
+.burb .x{color:var(--err);font-weight:600}
+.burb.mal{box-shadow:0 0 0 2px var(--err)}
+.burb.cancel{opacity:.45;text-decoration:line-through}
+.ahora{position:absolute;left:0;right:0;border-top:2px solid var(--err);z-index:4;pointer-events:none}
+.ahora::before{content:'';position:absolute;left:-5px;top:-6px;width:10px;height:10px;border-radius:50%;background:var(--err)}
 .mini{font-size:11px;color:var(--muted);text-align:left;margin-top:3px;line-height:1.3}
 .mini.x{color:var(--err)}
 .row{display:flex;gap:8px;align-items:center}
@@ -149,6 +184,12 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   .sticky1 td:first-child,.sticky1 th:first-child{min-width:110px}
 }
 @media print{
+  @page{size:landscape;margin:8mm}
+  .scroll{overflow:visible!important}
+  table.mes td.c{min-width:0;padding:1px}
+  table.mes .t{font-size:9px;padding:2px 0}
+  #selbar{display:none!important}
+  .cols{display:block}
   header,nav,.bar,button{display:none!important}
   body{background:#fff}
   .card,.ex{break-inside:avoid;border-color:#bbb}
@@ -159,6 +200,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 <div id="app"><div class="loading">Cargando…</div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <div id="toast"></div>
+<div id="selbar"></div>
 
 <script>
 /* ───────────── utilidades ───────────── */
@@ -202,7 +244,7 @@ const store = {
 };
 
 /* ───────────── estado ───────────── */
-const S = { fh: { q: '', desde: '', hasta: '', act: '', todos: false }, tok: store.get('anim_tk'), me: null, d: null, vista: 'dia', fecha: hoy(), semana: lunes(hoy()),
+const S = { sel: new Set(), fh: { q: '', desde: '', hasta: '', act: '', todos: false }, tok: store.get('anim_tk'), me: null, d: null, vista: 'dia', fecha: hoy(), semana: lunes(hoy()),
   fx: { desde: hoy(), hasta: addD(hoy(), 14), guia: '', estado: '', q: '', mias: true },
 };
 const esJefe = () => S.me && S.me.rol === 'jefe';
@@ -335,7 +377,7 @@ async function pantallaLogin() {
   $('#app').innerHTML = `<div id="login"><div class="card">
     <div class="logo">${esc(info.lodge)}</div><div class="sub">Animaciones y excursiones</div>
     <label>¿Quién eres?<select id="lq">
-      ${info.guias.map(g => `<option value="${esc(g.id)}">${esc(g.nombre)}${g.rol === 'jefe' ? ' (jefe)' : ''}</option>`).join('')}</select></label>
+      ${info.guias.map(g => `<option value="${esc(g.id)}">${esc(g.nombre)}</option>`).join('')}</select></label>
     <label>PIN<input id="lp" type="password" inputmode="numeric" autocomplete="current-password"></label>
     <button class="pri" style="width:100%" id="lb">Entrar</button></div></div>`;
   const last = store.get('anim_quien'); if (last && [...$('#lq').options].some(o => o.value === last)) $('#lq').value = last;
@@ -369,6 +411,10 @@ function render() {
     <nav>${vistas().map(([k, n]) => `<button class="${S.vista === k ? 'on' : ''}" data-a="vista" data-v="${k}">${n}</button>`).join('')}</nav>
     <main>${V[S.vista]()}</main>`;
   window.scrollTo(0, y);
+  barraSel();
+  if (S.vista === 'exc' && S._vistaAnt !== 'exc') calScroll(true);
+  S._vistaAnt = S.vista;
+  document.body.classList.toggle('sel-modo', !!S.selModo);
   const th = document.querySelector('.mes th.hoy'); // en el mes, muestra hoy a la vista
   if (th) { const sc = th.closest('.scroll'); sc.scrollLeft = Math.max(0, th.offsetLeft - sc.clientWidth / 2); }
 }
@@ -452,7 +498,7 @@ function vSemana(seg) {
       const tu = turnoDe(g.id, f);
       const exs = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id));
       const malas = exs.filter(e => alertas(e).some(a => a.t === 'err'));
-      return `<td class="c ${esJefe() ? 'ed' : ''} ${f === h ? 'hoy' : ''}" ${esJefe() ? `data-a="turno" data-g="${esc(g.id)}" data-f="${f}"` : ''}>
+      return `<td class="c ${esJefe() ? 'ed' : ''} ${f === h ? 'hoy' : ''} ${S.sel.has(g.id + '|' + f) ? 'sel' : ''}" ${esJefe() ? `data-g="${esc(g.id)}" data-f="${f}"` : ''}>
         ${tu ? `<span class="turno" style="background:${esc((tu.tipo && tu.tipo.color) || '#eee')}">${esc(tu.tipo ? tu.tipo.nombre : '?')}${tu.tipo && tu.tipo.inicio ? `<small>${esc(tu.tipo.inicio)}–${esc(tu.tipo.fin)}</small>` : ''}</span>` : '<small>—</small>'}
         ${tu && tu.nota ? `<div class="mini">📝 ${esc(tu.nota)}</div>` : ''}
         ${exs.map(e => `<div class="mini ${malas.includes(e) ? 'x' : ''}">${esc(e.inicio)} ${esc(nomAct(e))}</div>`).join('')}</td>`;
@@ -462,8 +508,8 @@ function vSemana(seg) {
   }).join('');
   const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada'); return `<td class="c ${f === h ? 'hoy' : ''}"><small>${v.length} exc · ${v.reduce((a, e) => a + exPax(e), 0)} pax</small></td>`; }).join('');
   return `<div class="bar">${seg}<button data-a="sem-mov" data-n="-7">‹</button><button data-a="sem-hoy">Esta semana</button><button data-a="sem-mov" data-n="7">›</button>
-      <span class="grow"></span>${esJefe() ? '<button data-a="copiar-semana-ant">Copiar turnos de la semana anterior</button>' : ''}
-      <button data-a="copiar-semana">📲 WhatsApp</button><button data-a="imprimir">🖨️</button></div>
+      <span class="grow"></span>${botonesSel()}${esJefe() ? '<button data-a="copiar-semana-ant">Copiar semana anterior</button>' : ''}
+      <button data-a="copiar-semana">📲 WhatsApp</button><button data-a="pdf-turnos">📄 PDF</button></div>
     <h2>Semana del ${esc(fLarga(L))}</h2>
     ${gs.length ? `<div class="card scroll"><table class="sem sticky1"><tr><th>Guía</th>${dias.map(f => `<th class="dh ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}">${esc(fCorta(f))}</th>`).join('')}</tr>${filas}
       <tr><td><small>Total</small></td>${tot}</tr></table></div>` : '<div class="empty">No hay guías activos.</div>'}
@@ -471,7 +517,110 @@ function vSemana(seg) {
 }
 function leyendaTurnos() {
   return `<div class="chips">${T('TiposTurno').map(t => `<span class="chip" style="background:${esc(t.color || '#fff')}"><b>${esc(abrev(t))}</b> ${esc(t.nombre)}${t.inicio ? ' ' + esc(t.inicio) + '–' + esc(t.fin) : ''}</span>`).join('')}</div>
-    ${esJefe() ? '<p><small>Toca una celda para asignar el turno o el día libre. Toca un día para ver su detalle.</small></p>' : ''}`;
+    ${esJefe() ? '<p><small>Toca una celda para asignar un turno. Para asignar varios días de una vez, <b>arrastra</b> con el mouse sobre las celdas (o ⌘/Ctrl + clic para sumar celdas sueltas); en el celular usa “Seleccionar varios”. Toca un día del encabezado para ver su detalle.</small></p>' : ''}`;
+}
+function botonesSel() {
+  if (!esJefe()) return '';
+  return `<button class="${S.selModo ? 'pri' : ''}" data-a="sel-modo">${S.selModo ? '✓ Seleccionando' : '☐ Seleccionar varios'}</button>`;
+}
+/* selección de celdas: arrastrar (rectángulo), ⌘/Ctrl/Shift + clic, o modo "Seleccionar varios" (toques) */
+function celdaInfo(td) {
+  const tr = td.parentElement, tabla = td.closest('table');
+  const filas = [...tabla.querySelectorAll('tr')].filter(r => r.querySelector('td.c.ed'));
+  return { r: filas.indexOf(tr), c: [...tr.querySelectorAll('td.c.ed')].indexOf(td), filas };
+}
+function pintarSel() {
+  document.querySelectorAll('td.c.ed').forEach(td => td.classList.toggle('sel', S.sel.has(td.dataset.g + '|' + td.dataset.f)));
+  barraSel();
+}
+function selRect(a, b) {
+  const set = new Set(S.drag.base);
+  const r0 = Math.min(a.r, b.r), r1 = Math.max(a.r, b.r), c0 = Math.min(a.c, b.c), c1 = Math.max(a.c, b.c);
+  for (let r = r0; r <= r1; r++) {
+    const tds = [...a.filas[r].querySelectorAll('td.c.ed')];
+    for (let c = c0; c <= c1; c++) if (tds[c]) set.add(tds[c].dataset.g + '|' + tds[c].dataset.f);
+  }
+  S.sel = set; pintarSel();
+}
+function barraSel() {
+  const b = $('#selbar');
+  const mostrar = S.vista === 'semana' && (S.sel.size > 1 || (S.selModo && S.sel.size > 0));
+  if (!mostrar) { b.className = ''; b.innerHTML = ''; return; }
+  const nd = S.sel.size;
+  b.className = 'on';
+  b.innerHTML = `<div class="row"><b>${nd} día${nd === 1 ? '' : 's'}</b>
+    ${T('TiposTurno').map(t => `<button class="sm" data-a="sel-aplicar" data-t="${esc(t.id)}" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}</button>`).join('')}
+    <input id="selnota" placeholder="Nota (opcional)" style="width:150px;padding:4px 8px">
+    <button class="sm del" data-a="sel-aplicar" data-t="">Quitar</button><button class="sm" data-a="sel-limpiar">✕</button></div>`;
+}
+async function aplicarSel(tipoId) {
+  const nota = ($('#selnota') || {}).value || '';
+  const lista = [...S.sel].map(k => { const [g, f] = k.split('|'); return { fecha: f, guiaId: g, tipoId, nota: nota.trim() }; });
+  S.sel = new Set(); barraSel();
+  try { S.d.Turnos = await api('guardarTurnos', S.tok, lista); render(); toast(lista.length + ' turnos guardados'); }
+  catch (e) { toast(e.message, true); render(); }
+}
+document.addEventListener('mousedown', e => {
+  const td = e.target.closest && e.target.closest('td.c.ed'); if (!td || e.button !== 0) return;
+  e.preventDefault();
+  const k = td.dataset.g + '|' + td.dataset.f, info = celdaInfo(td);
+  const suma = e.metaKey || e.ctrlKey || e.shiftKey || S.selModo;
+  if (suma && S.sel.has(k)) { S.sel.delete(k); S.drag = { start: info, base: new Set(S.sel), movido: true, quitar: true }; pintarSel(); return; }
+  S.drag = { start: info, base: suma ? new Set(S.sel) : new Set(), movido: false, suma };
+  selRect(info, info);
+});
+document.addEventListener('mouseover', e => {
+  if (!S.drag || S.drag.quitar) return;
+  const td = e.target.closest && e.target.closest('td.c.ed'); if (!td) return;
+  const info = celdaInfo(td);
+  if (info.r !== S.drag.start.r || info.c !== S.drag.start.c) S.drag.movido = true;
+  selRect(S.drag.start, info);
+});
+document.addEventListener('mouseup', () => {
+  const d = S.drag; if (!d) return; S.drag = null;
+  if (!d.movido && !d.suma && S.sel.size === 1) { // un clic simple: editar esa celda
+    const [g, f] = [...S.sel][0].split('|'); S.sel = new Set(); pintarSel(); modalTurno(g, f);
+  }
+});
+async function pdfTurnos(btn) {
+  const modo = S.tmodo || 'semana', gs = guiasActivas(), tipos = T('TiposTurno');
+  let dias, titulo, d;
+  const pie = [{ t: 'Turnos', b: true }].concat(tipos.map(t => ({ t: abrev(t) + '  ' + t.nombre + (t.inicio ? '  ' + t.inicio + '–' + t.fin : ''), bg: t.color || '#ffffff' })));
+  const notas = [];
+  if (modo === 'semana') {
+    dias = [...Array(7)].map((_, i) => addD(S.semana, i));
+    titulo = 'Turnos semana del ' + fRango(dias[0], dias[6]);
+    d = { cab: ['Guía'].concat(dias.map(f => ({ t: fCorta(f), bg: [0, 6].includes(pd(f).getDay()) ? '#3f7d72' : '#1f5f55' }))).concat(['Resumen']),
+      anchos: [150].concat(dias.map(() => 118)).concat([130]), alto: 58,
+      filas: gs.map(g => { const r = resumenGuia(g, dias);
+        return [{ t: g.nombre, b: true }].concat(dias.map(f => { const tu = turnoDe(g.id, f);
+          const ex = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).map(e => e.inicio + ' ' + nomAct(e));
+          return { t: tu ? [tu.tipo ? tu.tipo.nombre : '?', tu.tipo && tu.tipo.inicio ? tu.tipo.inicio + '–' + tu.tipo.fin : '', tu.nota].concat(ex).filter(Boolean).join('\n') : (ex.join('\n') || '—'),
+            bg: tu && tu.tipo ? tu.tipo.color : '#ffffff', b: false }; }))
+          .concat([{ t: r.trab + ' días · ' + r.horas + ' h\n' + r.libres + ' libres' }]); }) };
+  } else {
+    const M = S.mes || hoy().slice(0, 7), [y, m] = M.split('-').map(Number), n = new Date(y, m, 0).getDate();
+    dias = [...Array(n)].map((_, i) => M + '-' + pad(i + 1));
+    titulo = 'Turnos ' + MESES[m - 1] + ' ' + y;
+    d = { cab: ['Guía'].concat(dias.map(f => ({ t: DIAS[pd(f).getDay()][0] + '\n' + pd(f).getDate(), bg: [0, 6].includes(pd(f).getDay()) ? '#3f7d72' : '#1f5f55' }))).concat(['Resumen']),
+      anchos: [140].concat(dias.map(() => 30)).concat([120]), alto: 30,
+      filas: gs.map(g => { const r = resumenGuia(g, dias);
+        return [{ t: g.nombre, b: true }].concat(dias.map(f => { const tu = turnoDe(g.id, f);
+          if (tu && tu.nota) notas.push(g.nombre + ' · ' + fCorta(f) + ': ' + tu.nota);
+          return { t: tu ? abrev(tu.tipo) + (tu.nota ? '*' : '') : '', bg: tu && tu.tipo ? tu.tipo.color : ([0, 6].includes(pd(f).getDay()) ? '#f4f4ef' : '#ffffff'), b: true }; }))
+          .concat([{ t: r.trab + ' días · ' + r.horas + ' h\n' + r.libres + ' libres' }]); }) };
+  }
+  d.titulo = (cfg('LODGE') || 'Puyuhuapi Lodge & Spa') + ' · ' + titulo;
+  d.subtitulo = 'Generado el ' + fCorta(hoy());
+  d.pie = pie.concat(notas.length ? [{ t: ' ' }, { t: 'Notas', b: true }].concat(notas.map(x => ({ t: '* ' + x, ancho: true }))) : []);
+  btn.disabled = true; btn.textContent = 'Generando…';
+  try {
+    const res = await api('pdfTurnos', S.tok, d);
+    modal('PDF listo', `<p>Se guardó <b>${esc(res.nombre)}</b> en tu Google Drive (carpeta “Informes Puyuhuapi Lodge”).</p>`,
+      `<span class="grow"></span><a href="data:application/pdf;base64,${res.b64}" download="${esc(res.nombre)}"><button>Descargar</button></a>
+       <a href="${esc(res.url)}" target="_blank" rel="noopener"><button class="pri">Abrir PDF</button></a>`);
+  } catch (e) { toast(e.message, true); }
+  btn.disabled = false; btn.textContent = '📄 PDF';
 }
 const abrev = t => { if (!t) return '?'; const w = t.nombre.trim().split(/[\s-]+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[1][0] : t.nombre.slice(0, 2)).toUpperCase(); };
 function vMes(seg) {
@@ -487,14 +636,14 @@ function vMes(seg) {
         const tu = turnoDe(g.id, f), wd = pd(f).getDay();
         const ne = exsDe(f).filter(e => e.estado !== 'Cancelada' && exGuias(e).includes(g.id)).length;
         const tit = txtTurno(tu) + (tu && tu.nota ? ' · ' + tu.nota : '') + (ne ? ' · ' + ne + ' exc.' : '');
-        return `<td class="c ${esJefe() ? 'ed' : ''} ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}" title="${esc(fCorta(f) + ': ' + tit)}" ${esJefe() ? `data-a="turno" data-g="${esc(g.id)}" data-f="${f}"` : ''}>
+        return `<td class="c ${esJefe() ? 'ed' : ''} ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''} ${S.sel.has(g.id + '|' + f) ? 'sel' : ''}" title="${esc(fCorta(f) + ': ' + tit)}" ${esJefe() ? `data-g="${esc(g.id)}" data-f="${f}"` : ''}>
           ${tu ? `<span class="t" style="background:${esc((tu.tipo && tu.tipo.color) || '#eee')}">${esc(abrev(tu.tipo))}${tu.nota ? '*' : ''}</span>` : '<span class="n">·</span>'}${ne ? `<span class="n">${ne} exc</span>` : ''}</td>`;
       }).join('') + '</tr>';
   }).join('');
   const tot = dias.map(f => { const v = exsDe(f).filter(e => e.estado !== 'Cancelada').length; const wd = pd(f).getDay();
     return `<td class="c ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}"><span class="n">${v || ''}</span></td>`; }).join('');
   return `<div class="bar">${seg}<button data-a="mes-mov" data-n="-1">‹</button><button data-a="mes-hoy">Este mes</button><button data-a="mes-mov" data-n="1">›</button>
-      <span class="grow"></span><button data-a="copiar-mes">📲 WhatsApp</button><button data-a="imprimir">🖨️</button></div>
+      <span class="grow"></span>${botonesSel()}<button data-a="copiar-mes">📲 WhatsApp</button><button data-a="pdf-turnos">📄 PDF</button></div>
     <h2>${MESES[m - 1]} ${y}</h2>
     ${gs.length ? `<div class="card scroll"><table class="mes sticky1"><tr><th style="text-align:left">Guía</th>${dias.map(f => { const d = pd(f), wd = d.getDay();
       return `<th class="dh ${wd === 0 || wd === 6 ? 'fs' : ''} ${f === h ? 'hoy' : ''}" data-a="ir-dia" data-f="${f}" style="cursor:pointer">${DIAS[wd][0]}<br><b>${d.getDate()}</b></th>`; }).join('')}</tr>${filas}
@@ -543,7 +692,84 @@ async function copiarSemanaAnterior() {
 }
 
 /* ───────────── vista EXCURSIONES ───────────── */
+/* ───────────── CALENDARIO de excursiones (día / semana) ───────────── */
+const PPH = 64; // píxeles por hora
+function segExc(modo) {
+  return `<div class="seg">${[['dia', 'Día'], ['semana', 'Semana'], ['lista', 'Lista']].map(([k, n]) => `<button class="${modo === k ? 'on' : ''}" data-a="xmodo" data-m="${k}">${n}</button>`).join('')}</div>`;
+}
+function filtroGuia() {
+  const F = S.fx;
+  return esJefe() ? `<select data-fx="guia" style="width:auto"><option value="">Todos los guías</option>${T('Guias').map(g => `<option value="${esc(g.id)}" ${F.guia === g.id ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select>`
+    : `<span class="chk" style="margin:0"><input type="checkbox" data-fx="mias" ${F.mias ? 'checked' : ''}> Solo las mías</span>`;
+}
 function vExc() {
+  const modo = S.xmodo || (window.innerWidth < 700 ? 'dia' : 'semana');
+  return modo === 'lista' ? vLista(segExc(modo)) : vCal(modo);
+}
+/** Reparte actividades simultáneas en columnas, lado a lado. */
+function layoutDia(exs) {
+  const it = exs.map(ex => { const r = rango(ex) || [540, 600]; return { ex, s: r[0], e: Math.max(r[1], r[0] + 30) }; })
+    .sort((a, b) => a.s - b.s || b.e - a.e);
+  const out = []; let grupo = [], fin = -1;
+  const cerrar = () => {
+    const cols = [];
+    grupo.forEach(x => { let c = cols.findIndex(end => end <= x.s); if (c < 0) { c = cols.length; cols.push(0); } cols[c] = x.e; x.col = c; });
+    grupo.forEach(x => x.ncol = cols.length); out.push(...grupo); grupo = [];
+  };
+  it.forEach(x => { if (grupo.length && x.s >= fin) { cerrar(); fin = -1; } grupo.push(x); fin = Math.max(fin, x.e); });
+  if (grupo.length) cerrar();
+  return out;
+}
+function vCal(modo) {
+  const F = S.fx, base = S.cf || S.fecha;
+  const dias = modo === 'dia' ? [base] : [...Array(7)].map((_, i) => addD(lunes(base), i));
+  const gsel = !esJefe() && F.mias ? S.me.guiaId : F.guia;
+  const exsDia = f => exsDe(f).filter(e => (!gsel || exGuias(e).includes(gsel)) && (!F.estado || (e.estado || 'Programada') === F.estado));
+  const todos = dias.flatMap(exsDia).map(e => rango(e)).filter(Boolean);
+  const h0 = Math.min(7 * 60, ...todos.map(r => Math.floor(r[0] / 60) * 60));
+  const h1 = Math.max(22 * 60, ...todos.map(r => Math.ceil(Math.max(r[1], r[0] + 30) / 60) * 60));
+  const alto = (h1 - h0) / 60 * PPH, h = hoy();
+  const horas = []; for (let m = h0; m < h1; m += 60) horas.push(m);
+  const ahora = new Date(), mAhora = ahora.getHours() * 60 + ahora.getMinutes();
+  const anchos = [];
+  const cols = dias.map(f => {
+    const lay = layoutDia(exsDia(f));
+    anchos.push(Math.min(3, Math.max(1, ...lay.map(x => x.ncol))));
+    const burbujas = lay.map(x => {
+      const e = x.ex, a = act(e) || {}, c = a.color || '#1f5f55';
+      const al = alertas(e).some(y => y.t === 'err'), alt = (x.e - x.s) / 60 * PPH;
+      const gs = exGuias(e).map(id => (guia(id) || {}).nombre || '?').join(', ');
+      return `<div class="burb ${e.estado === 'Cancelada' ? 'cancel' : ''} ${al ? 'mal' : ''}" data-a="editar-ex" data-id="${esc(e.id)}"
+        style="top:${(x.s - h0) / 60 * PPH + 1}px;height:${Math.max(alt - 3, 20)}px;left:calc(${x.col / x.ncol * 100}% + 2px);width:calc(${100 / x.ncol}% - 4px);border-left-color:${esc(c)};background:${esc(c)}1f"
+        title="${esc(e.inicio + '–' + finEx(e) + ' ' + nomAct(e) + ' · ' + (gs || 'sin guía') + ' · ' + exPax(e) + ' pax')}">
+        <b>${esc(nomAct(e))}</b><span>${esc(e.inicio)}–${esc(finEx(e))} · ${exPax(e)} pax</span>${alt > 56 ? `<span>👤 ${esc(gs || 'sin guía')}</span>` : ''}${al ? '<span class="x">⛔ conflicto</span>' : ''}</div>`;
+    }).join('');
+    const now = f === h && mAhora >= h0 && mAhora <= h1 ? `<div class="ahora" style="top:${(mAhora - h0) / 60 * PPH}px"></div>` : '';
+    return `<div class="col ${f === h ? 'hoy' : ''}" data-a="cal-nueva" data-f="${f}" data-h0="${h0}">${burbujas}${now}</div>`;
+  }).join('');
+  const cab = dias.map(f => { const v = exsDia(f).filter(e => e.estado !== 'Cancelada');
+    const tur = modo === 'dia' ? guiasActivas().map(g => { const tu = turnoDe(g.id, f); return tu && tu.tipo ? g.nombre + ': ' + (tu.tipo.esLibre === 'si' ? tu.tipo.nombre.toLowerCase() : tu.tipo.nombre + ' ' + (tu.tipo.inicio || '') + '–' + (tu.tipo.fin || '')) : ''; }).filter(Boolean).join(' · ') : '';
+    return `<div class="dh ${f === h ? 'hoy' : ''}" ${modo === 'semana' ? `data-a="cal-dia" data-f="${f}"` : ''}><b>${esc(modo === 'dia' ? (tur ? 'Turnos' : fLarga(f)) : fCorta(f))}</b><small>${v.length} exc · ${v.reduce((a, e) => a + exPax(e), 0)} pax${tur ? ' · ' + esc(tur) : ''}</small></div>`; }).join('');
+  const plantilla = modo === 'dia' ? '54px 1fr' : '54px ' + anchos.map(k => `minmax(${k * 125}px,${k}fr)`).join(' ');
+  const titulo = modo === 'dia' ? fLarga(base) + (base === h ? ' · hoy' : '') : 'Semana del ' + fRango(dias[0], dias[6]);
+  return `<div class="bar">${segExc(modo)}<button data-a="cal-mov" data-n="${modo === 'dia' ? -1 : -7}">‹</button><button data-a="cal-hoy">Hoy</button><button data-a="cal-mov" data-n="${modo === 'dia' ? 1 : 7}">›</button>
+      <input type="date" value="${esc(base)}" data-a="cal-fecha" style="width:auto"><span class="grow"></span>${filtroGuia()}
+      <select data-fx="estado" style="width:auto"><option value="">Todos los estados</option>${ESTADOS.map(x => `<option ${F.estado === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <button class="pri" data-a="nueva-ex">+ Excursión</button></div>
+    <h2>${esc(titulo)}</h2>
+    <div class="cal ${modo}" id="cal" style="--pph:${PPH}px">
+      <div class="cal-head" style="grid-template-columns:${plantilla}"><div class="gut"></div>${cab}</div>
+      <div class="cal-body" style="height:${alto}px;grid-template-columns:${plantilla}"><div class="gut">${horas.map(m => `<span style="top:${(m - h0) / 60 * PPH}px">${fromM(m)}</span>`).join('')}</div>${cols}</div>
+    </div>
+    <p><small>Toca un espacio vacío del calendario para crear una excursión a esa hora. Las actividades que coinciden en horario se muestran lado a lado.</small></p>`;
+}
+function calScroll(forzar) {
+  const c = $('#cal'); if (!c || !forzar) return;
+  const col = c.querySelector('.col'); if (!col) return;
+  const primera = Math.min(...[...c.querySelectorAll('.burb')].map(b => parseFloat(b.style.top)));
+  c.scrollTop = isFinite(primera) ? Math.max(0, primera - PPH / 2) : Math.max(0, (8 * 60 - +col.dataset.h0) / 60 * PPH);
+}
+function vLista(seg) {
   const F = S.fx;
   let list = T('Excursiones').filter(e => (!F.desde || e.fecha >= F.desde) && (!F.hasta || e.fecha <= F.hasta));
   if (F.estado) list = list.filter(e => (e.estado || 'Programada') === F.estado);
@@ -553,7 +779,7 @@ function vExc() {
   list.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
   const fechas = [...new Set(list.map(e => e.fecha))];
   const html = fechas.map(f => `<div class="list-h">${esc(fLarga(f))}</div><div class="cards">${list.filter(e => e.fecha === f).map(e => tarjetaEx(e)).join('')}</div>`).join('');
-  return `<div class="bar">
+  return `<div class="bar">${seg}</div><div class="bar">
       <label style="margin:0">Desde<input type="date" value="${esc(F.desde)}" data-fx="desde"></label>
       <label style="margin:0">Hasta<input type="date" value="${esc(F.hasta)}" data-fx="hasta"></label>
       ${esJefe() ? `<label style="margin:0">Guía<select data-fx="guia"><option value="">Todos</option>${T('Guias').map(g => `<option value="${esc(g.id)}" ${F.guia === g.id ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select></label>`
@@ -826,13 +1052,13 @@ function abrirRec(r) {
 function vGuias() {
   const mes = hoy().slice(0, 7);
   return `<div class="bar"><h2 style="margin:0" class="grow">Guías</h2><button class="pri" data-a="nuevo-guia">+ Guía</button></div>
-    <div class="card scroll"><table class="tbl"><tr><th>Nombre</th><th>Rol</th><th>Teléfono</th><th>PIN</th><th>Este mes</th><th>Notas</th></tr>
+    <div class="card scroll"><table class="tbl"><tr><th>Nombre</th><th>Acceso</th><th>Teléfono</th><th>PIN</th><th>Este mes</th><th>Notas</th></tr>
     ${T('Guias').map(g => {
       const tm = T('Turnos').filter(t => t.guiaId === g.id && t.fecha.slice(0, 7) === mes).map(t => Object.assign({}, t, { tipo: by('TiposTurno', t.tipoId) }));
       const lib = tm.filter(t => t.tipo && t.tipo.esLibre === 'si').length, hrs = tm.reduce((a, t) => a + horasTurno(t), 0);
       const nex = T('Excursiones').filter(e => e.estado !== 'Cancelada' && e.fecha.slice(0, 7) === mes && exGuias(e).includes(g.id)).length;
       return `<tr data-a="editar-guia" data-id="${esc(g.id)}" style="cursor:pointer;${g.activo === 'no' ? 'opacity:.5' : ''}"><td><span class="dot" style="background:${esc(g.color || '#888')}"></span> <b>${esc(g.nombre)}</b>${g.activo === 'no' ? ' <span class="badge">inactivo</span>' : ''}</td>
-        <td>${g.rol === 'jefe' ? '<span class="badge b-Confirmada">Jefe</span>' : '<small>Guía</small>'}</td><td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${hrs}h · ${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
+        <td><small>${g.rol === 'jefe' ? 'Completo' : 'Guía'}</small></td><td>${esc(g.telefono)}</td><td>${esc(g.pin)}</td><td><small>${hrs}h · ${lib} libres · ${nex} exc.</small></td><td><small>${esc(g.notas)}</small></td></tr>`;
     }).join('')}</table></div>
     <div class="bar"><h2 style="margin:0" class="grow">Tipos de turno</h2><button class="pri" data-a="nuevo-tipo">+ Tipo de turno</button></div>
     <div class="card"><div class="chips">${T('TiposTurno').map(t => `<button data-a="editar-tipo" data-id="${esc(t.id)}" style="background:${esc(t.color || '#fff')}">${esc(t.nombre)}${t.inicio ? ' · ' + esc(t.inicio) + '–' + esc(t.fin) : ''}${t.esLibre === 'si' ? ' (libre)' : ''}</button>`).join('')}</div></div>
@@ -850,7 +1076,7 @@ function abrirGuia(g) {
     <div class="grid3"><label>PIN para entrar<input name="pin" value="${esc(g.pin)}"></label>
       <label>Color<input type="color" name="color" value="${esc(g.color || '#2e7d6b')}" style="height:38px;padding:2px"></label>
       <label>Estado<select name="activo"><option value="si">Activo</option><option value="no" ${g.activo === 'no' ? 'selected' : ''}>Inactivo</option></select></label></div>
-    <label>Rol<select name="rol"><option value="">Guía (ve todo, edita excursiones y huéspedes)</option><option value="jefe" ${g.rol === 'jefe' ? 'selected' : ''}>Jefe (edita todo: turnos, guías, catálogo, informes)</option></select></label>
+    <label>Acceso<select name="rol"><option value="">Guía (ve todo, edita excursiones y huéspedes)</option><option value="jefe" ${g.rol === 'jefe' ? 'selected' : ''}>Completo (además edita turnos, guías, catálogo e informes)</option></select></label>
     <label>Notas (idiomas, certificaciones, talla…)<textarea name="notas">${esc(g.notas)}</textarea></label></form>`,
     `${g.id && g.id !== S.me.guiaId ? '<button class="del" data-a="borrar" data-t="Guias">Eliminar</button>' : ''}<span class="grow"></span><button data-a="cerrar">Cancelar</button><button class="pri" data-a="guardar-form" data-t="Guias">Guardar</button>`);
   S.editId = g.id;
@@ -1080,15 +1306,27 @@ document.addEventListener('click', e => {
   if (el.tagName === 'INPUT' || el.tagName === 'SELECT') return;
   const a = el.dataset.a, id = el.dataset.id;
   const acciones = {
-    'vista': () => { S.vista = el.dataset.v; render(); window.scrollTo(0, 0); },
+    'vista': () => { S.vista = el.dataset.v; S.sel = new Set(); S.selModo = false; render(); window.scrollTo(0, 0); },
     'recargar': () => recargar(),
     'salir': () => { api('salir', S.tok).catch(() => {}); salirLocal(); pantallaLogin(); },
     'dia-mov': () => { S.fecha = addD(S.fecha, +el.dataset.n); render(); },
     'dia-hoy': () => { S.fecha = hoy(); render(); },
     'ir-dia': () => { S.fecha = el.dataset.f; S.vista = 'dia'; render(); },
-    'sem-mov': () => { S.semana = addD(S.semana, +el.dataset.n); render(); },
+    'sem-mov': () => { S.sel = new Set(); S.semana = addD(S.semana, +el.dataset.n); render(); },
     'sem-hoy': () => { S.semana = lunes(hoy()); render(); },
-    'turno': () => modalTurno(el.dataset.g, el.dataset.f),
+    'sel-modo': () => { S.selModo = !S.selModo; if (!S.selModo) S.sel = new Set(); render(); },
+    'sel-aplicar': () => aplicarSel(el.dataset.t),
+    'sel-limpiar': () => { S.sel = new Set(); S.selModo = false; render(); },
+    'pdf-turnos': () => pdfTurnos(el),
+    'xmodo': () => { S.xmodo = el.dataset.m; render(); calScroll(true); },
+    'cal-mov': () => { S.cf = addD(S.cf || S.fecha, +el.dataset.n); render(); calScroll(true); },
+    'cal-hoy': () => { S.cf = hoy(); render(); calScroll(true); },
+    'cal-dia': () => { S.cf = el.dataset.f; S.xmodo = 'dia'; render(); calScroll(true); },
+    'cal-nueva': () => {
+      const y = e.clientY - el.getBoundingClientRect().top;
+      const m = Math.round((+el.dataset.h0 + y / PPH * 60) / 30) * 30;
+      nuevaEx(el.dataset.f); const ini = $('#mbox [name="inicio"]'); if (ini) { ini.value = fromM(Math.min(m, 23 * 60 + 30)); exLeer(); }
+    },
     'set-turno': () => setTurno(el.dataset.t),
     'copiar-semana-ant': () => copiarSemanaAnterior(),
     'copiar-dia': () => modalTexto('Programa del día', textoDia(S.fecha)),
@@ -1123,8 +1361,8 @@ document.addEventListener('click', e => {
     },
     'inf-preset': () => { presetInforme(el.dataset.k); render(); },
     'inf-pdf': () => generarPdf(el),
-    'tmodo': () => { S.tmodo = el.dataset.m; if (el.dataset.m === 'mes' && !S.mes) S.mes = S.semana.slice(0, 7); render(); },
-    'mes-mov': () => { const [y, m] = (S.mes || hoy().slice(0, 7)).split('-').map(Number); const d = new Date(y, m - 1 + +el.dataset.n, 1); S.mes = iso(d).slice(0, 7); render(); },
+    'tmodo': () => { S.sel = new Set(); S.tmodo = el.dataset.m; if (el.dataset.m === 'mes' && !S.mes) S.mes = S.semana.slice(0, 7); render(); },
+    'mes-mov': () => { S.sel = new Set(); const [y, m] = (S.mes || hoy().slice(0, 7)).split('-').map(Number); const d = new Date(y, m - 1 + +el.dataset.n, 1); S.mes = iso(d).slice(0, 7); render(); },
     'mes-hoy': () => { S.mes = hoy().slice(0, 7); render(); },
     'copiar-mes': () => modalTexto('Turnos del mes', textoMes(S.mes || hoy().slice(0, 7))),
     'cerrar': () => cerrar()
@@ -1134,6 +1372,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset.a === 'dia-fecha' && el.value) { S.fecha = el.value; render(); return; }
+  if (el.dataset.a === 'cal-fecha' && el.value) { S.cf = el.value; render(); calScroll(true); return; }
   if (el.dataset.fi) { S.fi[el.dataset.fi] = el.type === 'checkbox' ? el.checked : el.value; render(); return; }
   if (el.dataset.fs) { S.fi.sec[el.dataset.fs] = el.checked; render(); return; }
   if (el.dataset.fx) { S.fx[el.dataset.fx] = el.type === 'checkbox' ? el.checked : el.value; render(); return; }
